@@ -16,6 +16,7 @@ public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
     private Long userId;
 
 
@@ -38,7 +39,5 @@ public class User {
 
     @Column(length = 255, nullable = false)
     private String userIntro;
-
-
 
 }
