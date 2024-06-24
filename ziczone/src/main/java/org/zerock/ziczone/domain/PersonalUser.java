@@ -18,7 +18,7 @@ public class PersonalUser {
     private Long personalId;
 
     @Column(length = 100, nullable = false)
-    private String career;
+    private String personalCareer;
 
     @ColumnDefault("false")
     @Column(columnDefinition = "TINYINT(1)")
