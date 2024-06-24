@@ -133,7 +133,7 @@ public class UserRepositoryTests {
 
         Resume resume = Resume.builder()
                 .resumeName("전민재")
-                .date("1998년04월06일")
+                .resumeDate("1998년04월06일")
                 .phoneNum("010-2427-9672")
                 .resumePhoto("http://photo.png")
                 .personalState("http://personalState.png")
@@ -262,7 +262,7 @@ public class UserRepositoryTests {
     }
 
     @Test
-    public void testReplyInsert(){
+    public void testReplyInsert() {
         Long userId = 1L;
         User user = User.builder()
                 .userId(userId)
@@ -284,6 +284,7 @@ public class UserRepositoryTests {
 
         replyRepository.save(reply);
         log.info("Reply saved: " + reply);
+    }
     @Test
     public void testJobInsert(){
         Job job1 = Job.builder()
@@ -441,7 +442,7 @@ public class UserRepositoryTests {
         PersonalUser personalUser = personalUserRepository.findByPersonalId(1L);
 
         Payment payment = Payment.builder()
-                .state(State.SUCCESS)
+                .payState(State.SUCCESS)
                 .payNum(1000L)
                 .berryPoint(100L)
                 .personalUser(personalUser)

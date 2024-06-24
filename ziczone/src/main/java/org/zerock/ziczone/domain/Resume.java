@@ -23,7 +23,7 @@ public class Resume {
     private String resumeName;
 
     @Column(length = 100, nullable = false)
-    private String date;
+    private String resumeDate;
 
     @Column(length = 100, nullable = false)
     private String phoneNum;
