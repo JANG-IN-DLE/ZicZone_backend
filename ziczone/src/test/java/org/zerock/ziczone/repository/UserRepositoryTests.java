@@ -26,6 +26,16 @@ public class UserRepositoryTests {
     private PortfolioRepository portfolioRepository;
     @Autowired
     private CertificateRepository certificateRepository;
+    @Autowired
+    private EducationRepository educationRepository;
+    @Autowired
+    private ArchiveRepository archiveRepository;
+    @Autowired
+    private CareerRepository careerRepository;
+    @Autowired
+    private CurriculumRepository curriculumRepository;
+    @Autowired
+    private EtcRepository etcRepository;
 
     @Test
     public void testPersonalInsert(){
@@ -132,6 +142,75 @@ public class UserRepositoryTests {
         certificateRepository.save(certificate);
 
         log.info("Certificate saved: " + certificate);
+
+    }
+    @Test
+    public void testEduInsert(){
+        Resume resume = resumeRepository.findByResumeId(1L);
+
+        Education education = Education.builder()
+                .edu("비트대학교")
+                .credit("4.1/4.5")
+                .eduDate("2024.07.30")
+                .resume(resume)
+                .build();
+        educationRepository.save(education);
+        log.info("Education saved: " + education);
+    }
+    @Test
+    public void testArchInsert(){
+        Resume resume = resumeRepository.findByResumeId(1L);
+
+        Archive archive = Archive.builder()
+                .archGit("https://github.com")
+                .archNotion("https://notion.com")
+                .archBlog("https://velog.com")
+                .resume(resume)
+                .build();
+        archiveRepository.save(archive);
+        log.info("Archive saved: " + archive);
+
+    }
+    @Test
+    public void testCareerInsert(){
+        Resume resume = resumeRepository.findByResumeId(1L);
+
+        Career career = Career.builder()
+                .careerName("배달의민족")
+                .careerJob("frontend")
+                .careerPosition("인턴")
+                .careerDate("2023.07~2023.09")
+                .resume(resume)
+                .build();
+        careerRepository.save(career);
+        log.info("Career saved: " + career);
+
+    }
+    @Test
+    public void testCurriInsert(){
+        Resume resume = resumeRepository.findByResumeId(1L);
+
+        Curriculum curriculum = Curriculum.builder()
+                .curriContent("네이버클라우드 데브옵스 과정")
+                .curriCompany("비트캠프")
+                .curriDate("2024.01~2024.07")
+                .resume(resume)
+                .build();
+        curriculumRepository.save(curriculum);
+
+        log.info("Curriculum saved: " + curriculum);
+    }
+    @Test
+    public void testEtcInsert(){
+        Resume resume = resumeRepository.findByResumeId(1L);
+
+        Etc etc = Etc.builder()
+                .etcContent("캡스톤디자인우수상")
+                .etcDate("2024.01.08")
+                .resume(resume)
+                .build();
+        etcRepository.save(etc);
+        log.info("Etc saved: " + etc);
 
     }
 }
