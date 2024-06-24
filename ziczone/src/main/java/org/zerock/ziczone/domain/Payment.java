@@ -20,7 +20,7 @@ public class Payment {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private State state;
+    private State payState;
 
     @Column(nullable = false)
     private Long payNum;
