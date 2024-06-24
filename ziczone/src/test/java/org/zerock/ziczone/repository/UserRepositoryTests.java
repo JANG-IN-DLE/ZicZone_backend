@@ -8,7 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.zerock.ziczone.domain.*;
 
+
 import javax.persistence.*;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -44,14 +46,29 @@ public class UserRepositoryTests {
     private BoardRepository boardRepository;
     @Autowired
     private ReplyRepository replyRepository;
+    private JobRepository jobRepository;
+    @Autowired
+    private JobPositionRepository jobPositionRepository;
+    @Autowired
+    private TechRepository techRepository;
+    @Autowired
+    private TechStackRepository techStackRepository;
+    @Autowired
+    private AppPaymentRepository appPaymentRepository;
+    @Autowired
+    private PaymentRepository paymentRepository;
+    @Autowired
+    private AlarmContentRepository alarmContentRepository;
+    @Autowired
+    private AlarmRepository alarmRepository;
 
     @Test
     public void testPersonalInsert(){
         User user = User.builder()
-                .userName("전민재")
-                .email("alswo9672@gmail.com")
+                .userName("홍길동")
+                .email("hong@gmail.com")
                 .password("1234")
-                .userIntro("전민재입니다.")
+                .userIntro("홍길동입니다.")
                 .userType(UserType.PERSONAL)
                 .build();
         userRepository.save(user);
@@ -267,5 +284,191 @@ public class UserRepositoryTests {
 
         replyRepository.save(reply);
         log.info("Reply saved: " + reply);
+    @Test
+    public void testJobInsert(){
+        Job job1 = Job.builder()
+                .jobName("서버/백엔드")
+                .build();
+        jobRepository.save(job1);
+
+        Job job2 = Job.builder()
+                .jobName("프론트엔드")
+                .build();
+        jobRepository.save(job2);
+        Job job3 = Job.builder()
+                .jobName("프론트엔드")
+                .build();
+        jobRepository.save(job3);
+        Job job4 = Job.builder()
+                .jobName("안드로이드")
+                .build();
+        jobRepository.save(job4);
+        Job job5 = Job.builder()
+                .jobName("QA")
+                .build();
+        jobRepository.save(job5);
+        Job job6 = Job.builder()
+                .jobName("게임서버")
+                .build();
+        jobRepository.save(job6);
+        Job job7 = Job.builder()
+                .jobName("빅데이터")
+                .build();
+        jobRepository.save(job7);
+        Job job8 = Job.builder()
+                .jobName("IOS")
+                .build();
+        jobRepository.save(job8);
+        Job job9 = Job.builder()
+                .jobName("크로스플랫폼")
+                .build();
+        jobRepository.save(job9);
+        Job job10 = Job.builder()
+                .jobName("게임 클라이언트")
+                .build();
+        jobRepository.save(job10);
+        Job job11 = Job.builder()
+                .jobName("인공지능/머신러닝")
+                .build();
+        jobRepository.save(job11);
+        Job job12 = Job.builder()
+                .jobName("DBA")
+                .build();
+        jobRepository.save(job12);
+        Job job13 = Job.builder()
+                .jobName("devops/시스템")
+                .build();
+        jobRepository.save(job13);
+        Job job14 = Job.builder()
+                .jobName("정보보안")
+                .build();
+        jobRepository.save(job14);
+        Job job15 = Job.builder()
+                .jobName("블록체인")
+                .build();
+        jobRepository.save(job15);
+        Job job16 = Job.builder()
+                .jobName("개발PM")
+                .build();
+        jobRepository.save(job16);
+        Job job17 = Job.builder()
+                .jobName("기술지원")
+                .build();
+        jobRepository.save(job17);
+        Job job18 = Job.builder()
+                .jobName("HW/임베디드")
+                .build();
+        jobRepository.save(job18);
+        Job job19 = Job.builder()
+                .jobName("SW/솔루션")
+                .build();
+        jobRepository.save(job19);
+        Job job20 = Job.builder()
+                .jobName("웹퍼블리셔")
+                .build();
+        jobRepository.save(job20);
+
+        log.info("Jobs saved: " + job1 + ", " + job2 + ", " + job3 + ", " + job4 + ", " + job5 + ", " + job6 + ", " + job7);
+    }
+    @Test
+    public void testJobPositionInsert(){
+        PersonalUser personalUser = personalUserRepository.findByPersonalId(1L);
+        Job job1 = jobRepository.findByJobId(1L);
+        Job job2 = jobRepository.findByJobId(2L);
+
+        JobPosition jobPosition1 = JobPosition.builder()
+                .personalUser(personalUser)
+                .job(job1)
+                .build();
+        JobPosition jobPosition2 = JobPosition.builder()
+                .personalUser(personalUser)
+                .job(job2)
+                .build();
+        jobPositionRepository.save(jobPosition1);
+        jobPositionRepository.save(jobPosition2);
+        log.info("JobPosition saved: " + jobPosition1);
+        log.info("JobPosition saved: " + jobPosition2);
+    }
+    @Test
+    public void testTechInsert(){
+
+        Tech tech1 = Tech.builder()
+                .techName("JavaScript")
+                .build();
+        techRepository.save(tech1);
+        Tech tech2 = Tech.builder()
+                .techName("Python")
+                .build();
+        techRepository.save(tech2);
+        Tech tech3 = Tech.builder()
+                .techName("Java")
+                .build();
+        techRepository.save(tech3);
+        log.info("Tech saved: " + tech1 + ", " + tech2 + ", " + tech3);
+    }
+    @Test
+    public void testTechStackInsert(){
+        PersonalUser personalUser = personalUserRepository.findByPersonalId(1L);
+        Tech tech1 = techRepository.findByTechId(1L);
+        Tech tech2 = techRepository.findByTechId(2L);
+
+        TechStack techStack1 = TechStack.builder()
+                .personalUser(personalUser)
+                .tech(tech1)
+                .build();
+        techStackRepository.save(techStack1);
+        TechStack techStack2 = TechStack.builder()
+                .personalUser(personalUser)
+                .tech(tech2)
+                .build();
+        techStackRepository.save(techStack2);
+        log.info("TechStack saved: " + techStack1 + "," + techStack2);
+    }
+    @Test
+    public void testAppPaymentInsert(){
+        PersonalUser personalUser = personalUserRepository.findByPersonalId(1L);
+
+        AppPayment appPayment = AppPayment.builder()
+                .sellUserId(4L)
+                .berryBucket(50L)
+                .personalUser(personalUser)
+                .build();
+        appPaymentRepository.save(appPayment);
+        log.info("AppPayment saved: " + appPayment);
+    }
+    @Test
+    public void testPaymentInsert(){
+        PersonalUser personalUser = personalUserRepository.findByPersonalId(1L);
+
+        Payment payment = Payment.builder()
+                .state(State.SUCCESS)
+                .payNum(1000L)
+                .berryPoint(100L)
+                .personalUser(personalUser)
+                .build();
+        paymentRepository.save(payment);
+        log.info("Payment saved: " + payment);
+    }
+    @Test
+    public void testAlarmContentInsert(){
+        AlarmContent alarmContent = AlarmContent.builder()
+                .alarmType("컨택")
+                .build();
+        alarmContentRepository.save(alarmContent);
+        log.info("AlarmContent saved: " + alarmContent);
+
+    }
+    @Test
+    public void testAlarmInsert(){
+        AlarmContent alarmContent = alarmContentRepository.findByAlarmContentId(1L);
+        User user = userRepository.findByUserId(2L);
+
+        Alarm alarm = Alarm.builder()
+                .readOrNot(false)
+                .user(user)
+                .alarmContent(alarmContent)
+                .build();
+        alarmRepository.save(alarm);
+        log.info("Alarm saved: " + alarm);
     }
 }
