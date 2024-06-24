@@ -1,13 +1,18 @@
 package org.zerock.ziczone.repository;
 
 import lombok.extern.log4j.Log4j2;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.zerock.ziczone.domain.*;
 
-import javax.persistence.EnumType;
+
+import javax.persistence.*;
+
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @SpringBootTest
 @Log4j2
@@ -38,6 +43,9 @@ public class UserRepositoryTests {
     @Autowired
     private EtcRepository etcRepository;
     @Autowired
+    private BoardRepository boardRepository;
+    @Autowired
+    private ReplyRepository replyRepository;
     private JobRepository jobRepository;
     @Autowired
     private JobPositionRepository jobPositionRepository;
@@ -230,6 +238,52 @@ public class UserRepositoryTests {
         log.info("Etc saved: " + etc);
 
     }
+
+    @Test
+    public void testBoardInsert(){
+        // DB에 있는 user_id
+        Long userId = 1L;
+        User user = User.builder()
+                .userId(userId)
+                .build();
+
+        Board board = Board.builder()
+                .corrTitle("테스트 제목")
+                .corrContent("테스트 내용")
+                .corrPdf("테스트 pdf")
+                .corrPoint(100)
+                .corrCreate(LocalDateTime.now())
+                .corrModify(LocalDateTime.now())
+                .user(user)
+                .build();
+
+        boardRepository.save(board);
+        log.info("Board saved: " + board);
+    }
+
+    @Test
+    public void testReplyInsert(){
+        Long userId = 1L;
+        User user = User.builder()
+                .userId(userId)
+                .build();
+
+        Long corrId = 2L;
+        Board board = Board.builder()
+                .corrId(corrId)
+                .build();
+
+        Reply reply = Reply.builder()
+                .commContent("테스트 내용")
+                .commSelection(false)
+                .commCreate(LocalDateTime.now())
+                .commModify(LocalDateTime.now())
+                .user(user)
+                .board(board)
+                .build();
+
+        replyRepository.save(reply);
+        log.info("Reply saved: " + reply);
     @Test
     public void testJobInsert(){
         Job job1 = Job.builder()
@@ -416,6 +470,5 @@ public class UserRepositoryTests {
                 .build();
         alarmRepository.save(alarm);
         log.info("Alarm saved: " + alarm);
-
     }
 }
