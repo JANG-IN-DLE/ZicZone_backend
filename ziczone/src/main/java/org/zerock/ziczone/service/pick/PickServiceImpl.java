@@ -3,9 +3,12 @@ package org.zerock.ziczone.service.pick;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.zerock.ziczone.domain.job.Job;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.dto.pick.PickCardDTO;
+import org.zerock.ziczone.dto.pick.PickJobDTO;
 import org.zerock.ziczone.repository.job.JobPositionRepository;
+import org.zerock.ziczone.repository.job.JobRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
 
@@ -22,6 +25,7 @@ public class PickServiceImpl implements PickService {
     private final PersonalUserRepository personalUserRepository;
     private final TechStackRepository techStackRepository;
     private final JobPositionRepository jobPositionRepository;
+    private final JobRepository jobRepository;
 
     @Override
     public List<PickCardDTO> getPickCards() {
@@ -47,4 +51,18 @@ public class PickServiceImpl implements PickService {
         }).collect(Collectors.toList());
 
     }
+
+    @Override
+    public List<PickJobDTO> getAllJobs() {
+        List<Job> jobs = jobRepository.findAll();
+        return jobs.stream()
+                .map(job -> PickJobDTO.builder()
+                        .jobId(job.getJobId())
+                        .jobName(job.getJobName())
+                        .build())
+                .collect(Collectors.toList());
+
+    }
+
+
 }
