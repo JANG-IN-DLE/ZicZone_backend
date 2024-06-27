@@ -1,4 +1,4 @@
-package org.zerock.ziczone.domain;
+package org.zerock.ziczone.domain.payment;
 
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -13,21 +13,25 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-public class AppPayment {
+public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long appPaymentId;
+    private Long payId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PayState payState;
 
     @Column(nullable = false)
-    private Long sellUserId;
-
-    @Column(nullable = false)
-    private Long berryBucket;
+    private Long payNum;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime appPaymentDate;
+    @Column(nullable = false)
+    private LocalDateTime payDate;
+
+    @Column(nullable = false)
+    private Long berryPoint;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "personal_id")
