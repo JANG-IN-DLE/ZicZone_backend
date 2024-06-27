@@ -1,15 +1,36 @@
 package org.zerock.ziczone.repository;
 
 import lombok.extern.log4j.Log4j2;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.zerock.ziczone.domain.*;
+import org.zerock.ziczone.domain.alarm.Alarm;
+import org.zerock.ziczone.domain.alarm.AlarmContent;
+import org.zerock.ziczone.domain.application.*;
+import org.zerock.ziczone.domain.board.Board;
+import org.zerock.ziczone.domain.board.Reply;
+import org.zerock.ziczone.domain.job.Job;
+import org.zerock.ziczone.domain.job.JobPosition;
+import org.zerock.ziczone.domain.member.*;
+import org.zerock.ziczone.domain.payment.PayState;
+import org.zerock.ziczone.domain.payment.Payment;
+import org.zerock.ziczone.domain.tech.Tech;
+import org.zerock.ziczone.domain.tech.TechStack;
+import org.zerock.ziczone.repository.alarm.AlarmContentRepository;
+import org.zerock.ziczone.repository.alarm.AlarmRepository;
+import org.zerock.ziczone.repository.application.*;
+import org.zerock.ziczone.repository.board.BoardRepository;
+import org.zerock.ziczone.repository.board.ReplyRepository;
+import org.zerock.ziczone.repository.job.JobPositionRepository;
+import org.zerock.ziczone.repository.job.JobRepository;
+import org.zerock.ziczone.repository.member.CompanyUserRepository;
+import org.zerock.ziczone.repository.member.PersonalUserRepository;
+import org.zerock.ziczone.repository.member.UserRepository;
+import org.zerock.ziczone.repository.payment.PaymentRepository;
+import org.zerock.ziczone.repository.tech.TechRepository;
+import org.zerock.ziczone.repository.tech.TechStackRepository;
 
-
-import javax.persistence.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -74,7 +95,7 @@ public class UserRepositoryTests {
         userRepository.save(user);
 
         PersonalUser personalUser = PersonalUser.builder()
-                .career("신입")
+                .personalCareer("신입")
                 .isPersonalVisible(true)
                 .isCompanyVisible(true)
                 .gender(Gender.MALE)
@@ -442,7 +463,7 @@ public class UserRepositoryTests {
         PersonalUser personalUser = personalUserRepository.findByPersonalId(1L);
 
         Payment payment = Payment.builder()
-                .payState(State.SUCCESS)
+                .payState(PayState.SUCCESS)
                 .payNum(1000L)
                 .berryPoint(100L)
                 .personalUser(personalUser)

@@ -2,6 +2,8 @@ package org.zerock.ziczone.domain;
 
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
+import org.zerock.ziczone.domain.member.CompanyUser;
+import org.zerock.ziczone.domain.member.PersonalUser;
 
 import javax.persistence.*;
 
