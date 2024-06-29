@@ -9,4 +9,5 @@ public interface PickService {
 
     List<PickCardDTO> getPickCards();
     List<PickJobDTO> getAllJobs();
+    PickCardDTO getPickCardsById(Long personalId);
 }

@@ -64,5 +64,33 @@ public class PickServiceImpl implements PickService {
 
     }
 
+    @Override
+    public PickCardDTO getPickCardsById(Long personalId) {
+        PersonalUser personalUser = personalUserRepository.findByPersonalId(personalId);
+
+        if(personalUser == null) {
+            throw new RuntimeException("personal user not found");
+        }
+        List<String> techNames = techStackRepository.findByPersonalUserPersonalId(personalId).stream()
+                .map(jobPosition -> jobPosition.getTech().getTechName())
+                .collect(Collectors.toList());
+        List<String> jobNames = jobPositionRepository.findByPersonalUserPersonalId(personalId).stream()
+                .map(jobPosition -> jobPosition.getJob().getJobName())
+                .collect(Collectors.toList());
+
+        PickCardDTO pickCardDTO = PickCardDTO.builder()
+                .userId(personalUser.getUser().getUserId())
+                .personalId(personalUser.getPersonalId())
+                .userName(personalUser.getUser().getUserName())
+                .userIntro(personalUser.getUser().getUserIntro())
+                .gender(personalUser.getGender())
+                .personalCareer(personalUser.getPersonalCareer())
+                .techName(String.join(",", techNames))
+                .jobName(String.join(",", jobNames))
+                .build();
+
+        return pickCardDTO;
+    }
+
 
 }
