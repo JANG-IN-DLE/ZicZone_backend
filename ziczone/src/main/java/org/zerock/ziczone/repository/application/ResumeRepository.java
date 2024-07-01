@@ -5,4 +5,5 @@ import org.zerock.ziczone.domain.application.Resume;
 
 public interface ResumeRepository extends JpaRepository<Resume, Long> {
     Resume findByResumeId(Long resumeId);
+    Resume findByPersonalUser_PersonalId(Long personalId);
 }
