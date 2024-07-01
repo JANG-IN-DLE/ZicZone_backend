@@ -43,7 +43,7 @@ public class Resume {
     @Column(length = 255)
     private String personalState;
 
-    @OneToOne(fetch = FetchType.EAGER)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "personal_id")
     private PersonalUser personalUser;
 }
