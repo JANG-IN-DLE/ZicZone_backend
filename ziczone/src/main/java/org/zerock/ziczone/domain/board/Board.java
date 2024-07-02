@@ -7,6 +7,7 @@ import org.zerock.ziczone.domain.member.User;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Getter
@@ -32,7 +33,9 @@ public class Board {
     @Column(nullable = false)
     private Integer corrPoint;
 
-    private Integer corrView;
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer corrView = 0;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -45,4 +48,13 @@ public class Board {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private User user;
+
+    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Comment> comments;
+
+    public void change(String corrTitle, String corrContent, String corrPdf) {
+        this.corrTitle = corrTitle;
+        this.corrContent = corrContent;
+        this.corrPdf = corrPdf;
+    }
 }
