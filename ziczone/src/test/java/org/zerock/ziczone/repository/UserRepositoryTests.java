@@ -9,7 +9,7 @@ import org.zerock.ziczone.domain.alarm.Alarm;
 import org.zerock.ziczone.domain.alarm.AlarmContent;
 import org.zerock.ziczone.domain.application.*;
 import org.zerock.ziczone.domain.board.Board;
-import org.zerock.ziczone.domain.board.Reply;
+import org.zerock.ziczone.domain.board.Comment;
 import org.zerock.ziczone.domain.job.Job;
 import org.zerock.ziczone.domain.job.JobPosition;
 import org.zerock.ziczone.domain.member.*;
@@ -21,7 +21,7 @@ import org.zerock.ziczone.repository.alarm.AlarmContentRepository;
 import org.zerock.ziczone.repository.alarm.AlarmRepository;
 import org.zerock.ziczone.repository.application.*;
 import org.zerock.ziczone.repository.board.BoardRepository;
-import org.zerock.ziczone.repository.board.ReplyRepository;
+import org.zerock.ziczone.repository.board.CommentRepository;
 import org.zerock.ziczone.repository.job.JobPositionRepository;
 import org.zerock.ziczone.repository.job.JobRepository;
 import org.zerock.ziczone.repository.member.CompanyUserRepository;
@@ -34,6 +34,7 @@ import org.zerock.ziczone.repository.tech.TechStackRepository;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @SpringBootTest
 @Log4j2
@@ -66,7 +67,7 @@ public class UserRepositoryTests {
     @Autowired
     private BoardRepository boardRepository;
     @Autowired
-    private ReplyRepository replyRepository;
+    private CommentRepository replyRepository;
     private JobRepository jobRepository;
     @Autowired
     private JobPositionRepository jobPositionRepository;
@@ -283,6 +284,37 @@ public class UserRepositoryTests {
     }
 
     @Test
+    public void testBoardSelect() {
+        Long corrId = 2L;
+
+        Optional<Board> result = boardRepository.findById(corrId);
+
+        Board board = result.orElseThrow();
+
+        log.info("testBoardSelect : " + board);
+    }
+
+    @Test
+    public void testBoardUpdate() {
+        Long corrId = 2L;
+
+        Optional<Board> result = boardRepository.findById(corrId);
+
+        Board board = result.orElseThrow();
+
+        board.change("테스트 제목 업데이트", "테스트 내용 업데이트", "update.pdf");
+
+        boardRepository.save(board);
+    }
+
+    @Test
+    public void testBoardDelete() {
+        Long corrId = 3L;
+
+        boardRepository.deleteById(corrId);
+    }
+
+    @Test
     public void testReplyInsert() {
         Long userId = 1L;
         User user = User.builder()
@@ -294,7 +326,7 @@ public class UserRepositoryTests {
                 .corrId(corrId)
                 .build();
 
-        Reply reply = Reply.builder()
+        Comment reply = Comment.builder()
                 .commContent("테스트 내용")
                 .commSelection(false)
                 .commCreate(LocalDateTime.now())
@@ -306,6 +338,7 @@ public class UserRepositoryTests {
         replyRepository.save(reply);
         log.info("Reply saved: " + reply);
     }
+
     @Test
     public void testJobInsert(){
         Job job1 = Job.builder()
