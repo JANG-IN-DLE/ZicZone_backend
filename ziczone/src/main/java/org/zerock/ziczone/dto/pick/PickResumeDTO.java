@@ -35,4 +35,6 @@ public class PickResumeDTO {
     private List<String> etcs;
 //    아카이브
     private List<String> archives;
+//    포트폴리오
+    private List<String> portfolios;
 }

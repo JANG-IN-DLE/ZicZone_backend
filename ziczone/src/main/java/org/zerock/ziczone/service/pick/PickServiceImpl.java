@@ -38,6 +38,7 @@ public class PickServiceImpl implements PickService {
     private final CurriculumRepository curriculumRepository;
     private final EtcRepository etcRepository;
     private final ArchiveRepository archiveRepository;
+    private final PortfolioRepository portfolioRepository;
 
     //    pickzone 회원 card data 가져오는 메서드
     @Override
@@ -139,6 +140,9 @@ public class PickServiceImpl implements PickService {
         List<String> archives = archiveRepository.findByResume_ResumeId(resume.getResumeId()).stream()
                 .map(archive -> archive.getArchBlog()+","+archive.getArchGit()+","+archive.getArchNotion())
                 .collect(Collectors.toList());
+        List<String> portfolios = portfolioRepository.findByResume_ResumeId(resume.getResumeId()).stream()
+                .map(portfolio -> portfolio.getPortFile())
+                .collect(Collectors.toList());
         PickResumeDTO pickResumeDTO = PickResumeDTO.builder()
                 .personalId(personalUser.getPersonalId())
                 .resumeId(resume.getResumeId())
@@ -155,6 +159,7 @@ public class PickServiceImpl implements PickService {
                 .etcs(etcs)
                 .archives(archives)
                 .certificates(certificates)
+                .portfolios(portfolios)
                 .build();
 
         return pickResumeDTO;
