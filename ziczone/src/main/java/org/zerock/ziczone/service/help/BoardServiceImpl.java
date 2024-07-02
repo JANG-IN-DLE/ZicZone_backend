@@ -102,9 +102,6 @@ public class BoardServiceImpl implements BoardService {
             case "berry":    // 포인트(베리)순
                 result = boardRepository.findAllByOrderByCorrPointDesc(pageable);
                 break;
-            case "selected": // 채택 여부
-                result = boardRepository.findAllByComments_CommSelectionTrue(pageable);
-                break;
             default:
                 result = boardRepository.findAll(pageable);
                 break;

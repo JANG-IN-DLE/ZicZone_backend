@@ -32,7 +32,7 @@ public class Comment {
     @Column(nullable = false, updatable = true)
     private LocalDateTime commModify;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "corr_id")
     private Board board;
 

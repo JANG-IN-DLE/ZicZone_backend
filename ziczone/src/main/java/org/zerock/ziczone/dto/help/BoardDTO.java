@@ -24,6 +24,7 @@ public class BoardDTO {
 
     private LocalDateTime corrModify; // 게시물 수정시간
 
+    @Builder.Default
     private Integer corrView = 0; // 게시물 조회수
 
     private Long userId; // 회원 ID
