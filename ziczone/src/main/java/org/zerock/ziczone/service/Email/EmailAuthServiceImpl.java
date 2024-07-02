@@ -1,5 +1,6 @@
-package org.zerock.ziczone.service;
+package org.zerock.ziczone.service.Email;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -14,15 +15,16 @@ import java.util.Random;
 
 @Log4j2
 @Service
-public class EmailAuthService {
+@RequiredArgsConstructor
+public class EmailAuthServiceImpl implements EmailAuthService {
 
-    @Autowired
-    private JavaMailSender mailSender; //메일을 보내기 위한 객체
+    private final JavaMailSender mailSender; //메일을 보내기 위한 객체
 
     // <이메일, 인증코드> : 이메일을 key값으로 가짐
     private Map<String, String> emailCodeMap = new HashMap<>();
 
     // 이메일 전송 함수
+    @Override
     public void sendVerificationEmail(String email) {
         String authCode = generateAuthCode(); //난수생성
         emailCodeMap.put(email, authCode); //이메일, 난수 삽입
@@ -35,6 +37,7 @@ public class EmailAuthService {
     }
 
     // 코드 검증 함수
+    @Override
     public boolean verifyEmailCode(String email, String code) {
         String savedCode = emailCodeMap.get(email);
         return savedCode != null && savedCode.equals(code);
