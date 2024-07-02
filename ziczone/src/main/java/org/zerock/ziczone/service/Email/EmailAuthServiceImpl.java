@@ -55,11 +55,18 @@ public class EmailAuthServiceImpl implements EmailAuthService {
         mailSender.send(message); //전송
     }
 
-    //난수생성
+    // 난수 생성
     private String generateAuthCode() {
+        int length = 8; // 난수의 길이
+        String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
         Random random = new Random();
-        int authCode = 100000 + random.nextInt(900000); // 6자리 랜덤 숫자
-        log.info("@@@@@@@@@@authCode: " + authCode); //확인log
-        return String.valueOf(authCode);
+        StringBuilder authCode = new StringBuilder(length);
+
+        for (int i = 0; i < length; i++) {
+            authCode.append(characters.charAt(random.nextInt(characters.length())));
+        }
+
+        log.info("@@@@@@@@@@authCode: " + authCode.toString()); // 확인log
+        return authCode.toString();
     }
 }
