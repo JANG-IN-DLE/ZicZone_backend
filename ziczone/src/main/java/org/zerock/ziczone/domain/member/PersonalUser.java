@@ -31,7 +31,7 @@ public class PersonalUser {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    @OneToOne(fetch = FetchType.EAGER)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 }
