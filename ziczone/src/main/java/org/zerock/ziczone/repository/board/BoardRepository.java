@@ -16,6 +16,4 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
     Page<Board> findAllByOrderByCorrViewDesc(Pageable pageable);
     // 포인트(베리)순 조회
     Page<Board> findAllByOrderByCorrPointDesc(Pageable pageable);
-    // 채택된 게시물 조회
-    Page<Board> findAllByComments_CommSelectionTrue(Pageable pageable);
 }

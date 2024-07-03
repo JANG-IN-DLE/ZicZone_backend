@@ -85,8 +85,6 @@ public class BoardServiceTests {
         log.info("berry : " + result);
     }
 
-    // 채택 여부 테스트는 진행하지 않았습니다ㅎㅎ!
-
     @Test
     public void testBoardModify() {
         BoardDTO boardDTO = BoardDTO.builder()
