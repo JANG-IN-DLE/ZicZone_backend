@@ -36,7 +36,11 @@ public class Comment {
     @JoinColumn(name = "corr_id")
     private Board board;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    public void change(String commContent) {
+        this.commContent = commContent;
+    }
 }

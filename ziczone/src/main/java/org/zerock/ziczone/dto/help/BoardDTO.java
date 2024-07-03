@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @Builder
@@ -27,7 +28,9 @@ public class BoardDTO {
     @Builder.Default
     private Integer corrView = 0; // 게시물 조회수
 
-    private Long userId; // 회원 ID
+    private Long userId; // 게시물 작성자 ID
 
-    private Boolean commSelection; // 채택 여부
+//    private Boolean commSelection; // 채택 여부
+
+    private List<CommentDTO> commentList; // 댓글 목록
 }
