@@ -76,7 +76,7 @@ public class UserRepositoryTests {
     @Autowired
     private TechStackRepository techStackRepository;
     @Autowired
-    private AppPaymentRepository appPaymentRepository;
+    private PayHistoryRepository payHistoryRepository;
     @Autowired
     private PaymentRepository paymentRepository;
     @Autowired
@@ -483,13 +483,13 @@ public class UserRepositoryTests {
     public void testAppPaymentInsert(){
         PersonalUser personalUser = personalUserRepository.findByPersonalId(1L);
 
-        AppPayment appPayment = AppPayment.builder()
-                .sellUserId(4L)
-                .berryBucket(50L)
+        PayHistory payHistory = PayHistory.builder()
+                .sellerId(4L)
+                .berryBucket("-50")
                 .personalUser(personalUser)
                 .build();
-        appPaymentRepository.save(appPayment);
-        log.info("AppPayment saved: " + appPayment);
+        payHistoryRepository.save(payHistory);
+        log.info("AppPayment saved: " + payHistory);
     }
     @Test
     public void testPaymentInsert(){

@@ -10,4 +10,6 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("SELECT SUM(p.berryPoint) FROM Payment p WHERE p.payId = :userId")
     Optional<Long> findTotalBerryPointsByUserId(Long userId);
 
+    Payment findByPersonalUser_PersonalId(Long personalId);
+
 }
