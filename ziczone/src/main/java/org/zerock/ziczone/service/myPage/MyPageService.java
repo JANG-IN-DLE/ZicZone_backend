@@ -1,4 +1,4 @@
-package org.zerock.ziczone.service.mypage;
+package org.zerock.ziczone.service.myPage;
 
 import org.zerock.ziczone.dto.mypage.CompanyUserDTO;
 import org.zerock.ziczone.dto.mypage.PersonalUserDTO;

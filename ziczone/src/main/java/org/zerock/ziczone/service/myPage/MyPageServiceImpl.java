@@ -1,4 +1,4 @@
-package org.zerock.ziczone.service.mypage;
+package org.zerock.ziczone.service.myPage;
 
 
 import lombok.RequiredArgsConstructor;
@@ -11,7 +11,6 @@ import org.zerock.ziczone.domain.member.CompanyUser;
 import org.zerock.ziczone.domain.member.Gender;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
-import org.zerock.ziczone.domain.tech.Tech;
 import org.zerock.ziczone.dto.mypage.*;
 import org.zerock.ziczone.repository.AppPaymentRepository;
 import org.zerock.ziczone.repository.PickAndScrapRepository;
@@ -22,7 +21,6 @@ import org.zerock.ziczone.repository.member.CompanyUserRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.repository.payment.PaymentRepository;
-import org.zerock.ziczone.repository.tech.TechRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
 
 import java.util.ArrayList;

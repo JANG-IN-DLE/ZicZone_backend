@@ -5,13 +5,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
-import org.zerock.ziczone.domain.application.Resume;
 import org.zerock.ziczone.dto.mypage.CompanyUserDTO;
 import org.zerock.ziczone.dto.mypage.PersonalUserDTO;
 import org.zerock.ziczone.dto.mypage.ResumeDTO;
 import org.zerock.ziczone.repository.AppPaymentRepository;
 import org.zerock.ziczone.repository.application.ResumeRepository;
-import org.zerock.ziczone.service.mypage.MyPageService;
+import org.zerock.ziczone.service.myPage.MyPageService;
 
 import java.util.List;
 
@@ -21,7 +20,7 @@ import java.util.List;
 public class MyPageServiceTests {
 
     @Autowired
-    private MyPageService mypageService;
+    private MyPageService myPageService;
 
     // 테스트용 유저 User 테이블 PK
     private final Long user_id = 1L;
@@ -37,7 +36,7 @@ public class MyPageServiceTests {
      */
     @Test
     public void getCompanyUserDTO() {
-        CompanyUserDTO companyUserDTO = mypageService.getCompanyUserDTO(user_id);
+        CompanyUserDTO companyUserDTO = myPageService.getCompanyUserDTO(user_id);
 
         log.info("CompanyUserDTO: " + companyUserDTO);
     }
@@ -49,7 +48,7 @@ public class MyPageServiceTests {
      */
     @Test
     public void getPersonalUserDTO() {
-        PersonalUserDTO personalUserDTO = mypageService.getPersonalUserDTO(user_id);
+        PersonalUserDTO personalUserDTO = myPageService.getPersonalUserDTO(user_id);
         log.info("PersonalUserDTO: " + personalUserDTO);
     }
     /**
@@ -59,7 +58,7 @@ public class MyPageServiceTests {
      */
     @Test
     public void getVisiblePersonalIds() {
-        List<Long> id =  mypageService.getVisiblePersonalIds();
+        List<Long> id =  myPageService.getVisiblePersonalIds();
         log.info("id: " + id);
     }
 
@@ -70,7 +69,7 @@ public class MyPageServiceTests {
      */
     @Test
     public void getVisibleCompanyIds() {
-        List<Long> id =  mypageService.getVisibleCompanyIds();
+        List<Long> id =  myPageService.getVisibleCompanyIds();
         log.info("id: " + id);
     }
 
@@ -81,7 +80,7 @@ public class MyPageServiceTests {
      */
     @Test
     public void getPurchasedResumes() {
-        List<ResumeDTO> resume =  mypageService.getPurchasedResumes(user_id);
+        List<ResumeDTO> resume =  myPageService.getPurchasedResumes(user_id);
         log.info("resume: " + resume);
     }
 

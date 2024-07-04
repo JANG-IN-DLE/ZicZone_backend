@@ -1,25 +1,18 @@
 package org.zerock.ziczone.repository;
 
 import lombok.extern.log4j.Log4j2;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 import org.zerock.ziczone.domain.member.*;
-import org.zerock.ziczone.dto.mypage.PersonalUserDTO;
 import org.zerock.ziczone.repository.application.ResumeRepository;
 import org.zerock.ziczone.repository.member.CompanyUserRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.repository.payment.PaymentRepository;
-import org.zerock.ziczone.service.mypage.MyPageServiceImpl;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.function.Function;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @Transactional

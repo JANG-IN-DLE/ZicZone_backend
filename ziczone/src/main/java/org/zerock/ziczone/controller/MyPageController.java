@@ -5,9 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.zerock.ziczone.dto.mypage.CompanyUserDTO;
 import org.zerock.ziczone.dto.mypage.PersonalUserDTO;
-import org.zerock.ziczone.dto.mypage.PersonalUserPointDTO;
 import org.zerock.ziczone.dto.mypage.ResumeDTO;
-import org.zerock.ziczone.service.mypage.MyPageService;
+import org.zerock.ziczone.service.myPage.MyPageService;
 
 import java.util.List;
 
