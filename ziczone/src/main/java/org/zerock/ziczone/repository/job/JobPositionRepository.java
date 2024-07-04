@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface JobPositionRepository extends JpaRepository<JobPosition, Long> {
     List<JobPosition> findByPersonalUserPersonalId(Long personalId);
+
 }
