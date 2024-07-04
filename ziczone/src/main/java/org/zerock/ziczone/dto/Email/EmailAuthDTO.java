@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class EmailAuth {
+public class EmailAuthDTO {
     private String email;
     private String code;
     private LocalDateTime createTime;
