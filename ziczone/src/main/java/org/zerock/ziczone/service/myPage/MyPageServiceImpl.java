@@ -253,20 +253,22 @@ public class MyPageServiceImpl implements  MyPageService{
         List<AppPayment> payments = appPaymentRepository.findByUserId(userId);
 
         for (AppPayment payment : payments) {
-            Resume resume = resumeRepository.findByPersonalUser(payment.getPersonalUser()).orElse(null);
-            if (resume != null && resume.getResumeUpdate().isBefore(payment.getAppPaymentDate())) {
-                ResumeDTO resumeDTO = ResumeDTO.builder()
-                        .resumeId(resume.getResumeId())
-                        .resumeName(resume.getResumeName())
-                        .resumeDate(resume.getResumeDate())
-                        .phoneNum(resume.getPhoneNum())
-                        .resumePhoto(resume.getResumePhoto())
-                        .resumeCreate(resume.getResumeCreate())
-                        .resumeUpdate(resume.getResumeUpdate())
-                        .personalState(resume.getPersonalState())
-                        .personalId(resume.getPersonalUser().getPersonalId())
-                        .build();
-                purchasedResumes.add(resumeDTO);
+            List<Resume> resumes = resumeRepository.findByPersonalUser(payment.getPersonalUser()).orElse(null);
+            for(Resume resume : resumes){
+                if(resume.getResumeUpdate().isBefore(payment.getAppPaymentDate())){
+                    ResumeDTO resumeDTO = ResumeDTO.builder()
+                            .resumeId(resume.getResumeId())
+                            .resumeName(resume.getResumeName())
+                            .resumeDate(resume.getResumeDate())
+                            .phoneNum(resume.getPhoneNum())
+                            .resumePhoto(resume.getResumePhoto())
+                            .resumeCreate(resume.getResumeCreate())
+                            .resumeUpdate(resume.getResumeUpdate())
+                            .personalState(resume.getPersonalState())
+                            .personalId(resume.getPersonalUser().getPersonalId())
+                            .build();
+                    purchasedResumes.add(resumeDTO);
+                }
             }
         }
         return purchasedResumes;
