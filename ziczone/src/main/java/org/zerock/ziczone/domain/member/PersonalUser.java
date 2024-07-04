@@ -2,8 +2,11 @@ package org.zerock.ziczone.domain.member;
 
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
+import org.zerock.ziczone.domain.job.JobPosition;
+import org.zerock.ziczone.domain.tech.TechStack;
 
 import javax.persistence.*;
+import java.util.List;
 
 @Entity
 @Getter
@@ -31,7 +34,14 @@ public class PersonalUser {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    @OneToOne(fetch = FetchType.EAGER)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    @OneToMany(mappedBy = "personalUser", fetch = FetchType.LAZY)
+    private List<JobPosition> jobPositions;
+
+    @OneToMany(mappedBy = "personalUser", fetch = FetchType.LAZY)
+    private List<TechStack> techStacks;
+
 }

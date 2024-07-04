@@ -11,4 +11,5 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Long> findTotalBerryPointsByUserId(Long userId);
 
     Payment findByPersonalUser_PersonalId(Long personalId);
+
 }
