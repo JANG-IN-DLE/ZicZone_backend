@@ -103,8 +103,7 @@ public class BoardServiceImpl implements BoardService {
                 result = boardRepository.findAllByOrderByCorrPointDesc(pageable);
                 break;
             default:
-                result = boardRepository.findAll(pageable);
-                break;
+                throw new IllegalArgumentException("Invalid filter type: " + filterType);
         }
 
         List<BoardDTO> dtoList = result.stream()
