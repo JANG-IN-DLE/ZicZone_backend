@@ -13,21 +13,30 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-public class AppPayment {
+public class PayHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long appPaymentId;
+    private Long payHistoryId;
 
-    @Column(nullable = false)
-    private Long sellUserId;
+    // 팔리는 사람
+    private Long sellerId;
 
+    // 사는 사람
     @Column(nullable = false)
-    private Long berryBucket;
+    private Long buyerId;
+
+    // 포인트 (ex. -50)
+    @Column(length = 100, nullable = false)
+    private String berryBucket;
+
+    // 내용 (ex. "이력서 조회")
+    @Column(nullable = false)
+    private String payHistoryContent;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
-    private LocalDateTime appPaymentDate;
+    private LocalDateTime payHistoryDate;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "personal_id")

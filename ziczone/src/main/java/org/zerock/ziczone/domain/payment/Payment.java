@@ -33,7 +33,15 @@ public class Payment {
     @Column(nullable = false)
     private Long berryPoint;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "personal_id")
     private PersonalUser personalUser;
+    
+    // berry_point를 차감하는 메서드
+    public void subtractBerryPoints(Long points) {
+        if(this.berryPoint < points) {
+            throw new IllegalArgumentException("Not enough berry points");
+        }
+        this.berryPoint -= points;
+    }
 }

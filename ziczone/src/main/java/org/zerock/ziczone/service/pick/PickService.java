@@ -1,5 +1,7 @@
 package org.zerock.ziczone.service.pick;
 
+import org.zerock.ziczone.domain.PayHistory;
+import org.zerock.ziczone.dto.pick.OpenCardDTO;
 import org.zerock.ziczone.dto.pick.PickCardDTO;
 import org.zerock.ziczone.dto.pick.PickJobDTO;
 import org.zerock.ziczone.dto.pick.PickResumeDTO;
@@ -12,4 +14,5 @@ public interface PickService {
     List<PickJobDTO> getAllJobs();
     PickCardDTO getPickCardsById(Long personalId);
     PickResumeDTO getResumeById(Long personalId);
+    boolean handlePayment(OpenCardDTO openCardDTO);
 }
