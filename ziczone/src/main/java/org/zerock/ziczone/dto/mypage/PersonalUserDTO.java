@@ -24,5 +24,4 @@ public class PersonalUserDTO {
     private List<JobPositionDTO> jobPositions;
     private List<TechStackDTO> techStacks;
 
-
 }
