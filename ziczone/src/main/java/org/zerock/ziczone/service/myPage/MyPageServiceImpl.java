@@ -129,8 +129,8 @@ public class MyPageServiceImpl implements  MyPageService{
     private PersonalUser convertPersonalUserToEntity(PersonalUserDTO personalUserDTO) {
         return PersonalUser.builder()
                 .personalCareer(personalUserDTO.getPersonalCareer())
-                .isPersonalVisible(personalUserDTO.getIsPersonalVisible())
-                .isCompanyVisible(personalUserDTO.getIsCompanyVisible())
+                .isPersonalVisible(personalUserDTO.isPersonalVisible())
+                .isCompanyVisible(personalUserDTO.isCompanyVisible())
                 .gender(Gender.valueOf(personalUserDTO.getGender()))
                 .user(userRepository.findById(personalUserDTO.getUser().getUserId()).orElse(null))
                 .build();
@@ -202,6 +202,7 @@ public class MyPageServiceImpl implements  MyPageService{
                 .isCompanyVisible(personalUser.isCompanyVisible())
                 .gender(personalUser.getGender().name())
                 .user(userDTO)
+                .resumes(null)
                 .jobPositions(jobPositionDTOS)
                 .techStacks(techStackDTOS)
                 .build();
@@ -270,6 +271,23 @@ public class MyPageServiceImpl implements  MyPageService{
         List<PersonalUserDTO> personalUsers = personalUserRepository.findByPersonalIdIn(sellerIds)
                 .stream()
                 .map(pu -> {
+                    UserDTO userDTO = convertUserToDTO(pu.getUser());
+
+                    List<ResumeDTO> resumeDTOS = resumeRepository.findByPersonalUserPersonalId(pu.getPersonalId())
+                            .stream()
+                            .map(r -> ResumeDTO.builder()
+                                    .resumeId(r.getResumeId())
+                                    .resumeName(r.getResumeName())
+                                    .resumeDate(r.getResumeDate())
+                                    .phoneNum(r.getPhoneNum())
+                                    .resumePhoto(r.getResumePhoto())
+                                    .resumeCreate(r.getResumeCreate())
+                                    .resumeUpdate(r.getResumeUpdate())
+                                    .personalState(r.getPersonalState())
+                                    .personalId(r.getPersonalUser().getPersonalId())
+                                    .build())
+                            .collect(Collectors.toList());
+
                     List<JobPositionDTO> jobPositionDTOS = jobPositionRepository.findByPersonalUserPersonalId(pu.getPersonalId())
                             .stream()
                             .map(this::convertJobPositionToDTO)
@@ -283,46 +301,19 @@ public class MyPageServiceImpl implements  MyPageService{
                     return PersonalUserDTO.builder()
                             .personalId(pu.getPersonalId())
                             .personalCareer(pu.getPersonalCareer())
-                            .gender(pu.getGender().name())
                             .isPersonalVisible(pu.isPersonalVisible())
                             .isCompanyVisible(pu.isCompanyVisible())
-                            .user(convertUserToDTO(pu.getUser()))
+                            .gender(pu.getGender().name())
+                            .user(userDTO)
+                            .resumes(resumeDTOS)
                             .jobPositions(jobPositionDTOS)
                             .techStacks(techStackDTOS)
                             .build();
                 })
                 .collect(Collectors.toList());
 
-        List<ResumeDTO> resumes = resumeRepository.findByPersonalUserPersonalIdIn(sellerIds)
-                .stream()
-                .map(r -> ResumeDTO.builder()
-                        .resumeId(r.getResumeId())
-                        .personalState(r.getPersonalState())
-                        .phoneNum(r.getPhoneNum())
-                        .resumeCreate(r.getResumeCreate())
-                        .resumeDate(r.getResumeDate())
-                        .resumeName(r.getResumeName())
-                        .resumePhoto(r.getResumePhoto())
-                        .resumeUpdate(r.getResumeUpdate())
-                        .personalId(r.getPersonalUser().getPersonalId())
-                        .build())
-                .collect(Collectors.toList());
-
-        List<JobPositionDTO> jobs = jobPositionRepository.findByPersonalUserPersonalIdIn(sellerIds)
-                .stream()
-                .map(this::convertJobPositionToDTO)
-                .collect(Collectors.toList());
-
-        List<TechStackDTO> techs = techStackRepository.findByPersonalUserPersonalIdIn(sellerIds)
-                .stream()
-                .map(this::convertTechStackToDTO)
-                .collect(Collectors.toList());
-
         return AggregatedDataDTO.builder()
                 .personalUsers(personalUsers)
-                .resumes(resumes)
-                .jobs(jobs)
-                .techs(techs)
                 .build();
     }
 
@@ -369,6 +360,7 @@ public class MyPageServiceImpl implements  MyPageService{
                             .isCompanyVisible(pUser.isCompanyVisible())
                             .gender(pUser.getGender().name())
                             .user(userDTOs)
+                            .resumes(null)
                             .jobPositions(jobPositionDTOS)
                             .techStacks(techStackDTOS)
                             .build();

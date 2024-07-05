@@ -13,7 +13,4 @@ import java.util.List;
 @Builder
 public class AggregatedDataDTO {
     private List<PersonalUserDTO> personalUsers;
-    private List<ResumeDTO> resumes;
-    private List<JobPositionDTO> jobs;
-    private List<TechStackDTO> techs;
 }
