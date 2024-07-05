@@ -1,6 +1,7 @@
 package org.zerock.ziczone.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.zerock.ziczone.service.Email.EmailAuthService;
@@ -10,6 +11,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Log4j2
 public class EmailAuthController {
 
     private final EmailAuthService emailAuthService;
@@ -18,8 +20,13 @@ public class EmailAuthController {
     @PostMapping("/email-verification")
     public ResponseEntity<String> sendVerificationEmail(@RequestBody Map<String, String> request) {
         String email = request.get("email");
-        emailAuthService.sendVerificationEmail(email);
-        return ResponseEntity.ok("인증번호가 전송되었습니다.");
+        boolean EmailDuplication = emailAuthService.EmailDuplication(email);
+        if(EmailDuplication) {
+            return ResponseEntity.ok("Email Duplication");
+        }else {
+            emailAuthService.sendVerificationEmail(email);
+            return ResponseEntity.ok("인증번호가 전송되었습니다.");
+        }
     }
 
     // 인증코드 검증
