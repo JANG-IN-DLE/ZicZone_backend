@@ -17,8 +17,7 @@ import org.zerock.ziczone.service.help.BoardService;
 @RequestMapping("/api/board")
 @RequiredArgsConstructor
 public class BoardController {
-    @Autowired
-    private BoardService boardService;
+    private final BoardService boardService;
 
     // 최신순, 조회순, 포인트(베리)순 필터링
     @GetMapping("/filter")
