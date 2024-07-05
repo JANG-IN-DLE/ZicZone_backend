@@ -5,7 +5,9 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.dto.Email.EmailAuthDTO;
+import org.zerock.ziczone.repository.member.UserRepository;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -20,6 +22,7 @@ import java.util.Random;
 public class EmailAuthServiceImpl implements EmailAuthService {
 
     private final JavaMailSender mailSender; //메일을 보내기 위한 객체
+    private final UserRepository userRepository;
 
     // <이메일, 인증코드> : 이메일을 key값으로 가짐
     private Map<String, EmailAuthDTO> emailCodeMap = new HashMap<>();
@@ -83,5 +86,16 @@ public class EmailAuthServiceImpl implements EmailAuthService {
 
         log.info("@@@@@@@@@@authCode: " + authCode.toString()); // 확인log
         return authCode.toString();
+    }
+
+    //해당 이메일을 가진 유저가 있는지 검사
+    @Override
+    public boolean EmailDuplication(String email) {
+        User user = userRepository.findByEmail(email);
+        log.info("@@@@@@@@@@user: " + user); // 확인log
+        if (user == null) {
+            return false;
+        }
+        return true;
     }
 }
