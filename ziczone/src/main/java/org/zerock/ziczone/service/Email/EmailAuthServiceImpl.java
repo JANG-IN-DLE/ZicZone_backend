@@ -36,7 +36,7 @@ public class EmailAuthServiceImpl implements EmailAuthService {
         }
     }
 
-    //코드건증함수
+    //코드검증함수
     @Override
     public boolean verifyEmailCode(String email, String code) {
         EmailAuthDTO savedAuth = emailCodeMap.get(email); // 받은 이메일주소에 해당하는 EamilAuth객체

@@ -7,9 +7,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.zerock.ziczone.domain.member.Gender;
 import org.zerock.ziczone.domain.member.UserType;
+import org.zerock.ziczone.dto.join.CompanyUserDTO;
 import org.zerock.ziczone.dto.join.PersonalUserDTO;
 import org.zerock.ziczone.service.join.JoinServiceImpl;
 
+import java.time.LocalDate;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,6 +40,28 @@ public class JoinServiceTests {
         String result = joinService.personalSignUp(personalUserDTO);
         assertEquals("signUp success", result);
 
-        log.info("회원 가입 결과: " + result);
+        log.info("개인 회원 가입 결과: " + result);
+    }
+
+    //개인회원가입 테스트
+    @Test
+    public void testCompanyJoin() {
+        CompanyUserDTO companyUserDTO = CompanyUserDTO.builder()
+                .userName("CompanytestUser")
+                .email("CompanytestUser@example.com")
+                .password("password1")
+                .userIntro("intro1")
+                .userType(UserType.COMPANY)
+                .companyAddr("companyAddr")
+                .companyCeo("companyCeo")
+                .companyLogo("companyLogo")
+                .companyNum("companyNum")
+                .companyYear(LocalDate.now())
+                .build();
+
+        String result = joinService.companyJoin(companyUserDTO);
+        assertEquals("signUp success", result);
+
+        log.info("기업 회원 가입 결과: " + result);
     }
 }
