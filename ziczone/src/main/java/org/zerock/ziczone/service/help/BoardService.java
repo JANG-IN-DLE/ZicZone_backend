@@ -19,4 +19,6 @@ public interface BoardService {
     void boardModify(BoardDTO boardDTO);
     // 게시물 삭제
     void boardDelete(Long userId, Long corrId);
+    // 정보 추가(userName, personalCareer)된 BoardDTO
+    BoardDTO boardUserRead(BoardDTO boardDTO);
 }

@@ -32,5 +32,9 @@ public class BoardDTO {
 
 //    private Boolean commSelection; // 채택 여부
 
+    private String userName; // 댓글 작성자 이름
+
+    private String personalCareer; // 댓글 작성자 경력
+
     private List<CommentDTO> commentList; // 댓글 목록
 }
