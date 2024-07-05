@@ -1,5 +1,6 @@
 package org.zerock.ziczone.service.join;
 
+import org.zerock.ziczone.dto.join.CompanyUserDTO;
 import org.zerock.ziczone.dto.join.PersonalUserDTO;
 import org.zerock.ziczone.dto.join.TechDTO;
 
@@ -11,6 +12,9 @@ public interface JoinService {
     List<TechDTO> getAllTechs();
 
     //개인회원가입
-    String personalJoin(PersonalUserDTO personalUserDTO);
+    String personalSignUp(PersonalUserDTO personalUserDTO);
+
+    //기업회원가입
+    String companyJoin(CompanyUserDTO companyUserDTO);
 
 }

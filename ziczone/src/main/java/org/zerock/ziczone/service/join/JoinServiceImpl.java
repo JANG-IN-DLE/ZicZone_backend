@@ -5,11 +5,13 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.zerock.ziczone.domain.job.Job;
 import org.zerock.ziczone.domain.job.JobPosition;
+import org.zerock.ziczone.domain.member.CompanyUser;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.domain.member.UserType;
 import org.zerock.ziczone.domain.tech.Tech;
 import org.zerock.ziczone.domain.tech.TechStack;
+import org.zerock.ziczone.dto.join.CompanyUserDTO;
 import org.zerock.ziczone.dto.join.PersonalUserDTO;
 import org.zerock.ziczone.dto.join.TechDTO;
 import org.zerock.ziczone.repository.job.JobPositionRepository;
@@ -57,7 +59,7 @@ public class JoinServiceImpl implements JoinService {
 
     //개인회원가입
     @Override
-    public String personalJoin(PersonalUserDTO personalUserDTO) {
+    public String personalSignUp(PersonalUserDTO personalUserDTO) {
 
         //회원
         User user = User.builder()
@@ -99,6 +101,33 @@ public class JoinServiceImpl implements JoinService {
                     .build();
             techStackRepository.save(techStack);
         }
+
+        return "signUp success";
+    }
+
+    @Override
+    public String companyJoin(CompanyUserDTO companyUserDTO) {
+        //회원
+        User user = User.builder()
+                .userName(companyUserDTO.getUserName())
+                .email(companyUserDTO.getEmail())
+                .password(companyUserDTO.getPassword())
+                .userType(UserType.COMPANY)
+                .userIntro(companyUserDTO.getUserIntro())
+                .userCreate(LocalDateTime.now())
+                .build();
+        userRepository.save(user);
+
+        //기업회원
+        CompanyUser companyUser = CompanyUser.builder()
+                .user(user)
+                .companyNum(companyUserDTO.getCompanyNum())
+                .companyAddr(companyUserDTO.getCompanyAddr())
+                .companyYear(companyUserDTO.getCompanyYear())
+                .companyLogo("companyUserDTO.getCompanyLogo()")
+                .companyCeo(companyUserDTO.getCompanyCeo())
+                .build();
+        companyUserRepository.save(companyUser);
 
         return "signUp success";
     }

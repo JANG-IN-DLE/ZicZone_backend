@@ -35,7 +35,7 @@ public class JoinServiceTests {
                 .techIds(Arrays.asList(1L, 2L))
                 .build();
 
-        String result = joinService.personalJoin(personalUserDTO);
+        String result = joinService.personalSignUp(personalUserDTO);
         assertEquals("signUp success", result);
 
         log.info("회원 가입 결과: " + result);
