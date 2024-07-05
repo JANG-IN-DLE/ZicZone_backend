@@ -19,6 +19,5 @@ public interface PersonalUserRepository extends JpaRepository<PersonalUser, Long
     @Query("SELECT p.personalId FROM PersonalUser p WHERE p.isCompanyVisible = true")
     List<Long> findPersonalUserIdsByIsCompanyVisibleTrue();
 
-
-
+    List<PersonalUser> findByPersonalIdIn(List<Long> sellerIds);
 }

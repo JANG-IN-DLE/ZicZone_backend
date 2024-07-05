@@ -1,20 +1,26 @@
 package org.zerock.ziczone.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.zerock.ziczone.dto.mypage.CompanyUserDTO;
-import org.zerock.ziczone.dto.mypage.PersonalUserDTO;
-import org.zerock.ziczone.dto.mypage.ResumeDTO;
+import org.zerock.ziczone.domain.PayHistory;
+import org.zerock.ziczone.dto.mypage.*;
+import org.zerock.ziczone.repository.PayHistoryRepository;
 import org.zerock.ziczone.service.myPage.MyPageService;
+import org.zerock.ziczone.service.myPage.MyPageServiceImpl;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class MyPageController {
     private final MyPageService mypageService;
+    private final MyPageServiceImpl myPageServiceImpl;
 
     /**
      * 기업 유저 정보 조회
@@ -57,13 +63,16 @@ public class MyPageController {
     /**
      * 구매한 이력서 목록 조회
      *
-     * @param userId 유저 아이디
+     * @param personalId 유저 아이디
      * @return ResponseEntity<List<ResumeDTO>> 구매한 이력서 리스트
      */
-    @GetMapping("/purchased/{userId}")
-    public ResponseEntity<List<ResumeDTO>> getPurchasedResumes(@PathVariable Long userId) {
-        return ResponseEntity.ok(mypageService.getPurchasedResumes(userId));
+    @GetMapping("/purchased/{personalId}")
+    public ResponseEntity<AggregatedDataDTO> getAggregatedData(@PathVariable Long personalId) {
+        AggregatedDataDTO aggregatedData = mypageService.getAggregatedData(personalId);
+        log.info(aggregatedData.toString());
+        return new ResponseEntity<>(aggregatedData, HttpStatus.OK);
     }
+
 
     /**
      * 개인 공개 설정된 유저 아이디 리스트 조회

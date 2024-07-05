@@ -11,6 +11,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class JobPositionDTO {
     private Long userJobId;
-    private Long jobId;
-    private String jobName;
+    private JobDTO job;
 }

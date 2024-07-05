@@ -5,11 +5,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class TechStackDTO {
-    private Long userTechId;
-    private TechDTO tech;
+@Builder
+public class AggregatedDataDTO {
+    private List<PersonalUserDTO> personalUsers;
 }
