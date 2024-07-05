@@ -1,5 +1,6 @@
 package org.zerock.ziczone.domain.tech;
 
+import com.jayway.jsonpath.internal.function.text.Length;
 import lombok.*;
 
 import javax.persistence.*;
@@ -18,4 +19,6 @@ public class Tech {
     @Column(length = 100)
     private String techName;
 
+    @Column(length = 100)
+    private String techUrl;
 }

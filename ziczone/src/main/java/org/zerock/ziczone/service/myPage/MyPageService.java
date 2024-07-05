@@ -1,9 +1,6 @@
 package org.zerock.ziczone.service.myPage;
 
-import org.zerock.ziczone.dto.mypage.CompanyUserDTO;
-import org.zerock.ziczone.dto.mypage.PersonalUserDTO;
-import org.zerock.ziczone.dto.mypage.PersonalUserPointDTO;
-import org.zerock.ziczone.dto.mypage.ResumeDTO;
+import org.zerock.ziczone.dto.mypage.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,7 +10,7 @@ public interface MyPageService {
     CompanyUserDTO getCompanyUserDTO(Long companyId);
     PersonalUserDTO getPersonalUserDTO(Long userId);
     Optional<PersonalUserPointDTO> getPersonalUserRemainingPoints(Long userId);
-    List<ResumeDTO> getPurchasedResumes(Long userId);
+    AggregatedDataDTO getAggregatedData(Long personalId);
     List<Long> getVisiblePersonalIds();
     List<Long> getVisibleCompanyIds();
 

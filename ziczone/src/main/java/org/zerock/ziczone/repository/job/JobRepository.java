@@ -5,4 +5,6 @@ import org.zerock.ziczone.domain.job.Job;
 
 public interface JobRepository extends JpaRepository<Job, Long> {
     Job findByJobId(Long jobId);
+
+
 }

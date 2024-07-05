@@ -2,32 +2,36 @@ package org.zerock.ziczone.service.myPage;
 
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.zerock.ziczone.domain.AppPayment;
+import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.domain.PickAndScrap;
-import org.zerock.ziczone.domain.application.Resume;
 import org.zerock.ziczone.domain.job.JobPosition;
 import org.zerock.ziczone.domain.member.CompanyUser;
 import org.zerock.ziczone.domain.member.Gender;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
+import org.zerock.ziczone.domain.tech.TechStack;
 import org.zerock.ziczone.dto.mypage.*;
 import org.zerock.ziczone.repository.AppPaymentRepository;
+import org.zerock.ziczone.repository.PayHistoryRepository;
 import org.zerock.ziczone.repository.PickAndScrapRepository;
 import org.zerock.ziczone.repository.application.ResumeRepository;
 import org.zerock.ziczone.repository.board.CommentRepository;
 import org.zerock.ziczone.repository.job.JobPositionRepository;
+import org.zerock.ziczone.repository.job.JobRepository;
 import org.zerock.ziczone.repository.member.CompanyUserRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.repository.payment.PaymentRepository;
+import org.zerock.ziczone.repository.tech.TechRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MyPageServiceImpl implements  MyPageService{
@@ -38,10 +42,13 @@ public class MyPageServiceImpl implements  MyPageService{
     private final PaymentRepository paymentRepository;
     private final AppPaymentRepository appPaymentRepository;
     private final ResumeRepository resumeRepository;
+    private final JobRepository jobRepository;
+    private final TechRepository techRepository;;
     private final PickAndScrapRepository pickAndScrapRepository;
     private final CommentRepository commentRepository;
     private final JobPositionRepository jobPositionRepository;
     private final TechStackRepository techStackRepository;
+    private final PayHistoryRepository payHistoryRepository;
 
     //
 
@@ -78,10 +85,24 @@ public class MyPageServiceImpl implements  MyPageService{
     private JobPositionDTO convertJobPositionToDTO(JobPosition jobPosition) {
         return JobPositionDTO.builder()
                 .userJobId(jobPosition.getUserJobId())
-                .jobId(jobPosition.getJob().getJobId())
-                .jobName(jobPosition.getJob().getJobName())
+                .job(JobDTO.builder()
+                        .jobId(jobPosition.getJob().getJobId())
+                        .jobName(jobPosition.getJob().getJobName())
+                        .build())
                 .build();
     }
+    private TechStackDTO convertTechStackToDTO(TechStack techStack) {
+        return TechStackDTO.builder()
+                .userTechId(techStack.getUserTechId())
+                .tech(TechDTO.builder()
+                        .techId(techStack.getTech().getTechId())
+                        .techName(techStack.getTech().getTechName())
+                        .techUrl(techStack.getTech().getTechUrl())
+                        .build())
+                .build();
+    }
+
+
 
     /**
      * User 엔티티를 UserDTO로 변환하는 메서드
@@ -115,7 +136,7 @@ public class MyPageServiceImpl implements  MyPageService{
                 .build();
     }
 
-     //
+    //
 
 
     /**
@@ -143,6 +164,7 @@ public class MyPageServiceImpl implements  MyPageService{
                 .companyAddr(companyUser.getCompanyAddr())
                 .companyLogo(companyUser.getCompanyLogo())
                 .companyCeo(companyUser.getCompanyCeo())
+                .companyYear(companyUser.getCompanyYear())
                 .build();
     }
 
@@ -154,35 +176,23 @@ public class MyPageServiceImpl implements  MyPageService{
     @Override
     public PersonalUserDTO getPersonalUserDTO(Long userId) {
         User user = userRepository.findByUserId(userId);
-        if(user == null) {
-            throw new RuntimeException("user not found") ;
+        if (user == null) {
+            throw new RuntimeException("user not found");
         }
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
-        if(personalUser == null) {
-            throw new RuntimeException("personal not found") ;
+        if (personalUser == null) {
+            throw new RuntimeException("personal not found");
         }
-        UserDTO userDTO = UserDTO.builder()
-                .userId(user.getUserId())
-                .email(user.getEmail())
-                .userName(user.getUserName())
-                .userType(user.getUserType().name())
-                .userIntro(user.getUserIntro())
-                .build();
-        // JobPositions and TechStacks retrieval
+        UserDTO userDTO = convertUserToDTO(user);
+
         List<JobPositionDTO> jobPositionDTOS = jobPositionRepository.findByPersonalUserPersonalId(personalUser.getPersonalId())
-                .stream().map(jobPosition -> JobPositionDTO.builder()
-                        .userJobId(jobPosition.getUserJobId())
-                        .jobId(jobPosition.getJob().getJobId())
-                        .jobName(jobPosition.getJob().getJobName())
-                        .build())
+                .stream()
+                .map(this::convertJobPositionToDTO)
                 .toList();
-        // TechStacks는 예제 데이터와 마찬가지로 가져오는 부분 추가 필요
+
         List<TechStackDTO> techStackDTOS = techStackRepository.findByPersonalUserPersonalId(personalUser.getPersonalId())
-                .stream().map(techStack -> TechStackDTO.builder()
-                        .userTechId(techStack.getUserTechId())
-                        .techId(techStack.getTech().getTechId())
-                        .techName(techStack.getTech().getTechName())
-                        .build())
+                .stream()
+                .map(this::convertTechStackToDTO)
                 .toList();
 
         return PersonalUserDTO.builder()
@@ -223,6 +233,8 @@ public class MyPageServiceImpl implements  MyPageService{
         return Optional.of(dto);
     }
 
+
+
     /**
      * 지원서 개인 공개 설정 유저 아이디 리스트 조회
      * @return List<Long> 개인 유저 아이디 리스트
@@ -244,35 +256,78 @@ public class MyPageServiceImpl implements  MyPageService{
 
     /**
      * 구매한 이력서 목록 조회
-     * @param userId 유저 아이디
+     * @param userId  유저 아이디
      * @return List<ResumeDTO> 구매한 이력서 리스트
      */
     @Override
-    public List<ResumeDTO> getPurchasedResumes(Long userId) {
-        List<ResumeDTO> purchasedResumes = new ArrayList<>();
-        List<AppPayment> payments = appPaymentRepository.findByUserId(userId);
+    public AggregatedDataDTO getAggregatedData(Long userId) {
+        List<Long> sellerIds = payHistoryRepository.findByBuyerId(userId)
+                .stream()
+                .map(PayHistory::getSellerId)
+                .distinct()
+                .collect(Collectors.toList());
 
-        for (AppPayment payment : payments) {
-            List<Resume> resumes = resumeRepository.findByPersonalUser(payment.getPersonalUser()).orElse(null);
-            for(Resume resume : resumes){
-                if(resume.getResumeUpdate().isBefore(payment.getAppPaymentDate())){
-                    ResumeDTO resumeDTO = ResumeDTO.builder()
-                            .resumeId(resume.getResumeId())
-                            .resumeName(resume.getResumeName())
-                            .resumeDate(resume.getResumeDate())
-                            .phoneNum(resume.getPhoneNum())
-                            .resumePhoto(resume.getResumePhoto())
-                            .resumeCreate(resume.getResumeCreate())
-                            .resumeUpdate(resume.getResumeUpdate())
-                            .personalState(resume.getPersonalState())
-                            .personalId(resume.getPersonalUser().getPersonalId())
+        List<PersonalUserDTO> personalUsers = personalUserRepository.findByPersonalIdIn(sellerIds)
+                .stream()
+                .map(pu -> {
+                    List<JobPositionDTO> jobPositionDTOS = jobPositionRepository.findByPersonalUserPersonalId(pu.getPersonalId())
+                            .stream()
+                            .map(this::convertJobPositionToDTO)
+                            .collect(Collectors.toList());
+
+                    List<TechStackDTO> techStackDTOS = techStackRepository.findByPersonalUserPersonalId(pu.getPersonalId())
+                            .stream()
+                            .map(this::convertTechStackToDTO)
+                            .collect(Collectors.toList());
+
+                    return PersonalUserDTO.builder()
+                            .personalId(pu.getPersonalId())
+                            .personalCareer(pu.getPersonalCareer())
+                            .gender(pu.getGender().name())
+                            .isPersonalVisible(pu.isPersonalVisible())
+                            .isCompanyVisible(pu.isCompanyVisible())
+                            .user(convertUserToDTO(pu.getUser()))
+                            .jobPositions(jobPositionDTOS)
+                            .techStacks(techStackDTOS)
                             .build();
-                    purchasedResumes.add(resumeDTO);
-                }
-            }
-        }
-        return purchasedResumes;
+                })
+                .collect(Collectors.toList());
+
+        List<ResumeDTO> resumes = resumeRepository.findByPersonalUserPersonalIdIn(sellerIds)
+                .stream()
+                .map(r -> ResumeDTO.builder()
+                        .resumeId(r.getResumeId())
+                        .personalState(r.getPersonalState())
+                        .phoneNum(r.getPhoneNum())
+                        .resumeCreate(r.getResumeCreate())
+                        .resumeDate(r.getResumeDate())
+                        .resumeName(r.getResumeName())
+                        .resumePhoto(r.getResumePhoto())
+                        .resumeUpdate(r.getResumeUpdate())
+                        .personalId(r.getPersonalUser().getPersonalId())
+                        .build())
+                .collect(Collectors.toList());
+
+        List<JobPositionDTO> jobs = jobPositionRepository.findByPersonalUserPersonalIdIn(sellerIds)
+                .stream()
+                .map(this::convertJobPositionToDTO)
+                .collect(Collectors.toList());
+
+        List<TechStackDTO> techs = techStackRepository.findByPersonalUserPersonalIdIn(sellerIds)
+                .stream()
+                .map(this::convertTechStackToDTO)
+                .collect(Collectors.toList());
+
+        return AggregatedDataDTO.builder()
+                .personalUsers(personalUsers)
+                .resumes(resumes)
+                .jobs(jobs)
+                .techs(techs)
+                .build();
     }
+
+
+
 
     /**
      * Pick 탭 기업정보 리스트
@@ -281,27 +336,10 @@ public class MyPageServiceImpl implements  MyPageService{
      */
     @Override
     public List<PersonalUserDTO> getPicksByCompanyUsers(Long personalUserId) {
-
         PersonalUser personalUser = personalUserRepository.findById(personalUserId)
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 개인 사용자 ID: " + personalUserId));
 
         List<PickAndScrap> pickAndScrapList = pickAndScrapRepository.findByPersonalUserAndPickTrue(personalUser);
-
-        List<JobPositionDTO> jobPositionDTOS = jobPositionRepository.findByPersonalUserPersonalId(personalUser.getPersonalId())
-                .stream().map(jobPosition -> JobPositionDTO.builder()
-                        .userJobId(jobPosition.getUserJobId())
-                        .jobId(jobPosition.getJob().getJobId())
-                        .jobName(jobPosition.getJob().getJobName())
-                        .build())
-                .toList();
-        // TechStacks는 예제 데이터와 마찬가지로 가져오는 부분 추가 필요
-        List<TechStackDTO> techStackDTOS = techStackRepository.findByPersonalUserPersonalId(personalUser.getPersonalId())
-                .stream().map(techStack -> TechStackDTO.builder()
-                        .userTechId(techStack.getUserTechId())
-                        .techId(techStack.getTech().getTechId())
-                        .techName(techStack.getTech().getTechName())
-                        .build())
-                .toList();
 
         return pickAndScrapList.stream()
                 .map(pickAndScrap -> {
@@ -309,23 +347,33 @@ public class MyPageServiceImpl implements  MyPageService{
                     UserDTO userDTOs = UserDTO.builder()
                             .userId(pUser.getUser().getUserId())
                             .email(pUser.getUser().getEmail())
-                            .userName(pUser.getUser().getUserName()) // User 엔티티에서 userName을 가져옴
+                            .userName(pUser.getUser().getUserName())
                             .userIntro(pUser.getUser().getUserIntro())
+                            .userType(pUser.getUser().getUserType().name())
                             .build();
+
+                    List<JobPositionDTO> jobPositionDTOS = jobPositionRepository.findByPersonalUserPersonalId(pUser.getPersonalId())
+                            .stream()
+                            .map(this::convertJobPositionToDTO)
+                            .toList();
+
+                    List<TechStackDTO> techStackDTOS = techStackRepository.findByPersonalUserPersonalId(pUser.getPersonalId())
+                            .stream()
+                            .map(this::convertTechStackToDTO)
+                            .toList();
+
                     return PersonalUserDTO.builder()
-                            .personalId(userDTOs.getUserId())
                             .personalId(pUser.getPersonalId())
                             .personalCareer(pUser.getPersonalCareer())
                             .isPersonalVisible(pUser.isPersonalVisible())
                             .isCompanyVisible(pUser.isCompanyVisible())
-                            .gender(pUser.getGender().name()) // Enum to String
+                            .gender(pUser.getGender().name())
+                            .user(userDTOs)
                             .jobPositions(jobPositionDTOS)
                             .techStacks(techStackDTOS)
-                            .user(userDTOs)
                             .build();
                 })
-                .collect(Collectors.toList());
-
+                .toList();
     }
 
 
@@ -337,12 +385,20 @@ public class MyPageServiceImpl implements  MyPageService{
     @Override
     public List<CompanyUserDTO> getPicksByPersonalUsers(Long personalUserId) {
         CompanyUser companyUser = companyUserRepository.findById(personalUserId)
-                .orElseThrow(()-> new IllegalArgumentException("유효하지 않은 기업 사용자 ID: "+ personalUserId));
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 기업 사용자 ID: " + personalUserId));
         List<PickAndScrap> pickAndScrapList = pickAndScrapRepository.findByCompanyUserAndPickTrue(companyUser);
 
         return pickAndScrapList.stream()
                 .map(pick -> {
                     CompanyUser cUser = pick.getCompanyUser();
+                    UserDTO userDTOs = UserDTO.builder()
+                            .userId(cUser.getUser().getUserId())
+                            .email(cUser.getUser().getEmail())
+                            .userName(cUser.getUser().getUserName())
+                            .userIntro(cUser.getUser().getUserIntro())
+                            .userType(cUser.getUser().getUserType().name())
+                            .build();
+
                     return CompanyUserDTO.builder()
                             .userId(companyUser.getUser().getUserId())
                             .companyId(cUser.getCompanyId())
@@ -351,9 +407,13 @@ public class MyPageServiceImpl implements  MyPageService{
                             .companyLogo(cUser.getCompanyLogo())
                             .companyCeo(cUser.getCompanyCeo())
                             .companyAddr(cUser.getCompanyAddr())
+                            .userName(cUser.getUser().getUserName())
+                            .email(cUser.getUser().getEmail())
+                            .userIntro(cUser.getUser().getUserIntro())
+                            .userId(cUser.getUser().getUserId())
                             .build();
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
 
