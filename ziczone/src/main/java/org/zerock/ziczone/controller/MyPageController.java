@@ -34,6 +34,14 @@ public class MyPageController {
         return ResponseEntity.ok(companyUserDTO);
     }
 
+    
+    @PutMapping("/companyUser/{userId}")
+    public ResponseEntity<CompanyUserDTO> updateCompanyUser(
+            @PathVariable Long userId,
+            @RequestBody CompanyUserUpdateDTO companyUserUpdateDTO) {
+        return ResponseEntity.ok(mypageService.updateCompanyUser(userId, companyUserUpdateDTO));
+    }
+
     /**
      * 개인 유저 정보 조회
      *
@@ -44,6 +52,13 @@ public class MyPageController {
     public ResponseEntity<PersonalUserDTO> getPersonalUserDTO(@PathVariable Long userId) {
         PersonalUserDTO personalUserDTO = mypageService.getPersonalUserDTO(userId);
         return ResponseEntity.ok(personalUserDTO);
+    }
+
+    @PutMapping("/personalUser/{userId}")
+    public ResponseEntity<PersonalUserDTO> updatePersonalUser(
+            @PathVariable Long userId,
+            @RequestBody PersonalUserUpdateDTO personalUserUpdateDTO) {
+        return ResponseEntity.ok(mypageService.updatePersonalUser(userId, personalUserUpdateDTO));
     }
 
 //    /**
