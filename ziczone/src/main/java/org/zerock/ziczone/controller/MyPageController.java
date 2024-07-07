@@ -41,6 +41,16 @@ public class MyPageController {
     }
 
     /**
+     * 기업 회원 정보 수정
+     * @param companyUserUpdateDTO
+     * @param userId
+     * @return
+     */
+    @PutMapping("/company-user/{userId}")
+    public ResponseEntity<CompanyUserDTO> companyUserUpdate(@RequestBody CompanyUserUpdateDTO companyUserUpdateDTO, @PathVariable Long userId) {
+        return ResponseEntity.ok(mypageService.updateCompanyUser(userId, companyUserUpdateDTO));
+    }
+    /**
      * 개인 유저 정보 조회
      *
      * @param userId 유저 아이디
@@ -52,6 +62,10 @@ public class MyPageController {
         return ResponseEntity.ok(personalUserDTO);
     }
 
+    @PutMapping("/personal-user/{userId}")
+    public ResponseEntity<PersonalUserDTO> personalUserUpdate(@RequestBody PersonalUserUpdateDTO personalUserUpdateDTO, @PathVariable Long userId){
+        return ResponseEntity.ok(mypageService.updatePersonalUser(userId, personalUserUpdateDTO));
+    }
 //    /**
 //     * 남은 포인트 조회 사용불가 업데이트 예정
 //     *

@@ -4,6 +4,7 @@ package org.zerock.ziczone.service.myPage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.domain.PickAndScrap;
@@ -50,7 +51,7 @@ public class MyPageServiceImpl implements  MyPageService{
     private final JobPositionRepository jobPositionRepository;
     private final TechStackRepository techStackRepository;
     private final PayHistoryRepository payHistoryRepository;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final PasswordEncoder passwordEncoder;
 
     private String hashPassword(String password){
         return passwordEncoder.encode(password);
