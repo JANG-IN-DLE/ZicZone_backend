@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.service.Email.EmailAuthService;
+import org.zerock.ziczone.service.join.JoinService;
 
 import java.util.Map;
 
@@ -15,17 +17,18 @@ import java.util.Map;
 public class EmailAuthController {
 
     private final EmailAuthService emailAuthService;
+    private final JoinService joinService;
 
     // 이메일 전송
     @PostMapping("/email-verification")
     public ResponseEntity<String> sendVerificationEmail(@RequestBody Map<String, String> request) {
         String email = request.get("email");
-        boolean EmailDuplication = emailAuthService.EmailDuplication(email);
-        if(EmailDuplication) {
+        User EmailDuplication = joinService.EmailDuplication(email);
+        if(EmailDuplication != null) {
             return ResponseEntity.ok("Email Duplication");
         }else {
             emailAuthService.sendVerificationEmail(email);
-            return ResponseEntity.ok("인증번호가 전송되었습니다.");
+            return ResponseEntity.ok("email sent");
         }
     }
 

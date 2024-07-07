@@ -132,4 +132,11 @@ public class JoinServiceImpl implements JoinService {
         return "signUp success";
     }
 
+    //해당 이메일을 가진 유저가 있는지 검사
+    @Override
+    public User EmailDuplication(String email) {
+        User user = userRepository.findByEmail(email);
+        return user;
+    }
+
 }
