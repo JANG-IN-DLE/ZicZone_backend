@@ -2,6 +2,7 @@ package org.zerock.ziczone.service.join;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.zerock.ziczone.domain.job.Job;
 import org.zerock.ziczone.domain.job.JobPosition;
@@ -34,6 +35,8 @@ import java.util.stream.Collectors;
 @Transactional
 public class JoinServiceImpl implements JoinService {
 
+    private final PasswordEncoder passwordEncoder;
+
     private final UserRepository userRepository;
     private final PersonalUserRepository personalUserRepository;
     private final CompanyUserRepository companyUserRepository;
@@ -65,7 +68,7 @@ public class JoinServiceImpl implements JoinService {
         User user = User.builder()
                 .userName(personalUserDTO.getUserName())
                 .email(personalUserDTO.getEmail())
-                .password(personalUserDTO.getPassword())
+                .password(passwordEncoder.encode(personalUserDTO.getPassword()))
                 .userType(UserType.PERSONAL)
                 .userIntro(personalUserDTO.getUserIntro())
                 .userCreate(LocalDateTime.now())
@@ -111,7 +114,7 @@ public class JoinServiceImpl implements JoinService {
         User user = User.builder()
                 .userName(companyUserDTO.getUserName())
                 .email(companyUserDTO.getEmail())
-                .password(companyUserDTO.getPassword())
+                .password(passwordEncoder.encode(companyUserDTO.getPassword()))
                 .userType(UserType.COMPANY)
                 .userIntro(companyUserDTO.getUserIntro())
                 .userCreate(LocalDateTime.now())
