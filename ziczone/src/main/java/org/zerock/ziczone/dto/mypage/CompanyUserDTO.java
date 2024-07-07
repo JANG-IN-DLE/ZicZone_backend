@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.zerock.ziczone.domain.member.User;
 
 import java.time.LocalDate;
 
@@ -15,11 +16,13 @@ public class CompanyUserDTO {
 
     private Long userId;
 
-    private String email;
+//    private String email;
 
-    private String userName;
+//    private String userName;
 
-    private String userIntro;
+//    private String userIntro;
+
+    private UserDTO user;
 
     private Long companyId;
 

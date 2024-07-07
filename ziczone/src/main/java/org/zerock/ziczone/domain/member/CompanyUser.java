@@ -8,7 +8,7 @@ import java.time.LocalDate;
 
 @Entity
 @Getter
-@Builder
+@Builder(toBuilder = true) // toBuilder 속성 추가
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
