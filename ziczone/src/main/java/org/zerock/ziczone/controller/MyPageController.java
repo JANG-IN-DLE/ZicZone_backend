@@ -7,8 +7,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.zerock.ziczone.domain.PayHistory;
+import org.zerock.ziczone.dto.help.BoardDTO;
+import org.zerock.ziczone.dto.help.CommentDTO;
 import org.zerock.ziczone.dto.mypage.*;
 import org.zerock.ziczone.repository.PayHistoryRepository;
+import org.zerock.ziczone.service.help.BoardService;
+import org.zerock.ziczone.service.help.CommentService;
 import org.zerock.ziczone.service.myPage.MyPageService;
 import org.zerock.ziczone.service.myPage.MyPageServiceImpl;
 
@@ -21,6 +25,8 @@ import java.util.List;
 public class MyPageController {
     private final MyPageService mypageService;
     private final MyPageServiceImpl myPageServiceImpl;
+    private final BoardService boardService;
+    private final CommentService commentService;
 
     /**
      * 기업 유저 정보 조회
@@ -34,14 +40,6 @@ public class MyPageController {
         return ResponseEntity.ok(companyUserDTO);
     }
 
-    
-    @PutMapping("/companyUser/{userId}")
-    public ResponseEntity<CompanyUserDTO> updateCompanyUser(
-            @PathVariable Long userId,
-            @RequestBody CompanyUserUpdateDTO companyUserUpdateDTO) {
-        return ResponseEntity.ok(mypageService.updateCompanyUser(userId, companyUserUpdateDTO));
-    }
-
     /**
      * 개인 유저 정보 조회
      *
@@ -52,13 +50,6 @@ public class MyPageController {
     public ResponseEntity<PersonalUserDTO> getPersonalUserDTO(@PathVariable Long userId) {
         PersonalUserDTO personalUserDTO = mypageService.getPersonalUserDTO(userId);
         return ResponseEntity.ok(personalUserDTO);
-    }
-
-    @PutMapping("/personalUser/{userId}")
-    public ResponseEntity<PersonalUserDTO> updatePersonalUser(
-            @PathVariable Long userId,
-            @RequestBody PersonalUserUpdateDTO personalUserUpdateDTO) {
-        return ResponseEntity.ok(mypageService.updatePersonalUser(userId, personalUserUpdateDTO));
     }
 
 //    /**
@@ -136,5 +127,18 @@ public class MyPageController {
 
         return ResponseEntity.ok(companyUserDTOS);
     }
+
+    @GetMapping("myboard/{userId}")
+    public ResponseEntity<List<BoardDTO>> getBoardUserList(@PathVariable Long userId) {
+        List<BoardDTO> boardDTOS = boardService.userReadAll(userId);
+        return ResponseEntity.ok(boardDTOS);
+    }
+
+    @GetMapping("mycomm/{userId}")
+    public ResponseEntity<List<CommentDTO>> getCommentUserList(@PathVariable Long userId) {
+        List<CommentDTO> commentDTOS = commentService.userReadAllComment(userId);
+        return ResponseEntity.ok(commentDTOS);
+    }
+
 
 }
