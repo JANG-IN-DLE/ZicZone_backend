@@ -16,6 +16,9 @@ public class Tech {
     private Long techId;
 
     @Column(length = 100)
+    private String techUrl;
+
+    @Column(length = 100)
     private String techName;
 
 }

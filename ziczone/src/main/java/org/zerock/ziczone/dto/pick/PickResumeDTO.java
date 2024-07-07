@@ -18,10 +18,12 @@ public class PickResumeDTO {
     private Long resumeId;
     private String resumeName;
     private String resumeDate;
+    private String resumeEmail;
     private String phoneNum;
     private String resumePhoto;
     private String personalState;
     private String jobName;
+    private String techUrl;
     private String techName;
 //    학력
     private List<String> educations;
