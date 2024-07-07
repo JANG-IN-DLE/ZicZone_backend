@@ -1,6 +1,7 @@
 package org.zerock.ziczone.domain.member;
 
 import lombok.*;
+import net.minidev.json.annotate.JsonIgnore;
 import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
@@ -8,10 +9,10 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Builder
+@Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor
-@ToString
+@ToString(exclude = "personalUser")
 public class User {
 
     @Id
@@ -40,7 +41,7 @@ public class User {
     @Column(length = 255, nullable = false)
     private String userIntro;
 
-
+    @JsonIgnore
     @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
     private PersonalUser personalUser;
 }

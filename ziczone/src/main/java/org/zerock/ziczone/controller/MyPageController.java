@@ -1,20 +1,32 @@
 package org.zerock.ziczone.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.zerock.ziczone.dto.mypage.CompanyUserDTO;
-import org.zerock.ziczone.dto.mypage.PersonalUserDTO;
-import org.zerock.ziczone.dto.mypage.ResumeDTO;
+import org.zerock.ziczone.domain.PayHistory;
+import org.zerock.ziczone.dto.help.BoardDTO;
+import org.zerock.ziczone.dto.help.CommentDTO;
+import org.zerock.ziczone.dto.mypage.*;
+import org.zerock.ziczone.repository.PayHistoryRepository;
+import org.zerock.ziczone.service.help.BoardService;
+import org.zerock.ziczone.service.help.CommentService;
 import org.zerock.ziczone.service.myPage.MyPageService;
+import org.zerock.ziczone.service.myPage.MyPageServiceImpl;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class MyPageController {
     private final MyPageService mypageService;
+    private final MyPageServiceImpl myPageServiceImpl;
+    private final BoardService boardService;
+    private final CommentService commentService;
 
     /**
      * 기업 유저 정보 조회
@@ -29,6 +41,16 @@ public class MyPageController {
     }
 
     /**
+     * 기업 회원 정보 수정
+     * @param companyUserUpdateDTO
+     * @param userId
+     * @return
+     */
+    @PutMapping("/company-user/{userId}")
+    public ResponseEntity<CompanyUserDTO> companyUserUpdate(@RequestBody CompanyUserUpdateDTO companyUserUpdateDTO, @PathVariable Long userId) {
+        return ResponseEntity.ok(mypageService.updateCompanyUser(userId, companyUserUpdateDTO));
+    }
+    /**
      * 개인 유저 정보 조회
      *
      * @param userId 유저 아이디
@@ -40,6 +62,10 @@ public class MyPageController {
         return ResponseEntity.ok(personalUserDTO);
     }
 
+    @PutMapping("/personal-user/{userId}")
+    public ResponseEntity<PersonalUserDTO> personalUserUpdate(@RequestBody PersonalUserUpdateDTO personalUserUpdateDTO, @PathVariable Long userId){
+        return ResponseEntity.ok(mypageService.updatePersonalUser(userId, personalUserUpdateDTO));
+    }
 //    /**
 //     * 남은 포인트 조회 사용불가 업데이트 예정
 //     *
@@ -57,13 +83,16 @@ public class MyPageController {
     /**
      * 구매한 이력서 목록 조회
      *
-     * @param userId 유저 아이디
+     * @param personalId 유저 아이디
      * @return ResponseEntity<List<ResumeDTO>> 구매한 이력서 리스트
      */
-    @GetMapping("/purchased/{userId}")
-    public ResponseEntity<List<ResumeDTO>> getPurchasedResumes(@PathVariable Long userId) {
-        return ResponseEntity.ok(mypageService.getPurchasedResumes(userId));
+    @GetMapping("/purchased/{personalId}")
+    public ResponseEntity<AggregatedDataDTO> getAggregatedData(@PathVariable Long personalId) {
+        AggregatedDataDTO aggregatedData = mypageService.getAggregatedData(personalId);
+        log.info(aggregatedData.toString());
+        return new ResponseEntity<>(aggregatedData, HttpStatus.OK);
     }
+
 
     /**
      * 개인 공개 설정된 유저 아이디 리스트 조회
@@ -112,5 +141,18 @@ public class MyPageController {
 
         return ResponseEntity.ok(companyUserDTOS);
     }
+
+    @GetMapping("myboard/{userId}")
+    public ResponseEntity<List<BoardDTO>> getBoardUserList(@PathVariable Long userId) {
+        List<BoardDTO> boardDTOS = boardService.userReadAll(userId);
+        return ResponseEntity.ok(boardDTOS);
+    }
+
+    @GetMapping("mycomm/{userId}")
+    public ResponseEntity<List<CommentDTO>> getCommentUserList(@PathVariable Long userId) {
+        List<CommentDTO> commentDTOS = commentService.userReadAllComment(userId);
+        return ResponseEntity.ok(commentDTOS);
+    }
+
 
 }

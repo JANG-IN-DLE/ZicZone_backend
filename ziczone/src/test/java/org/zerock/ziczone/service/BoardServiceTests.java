@@ -28,7 +28,7 @@ public class BoardServiceTests {
         log.info(boardService.getClass().getName());
 
         BoardDTO boardDTO = BoardDTO.builder()
-                .corrPoint(40)
+                .corrPoint(1000)
                 .corrTitle("게시판 서비스 제목 테스트")
                 .corrContent("게시판 서비스 내용 테스트")
                 .corrPdf("게시판_서비스.pdf")
@@ -36,13 +36,11 @@ public class BoardServiceTests {
                 .build();
 
         Long corrId = boardService.boardRegister(boardDTO);
-
-        log.info("corrId : " + corrId);
     }
 
     @Test
     public void testBoardReadOne() {
-        Long corrId = 4L;
+        Long corrId = 37L;
 
         BoardDTO boardDTO = boardService.boardReadOne(corrId);
 
@@ -51,7 +49,7 @@ public class BoardServiceTests {
 
     @Test
     public void testUserReadAll() {
-        Long userId = 3L;
+        Long userId = 5L;
 
         List<BoardDTO> boardDTOList = boardService.userReadAll(userId);
 

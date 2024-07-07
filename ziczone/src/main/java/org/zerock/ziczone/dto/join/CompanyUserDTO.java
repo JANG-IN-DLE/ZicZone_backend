@@ -1,12 +1,13 @@
-package org.zerock.ziczone.dto.mypage;
+package org.zerock.ziczone.dto.join;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.zerock.ziczone.domain.member.User;
+import org.zerock.ziczone.domain.member.UserType;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @Builder
@@ -14,25 +15,26 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class CompanyUserDTO {
 
-    private Long userId;
+    private String userName;
 
-//    private String email;
+    private String email;
 
-//    private String userName;
+    private String password;
 
-//    private String userIntro;
+    private UserType userType;
 
-    private UserDTO user;
-
-    private Long companyId;
+    private String userIntro;
 
     private String companyNum;
 
     private String companyAddr;
 
+    private LocalDate companyYear;
+
     private String companyLogo;
 
     private String companyCeo;
 
-    private LocalDate companyYear;
+    //생성시간
+    private String userCreate;
 }

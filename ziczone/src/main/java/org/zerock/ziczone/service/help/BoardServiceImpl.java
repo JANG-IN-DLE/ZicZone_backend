@@ -7,12 +7,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.zerock.ziczone.domain.board.Board;
+import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.domain.member.UserType;
 import org.zerock.ziczone.dto.help.BoardDTO;
 import org.zerock.ziczone.dto.page.PageRequestDTO;
 import org.zerock.ziczone.dto.page.PageResponseDTO;
 import org.zerock.ziczone.repository.board.BoardRepository;
+import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
 
 import javax.transaction.Transactional;
@@ -27,7 +29,9 @@ import java.util.stream.Collectors;
 public class BoardServiceImpl implements BoardService {
     private final UserRepository userRepository;
     private final BoardRepository boardRepository;
+    private final PersonalUserRepository personalUserRepository;
 
+    @Override
     @Transactional
     public Long boardRegister(BoardDTO boardDTO) {
         User user = userRepository.findById(boardDTO.getUserId())
@@ -43,19 +47,26 @@ public class BoardServiceImpl implements BoardService {
                 .corrContent(boardDTO.getCorrContent())
                 .corrPdf(boardDTO.getCorrPdf())
                 .corrView(0)
+                .corrModify(boardDTO.getCorrModify())
                 .user(user)
                 .build();
 
         boardRepository.save(board);
 
+        BoardDTO updatedDTO = boardUserRead(boardDTO);
+        log.info(updatedDTO);
+
         return boardDTO.getCorrId();
     }
 
-    @Transactional
+    @Override
     public BoardDTO boardReadOne(Long corrId) {
         Optional<Board> result = boardRepository.findById(corrId);
 
         Board board = result.orElseThrow(() -> new IllegalArgumentException("게시물 ID가 없습니다."));
+
+        User user = board.getUser();
+        PersonalUser personalUser = user.getPersonalUser();
 
         return BoardDTO.builder()
                 .corrId(board.getCorrId())
@@ -65,29 +76,38 @@ public class BoardServiceImpl implements BoardService {
                 .corrPdf(board.getCorrPdf())
                 .corrView(board.getCorrView())
                 .corrModify(board.getCorrModify())
-                .userId(board.getUser().getUserId())
+                .userId(user.getUserId())
+                .userName(user.getUserName())
+                .personalCareer(personalUser.getPersonalCareer())
                 .build();
     }
 
-    @Transactional
+    @Override
     public List<BoardDTO> userReadAll(Long userId) {
         List<Board> boards = boardRepository.findByUserUserId(userId);
 
         return boards.stream()
-                .map(board -> BoardDTO.builder()
-                        .corrId(board.getCorrId())
-                        .corrPoint(board.getCorrPoint())
-                        .corrTitle(board.getCorrTitle())
-                        .corrContent(board.getCorrContent())
-                        .corrPdf(board.getCorrPdf())
-                        .corrView(board.getCorrView())
-                        .corrModify(board.getCorrModify())
-                        .userId(board.getUser().getUserId())
-                        .build())
+                .map(board -> {
+                    User user = board.getUser();
+                    PersonalUser personalUser = user.getPersonalUser();
+
+                    return BoardDTO.builder()
+                            .corrId(board.getCorrId())
+                            .corrPoint(board.getCorrPoint())
+                            .corrTitle(board.getCorrTitle())
+                            .corrContent(board.getCorrContent())
+                            .corrPdf(board.getCorrPdf())
+                            .corrView(board.getCorrView())
+                            .corrModify(board.getCorrModify())
+                            .userId(user.getUserId())
+                            .userName(user.getUserName())
+                            .personalCareer(personalUser.getPersonalCareer())
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 
-    @Transactional
+    @Override
     public PageResponseDTO<BoardDTO> boardFilter(String filterType, PageRequestDTO pageRequestDTO) {
         Pageable pageable = PageRequest.of(pageRequestDTO.getPage() -1, pageRequestDTO.getSize());
         Page<Board> result;
@@ -107,16 +127,23 @@ public class BoardServiceImpl implements BoardService {
         }
 
         List<BoardDTO> dtoList = result.stream()
-                .map(board -> BoardDTO.builder()
-                        .corrId(board.getCorrId())
-                        .corrPoint(board.getCorrPoint())
-                        .corrTitle(board.getCorrTitle())
-                        .corrContent(board.getCorrContent())
-                        .corrPdf(board.getCorrPdf())
-                        .corrView(board.getCorrView())
-                        .corrModify(board.getCorrModify())
-                        .userId(board.getUser().getUserId())
-                        .build())
+                .map(board -> {
+                    User user = board.getUser();
+                    PersonalUser personalUser = user.getPersonalUser();
+
+                    return BoardDTO.builder()
+                            .corrId(board.getCorrId())
+                            .corrPoint(board.getCorrPoint())
+                            .corrTitle(board.getCorrTitle())
+                            .corrContent(board.getCorrContent())
+                            .corrPdf(board.getCorrPdf())
+                            .corrView(board.getCorrView())
+                            .corrModify(board.getCorrModify())
+                            .userId(user.getUserId())
+                            .userName(user.getUserName())
+                            .personalCareer(personalUser.getPersonalCareer())
+                            .build();
+                })
                 .collect(Collectors.toList());
 
         return PageResponseDTO.<BoardDTO>withAll()
@@ -126,6 +153,7 @@ public class BoardServiceImpl implements BoardService {
                 .build();
     }
 
+    @Override
     @Transactional
     public void boardModify(BoardDTO boardDTO) {
         Optional<Board> result = boardRepository.findById(boardDTO.getCorrId());
@@ -139,8 +167,12 @@ public class BoardServiceImpl implements BoardService {
         board.change(boardDTO.getCorrTitle(), boardDTO.getCorrContent(), boardDTO.getCorrPdf());
 
         boardRepository.save(board);
+
+        BoardDTO updatedDTO = boardUserRead(boardDTO);
+        log.info(updatedDTO);
     }
 
+    @Override
     @Transactional
     public void boardDelete(Long userId, Long corrId) {
         Optional<Board> result = boardRepository.findById(corrId);
@@ -152,5 +184,23 @@ public class BoardServiceImpl implements BoardService {
         }
 
         boardRepository.deleteById(corrId);
+    }
+
+    @Override
+    public BoardDTO boardUserRead(BoardDTO boardDTO) {
+        User user = userRepository.findByUserId(boardDTO.getUserId());
+        PersonalUser personalUser = personalUserRepository.findByPersonalId(boardDTO.getUserId());
+
+        return BoardDTO.builder()
+                .corrId(boardDTO.getCorrId())
+                .corrPoint(boardDTO.getCorrPoint())
+                .corrTitle(boardDTO.getCorrTitle())
+                .corrContent(boardDTO.getCorrContent())
+                .corrPdf(boardDTO.getCorrPdf())
+                .corrView(boardDTO.getCorrView())
+                .userId(user.getUserId())
+                .userName(user.getUserName())
+                .personalCareer(personalUser.getPersonalCareer())
+                .build();
     }
 }

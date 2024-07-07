@@ -1,5 +1,6 @@
 package org.zerock.ziczone.domain.tech;
 
+import com.jayway.jsonpath.internal.function.text.Length;
 import lombok.*;
 
 import javax.persistence.*;

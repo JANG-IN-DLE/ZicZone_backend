@@ -2,32 +2,38 @@ package org.zerock.ziczone.service.myPage;
 
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.zerock.ziczone.domain.AppPayment;
+import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.domain.PickAndScrap;
-import org.zerock.ziczone.domain.application.Resume;
 import org.zerock.ziczone.domain.job.JobPosition;
 import org.zerock.ziczone.domain.member.CompanyUser;
 import org.zerock.ziczone.domain.member.Gender;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
+import org.zerock.ziczone.domain.tech.TechStack;
 import org.zerock.ziczone.dto.mypage.*;
 import org.zerock.ziczone.repository.AppPaymentRepository;
+import org.zerock.ziczone.repository.PayHistoryRepository;
 import org.zerock.ziczone.repository.PickAndScrapRepository;
 import org.zerock.ziczone.repository.application.ResumeRepository;
 import org.zerock.ziczone.repository.board.CommentRepository;
 import org.zerock.ziczone.repository.job.JobPositionRepository;
+import org.zerock.ziczone.repository.job.JobRepository;
 import org.zerock.ziczone.repository.member.CompanyUserRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.repository.payment.PaymentRepository;
+import org.zerock.ziczone.repository.tech.TechRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MyPageServiceImpl implements  MyPageService{
@@ -38,85 +44,18 @@ public class MyPageServiceImpl implements  MyPageService{
     private final PaymentRepository paymentRepository;
     private final AppPaymentRepository appPaymentRepository;
     private final ResumeRepository resumeRepository;
+    private final JobRepository jobRepository;
+    private final TechRepository techRepository;;
     private final PickAndScrapRepository pickAndScrapRepository;
     private final CommentRepository commentRepository;
     private final JobPositionRepository jobPositionRepository;
     private final TechStackRepository techStackRepository;
+    private final PayHistoryRepository payHistoryRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    //
-
-    /**
-     * PersonalUser 엔티티를 PersonalUserDTO로 변환하는 메서드
-     *
-     * @param personalUser 변환할 PersonalUser 엔티티
-     * @return 변환된 PersonalUserDTO
-     */
-    private PersonalUserDTO convertPersonalUserToDTO(PersonalUser personalUser) {
-        List<JobPositionDTO> jobPositionDTOS = personalUser.getJobPositions().stream()
-                .map(this::convertJobPositionToDTO)
-                .collect(Collectors.toList());
-
-        UserDTO userDTO = convertUserToDTO(personalUser.getUser());
-
-        return PersonalUserDTO.builder()
-                .personalId(personalUser.getPersonalId())
-                .personalCareer(personalUser.getPersonalCareer())
-                .isPersonalVisible(personalUser.isPersonalVisible())
-                .isCompanyVisible(personalUser.isCompanyVisible())
-                .gender(personalUser.getGender().name())
-                .user(userDTO)
-                .jobPositions(jobPositionDTOS)
-                .build();
+    private String hashPassword(String password){
+        return passwordEncoder.encode(password);
     }
-
-    /**
-     * JobPosition 엔티티를 JobPositionDTO로 변환하는 메서드
-     *
-     * @param jobPosition 변환할 JobPosition 엔티티
-     * @return 변환된 JobPositionDTO
-     */
-    private JobPositionDTO convertJobPositionToDTO(JobPosition jobPosition) {
-        return JobPositionDTO.builder()
-                .userJobId(jobPosition.getUserJobId())
-                .jobId(jobPosition.getJob().getJobId())
-                .jobName(jobPosition.getJob().getJobName())
-                .build();
-    }
-
-    /**
-     * User 엔티티를 UserDTO로 변환하는 메서드
-     *
-     * @param user 변환할 User 엔티티
-     * @return 변환된 UserDTO
-     */
-    private UserDTO convertUserToDTO(User user) {
-        return UserDTO.builder()
-                .userId(user.getUserId())
-                .email(user.getEmail())
-                .userName(user.getUserName())
-                .userType(user.getUserType().name())
-                .userIntro(user.getUserIntro())
-                .build();
-    }
-
-    /**
-     * PersonalUserDTO를 PersonalUser 엔티티로 변환하는 메서드
-     *
-     * @param personalUserDTO 변환할 PersonalUserDTO
-     * @return 변환된 PersonalUser 엔티티
-     */
-    private PersonalUser convertPersonalUserToEntity(PersonalUserDTO personalUserDTO) {
-        return PersonalUser.builder()
-                .personalCareer(personalUserDTO.getPersonalCareer())
-                .isPersonalVisible(personalUserDTO.getIsPersonalVisible())
-                .isCompanyVisible(personalUserDTO.getIsCompanyVisible())
-                .gender(Gender.valueOf(personalUserDTO.getGender()))
-                .user(userRepository.findById(personalUserDTO.getUser().getUserId()).orElse(null))
-                .build();
-    }
-
-     //
-
 
     /**
      * 마이페이지 기업유저 정보 조회
@@ -125,25 +64,51 @@ public class MyPageServiceImpl implements  MyPageService{
      */
     @Override
     public CompanyUserDTO getCompanyUserDTO(Long userId) {
-        User user = userRepository.findByUserId(userId);
-        if(user == null) {
-            throw new RuntimeException("user not found") ;
-        }
+        User user = getUserById(userId);
         CompanyUser companyUser = companyUserRepository.findByUser_UserId(userId);
-        if(companyUser == null) {
-            throw new RuntimeException("company not found") ;
+        if (companyUser == null) {
+            throw new RuntimeException("company not found");
         }
-        return CompanyUserDTO.builder()
-                .userId(user.getUserId())
-                .email(user.getEmail())
-                .userName(user.getUserName())
-                .userIntro(user.getUserIntro())
-                .companyId(companyUser.getCompanyId())
-                .companyNum(companyUser.getCompanyNum())
-                .companyAddr(companyUser.getCompanyAddr())
-                .companyLogo(companyUser.getCompanyLogo())
-                .companyCeo(companyUser.getCompanyCeo())
+
+        return convertToCompanyUserDTO(user, companyUser);
+    }
+
+    /**
+     * 마이페이지 기업유저 정보 수정
+     * @param userId
+     * @param companyUserUpdateDTO
+     * @return
+     */
+    @Override
+    public CompanyUserDTO updateCompanyUser(Long userId, CompanyUserUpdateDTO companyUserUpdateDTO) {
+        User user = getUserById(userId);
+        CompanyUser companyUser = companyUserRepository.findByUser_UserId(userId);
+        if (companyUser == null) {
+            throw new RuntimeException("company not found");
+        }
+
+        // 비밀번호 업데이트 처리
+        if (companyUserUpdateDTO.getCompanyUserPassword() != null && !companyUserUpdateDTO.getCompanyUserPassword().isEmpty()) {
+            String hashedPassword = hashPassword(companyUserUpdateDTO.getCompanyUserPassword());
+            user = user.toBuilder()
+                    .password(hashedPassword)
+                    .build();
+            userRepository.save(user);
+        }
+
+        CompanyUser updatedCompanyUser = companyUser.toBuilder()
+                .companyAddr(companyUserUpdateDTO.getCompanyAddr())
+                .companyLogo(companyUserUpdateDTO.getCompanyLogo())
                 .build();
+
+        user = user.toBuilder()
+                .userName(companyUserUpdateDTO.getUserName() != null ? companyUserUpdateDTO.getUserName() : user.getUserName())
+                .userIntro(companyUserUpdateDTO.getUserIntro() != null ? companyUserUpdateDTO.getUserIntro() : user.getUserIntro())
+                .build();
+
+        userRepository.save(user);
+        companyUserRepository.save(updatedCompanyUser);
+        return convertToCompanyUserDTO(user, updatedCompanyUser);
     }
 
     /**
@@ -153,74 +118,67 @@ public class MyPageServiceImpl implements  MyPageService{
      */
     @Override
     public PersonalUserDTO getPersonalUserDTO(Long userId) {
-        User user = userRepository.findByUserId(userId);
-        if(user == null) {
-            throw new RuntimeException("user not found") ;
-        }
+        User user = getUserById(userId);
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
-        if(personalUser == null) {
-            throw new RuntimeException("personal not found") ;
+        if (personalUser == null) {
+            throw new RuntimeException("personal not found");
         }
-        UserDTO userDTO = UserDTO.builder()
+        return convertToPersonalUserDTO(user, personalUser);
+    }
+
+    /**
+     * 마이페이지 개인유저 정보 수정
+     * @param userId
+     * @param personalUserUpdateDTO
+     * @return
+     */
+    @Override
+    public PersonalUserDTO updatePersonalUser(Long userId, PersonalUserUpdateDTO personalUserUpdateDTO) {
+        User user = getUserById(userId);
+        PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
+        if (personalUser == null) {
+            throw new RuntimeException("personal not found");
+        }
+
+        PersonalUser updatedPersonalUser = PersonalUser.builder()
+                //기존 아이디 유지
+                .personalId(personalUser.getPersonalId())
+                .user(user) // 기존 유저또한 유지
+                .personalCareer(personalUserUpdateDTO.getPersonalCareer())
+                .isCompanyVisible(personalUserUpdateDTO.isCompanyVisible())
+                .isPersonalVisible(personalUserUpdateDTO.isPersonalVisible())
+                .gender(user.getPersonalUser().getGender())
+                .build();
+
+        User updatedUser = User.builder()
                 .userId(user.getUserId())
                 .email(user.getEmail())
                 .userName(user.getUserName())
-                .userType(user.getUserType().name())
-                .userIntro(user.getUserIntro())
+                .userIntro(personalUserUpdateDTO.getIntro() != null ? personalUserUpdateDTO.getIntro() : user.getUserIntro())
+                .password(user.getPassword())
+                .userType(user.getUserType())
                 .build();
-        // JobPositions and TechStacks retrieval
-        List<JobPositionDTO> jobPositionDTOS = jobPositionRepository.findByPersonalUserPersonalId(personalUser.getPersonalId())
-                .stream().map(jobPosition -> JobPositionDTO.builder()
-                        .userJobId(jobPosition.getUserJobId())
-                        .jobId(jobPosition.getJob().getJobId())
-                        .jobName(jobPosition.getJob().getJobName())
-                        .build())
-                .toList();
-        // TechStacks는 예제 데이터와 마찬가지로 가져오는 부분 추가 필요
-        List<TechStackDTO> techStackDTOS = techStackRepository.findByPersonalUserPersonalId(personalUser.getPersonalId())
-                .stream().map(techStack -> TechStackDTO.builder()
-                        .userTechId(techStack.getUserTechId())
-                        .techId(techStack.getTech().getTechId())
-                        .techName(techStack.getTech().getTechName())
-                        .build())
-                .toList();
 
-        return PersonalUserDTO.builder()
-                .personalId(personalUser.getPersonalId())
-                .personalCareer(personalUser.getPersonalCareer())
-                .isPersonalVisible(personalUser.isPersonalVisible())
-                .isCompanyVisible(personalUser.isCompanyVisible())
-                .gender(personalUser.getGender().name())
-                .user(userDTO)
-                .jobPositions(jobPositionDTOS)
-                .techStacks(techStackDTOS)
-                .build();
-    }
+        if(personalUserUpdateDTO.getPersonalUserPassword() != null && !personalUserUpdateDTO.getPersonalUserPassword().isEmpty()) {
+            String hashedPassword = hashPassword(personalUserUpdateDTO.getPersonalUserPassword());
+            updatedUser = updatedUser.toBuilder()
+                    .password(hashedPassword)
+                    .build();
+            /**
+             * 빌더 패턴을 사용하여 updatedUser 객체를 업데이트하는 방식은 새 객체를 생성하는 것입니다.
+             * toBuilder 메서드는 Lombok이 제공하는 기능으로, 기존 객체의 값을 복사하여 새로운 빌더를 생성합니다.
+             * 이를 통해 기존 값은 유지하고 필요한 필드만 변경할 수 있습니다.
+             * toBuilder 메서드를 사용하려면 Lombok의 @Builder 어노테이션을 클래스 수준에 추가하면서 toBuilder = true 속성을 설정해야 합니다.
+             * 이는 Lombok이 해당 클래스에 대해 toBuilder 메서드를 생성하도록 지시합니다.
+             *
+             * 먼저, User 엔티티에 @Builder(toBuilder = true)를 추가해야 합니다.
+             */
 
 
-    /**
-     * 남은 포인트 조회 07-03_포인트 테이블 재 수정 예정
-     * @param userId 유저 아이디
-     * @return PersonalUserPointDTO 남은 포인트 정보
-     */
-    @Override
-    public Optional<PersonalUserPointDTO> getPersonalUserRemainingPoints(Long userId) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        if(userOptional.isEmpty()) {
-            return Optional.empty();
         }
-        User user = userOptional.get();
-        Long totalBerryPoints = paymentRepository.findTotalBerryPointsByUserId(userId).orElse(0L);
-        Long totalBerryBucket = appPaymentRepository.findTotalBerryBuketByUserId(userId).orElse(0L);
-
-        Long remainingPoints = totalBerryBucket - totalBerryPoints;
-
-        PersonalUserPointDTO dto = PersonalUserPointDTO.builder()
-                .userId(user.getUserId())
-                .userName(user.getUserName())
-                .remainingPoints(remainingPoints)
-                .build();
-        return Optional.of(dto);
+        userRepository.save(updatedUser);
+        personalUserRepository.save(updatedPersonalUser);
+        return convertToPersonalUserDTO(updatedUser, updatedPersonalUser);
     }
 
     /**
@@ -241,67 +199,40 @@ public class MyPageServiceImpl implements  MyPageService{
         return personalUserRepository.findPersonalUserIdsByIsCompanyVisibleTrue();
     }
 
-
     /**
      * 구매한 이력서 목록 조회
      * @param userId 유저 아이디
-     * @return List<ResumeDTO> 구매한 이력서 리스트
+     * @return AggregatedDataDTO 구매한 이력서 리스트
      */
     @Override
-    public List<ResumeDTO> getPurchasedResumes(Long userId) {
-        List<ResumeDTO> purchasedResumes = new ArrayList<>();
-        List<AppPayment> payments = appPaymentRepository.findByUserId(userId);
+    public AggregatedDataDTO getAggregatedData(Long userId) {
+        List<Long> sellerIds = payHistoryRepository.findByBuyerId(userId)
+                .stream()
+                .map(PayHistory::getSellerId)
+                .distinct()
+                .collect(Collectors.toList());
 
-        for (AppPayment payment : payments) {
-            List<Resume> resumes = resumeRepository.findByPersonalUser(payment.getPersonalUser()).orElse(null);
-            for(Resume resume : resumes){
-                if(resume.getResumeUpdate().isBefore(payment.getAppPaymentDate())){
-                    ResumeDTO resumeDTO = ResumeDTO.builder()
-                            .resumeId(resume.getResumeId())
-                            .resumeName(resume.getResumeName())
-                            .resumeDate(resume.getResumeDate())
-                            .phoneNum(resume.getPhoneNum())
-                            .resumePhoto(resume.getResumePhoto())
-                            .resumeCreate(resume.getResumeCreate())
-                            .resumeUpdate(resume.getResumeUpdate())
-                            .personalState(resume.getPersonalState())
-                            .personalId(resume.getPersonalUser().getPersonalId())
-                            .build();
-                    purchasedResumes.add(resumeDTO);
-                }
-            }
-        }
-        return purchasedResumes;
+        List<PersonalUserDTO> personalUsers = personalUserRepository.findByPersonalIdIn(sellerIds)
+                .stream()
+                .map(this::convertToPersonalUserDTO)
+                .collect(Collectors.toList());
+
+        return AggregatedDataDTO.builder()
+                .personalUsers(personalUsers)
+                .build();
     }
 
     /**
-     * Pick 탭 기업정보 리스트
+     * Pick 탭 기업정보 리스트 조회
      * @param personalUserId 유저 아이디
      * @return List<CompanyUserDTO> 회사 유저 정보 리스트
      */
     @Override
     public List<PersonalUserDTO> getPicksByCompanyUsers(Long personalUserId) {
-
         PersonalUser personalUser = personalUserRepository.findById(personalUserId)
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 개인 사용자 ID: " + personalUserId));
 
         List<PickAndScrap> pickAndScrapList = pickAndScrapRepository.findByPersonalUserAndPickTrue(personalUser);
-
-        List<JobPositionDTO> jobPositionDTOS = jobPositionRepository.findByPersonalUserPersonalId(personalUser.getPersonalId())
-                .stream().map(jobPosition -> JobPositionDTO.builder()
-                        .userJobId(jobPosition.getUserJobId())
-                        .jobId(jobPosition.getJob().getJobId())
-                        .jobName(jobPosition.getJob().getJobName())
-                        .build())
-                .toList();
-        // TechStacks는 예제 데이터와 마찬가지로 가져오는 부분 추가 필요
-        List<TechStackDTO> techStackDTOS = techStackRepository.findByPersonalUserPersonalId(personalUser.getPersonalId())
-                .stream().map(techStack -> TechStackDTO.builder()
-                        .userTechId(techStack.getUserTechId())
-                        .techId(techStack.getTech().getTechId())
-                        .techName(techStack.getTech().getTechName())
-                        .build())
-                .toList();
 
         return pickAndScrapList.stream()
                 .map(pickAndScrap -> {
@@ -309,52 +240,151 @@ public class MyPageServiceImpl implements  MyPageService{
                     UserDTO userDTOs = UserDTO.builder()
                             .userId(pUser.getUser().getUserId())
                             .email(pUser.getUser().getEmail())
-                            .userName(pUser.getUser().getUserName()) // User 엔티티에서 userName을 가져옴
+                            .userName(pUser.getUser().getUserName())
                             .userIntro(pUser.getUser().getUserIntro())
+                            .userType(pUser.getUser().getUserType().name())
                             .build();
+
+                    List<JobPositionDTO> jobPositionDTOS = jobPositionRepository.findByPersonalUserPersonalId(pUser.getPersonalId())
+                            .stream()
+                            .map(this::convertJobPositionToDTO)
+                            .toList();
+
+                    List<TechStackDTO> techStackDTOS = techStackRepository.findByPersonalUserPersonalId(pUser.getPersonalId())
+                            .stream()
+                            .map(this::convertTechStackToDTO)
+                            .toList();
+
                     return PersonalUserDTO.builder()
-                            .personalId(userDTOs.getUserId())
                             .personalId(pUser.getPersonalId())
                             .personalCareer(pUser.getPersonalCareer())
                             .isPersonalVisible(pUser.isPersonalVisible())
                             .isCompanyVisible(pUser.isCompanyVisible())
-                            .gender(pUser.getGender().name()) // Enum to String
+                            .gender(pUser.getGender().name())
+                            .user(userDTOs)
+                            .resumes(null)
                             .jobPositions(jobPositionDTOS)
                             .techStacks(techStackDTOS)
-                            .user(userDTOs)
                             .build();
                 })
-                .collect(Collectors.toList());
-
+                .toList();
     }
-
 
     /**
      * Pick 탭 개인정보 조회
      * @param personalUserId 개인 유저 아이디
-     * @return List<PersonalUserDTO> 개인 유저 정보 리스트
+     * @return List<CompanyUserDTO> 개인 유저 정보 리스트
      */
     @Override
     public List<CompanyUserDTO> getPicksByPersonalUsers(Long personalUserId) {
-        CompanyUser companyUser = companyUserRepository.findById(personalUserId)
-                .orElseThrow(()-> new IllegalArgumentException("유효하지 않은 기업 사용자 ID: "+ personalUserId));
+        CompanyUser companyUser = getCompanyUserById(personalUserId);
         List<PickAndScrap> pickAndScrapList = pickAndScrapRepository.findByCompanyUserAndPickTrue(companyUser);
 
         return pickAndScrapList.stream()
-                .map(pick -> {
-                    CompanyUser cUser = pick.getCompanyUser();
-                    return CompanyUserDTO.builder()
-                            .userId(companyUser.getUser().getUserId())
-                            .companyId(cUser.getCompanyId())
-                            .companyNum(cUser.getCompanyNum())
-                            .companyYear(cUser.getCompanyYear())
-                            .companyLogo(cUser.getCompanyLogo())
-                            .companyCeo(cUser.getCompanyCeo())
-                            .companyAddr(cUser.getCompanyAddr())
-                            .build();
-                })
+                .map(pick -> convertToCompanyUserDTO(pick.getCompanyUser().getUser(), pick.getCompanyUser()))
                 .collect(Collectors.toList());
     }
 
+    private User getUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("user not found"));
+    }
 
+    private PersonalUser getPersonalUserById(Long personalUserId) {
+        return personalUserRepository.findById(personalUserId)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 개인 사용자 ID: " + personalUserId));
+    }
+
+    private CompanyUser getCompanyUserById(Long companyUserId) {
+        return companyUserRepository.findById(companyUserId)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 기업 사용자 ID: " + companyUserId));
+    }
+
+    private CompanyUserDTO convertToCompanyUserDTO(User user, CompanyUser companyUser) {
+        UserDTO userDTO = convertUserToDTO(user);
+        return CompanyUserDTO.builder()
+                .userId(user.getUserId())
+                .companyId(companyUser.getCompanyId())
+                .companyNum(companyUser.getCompanyNum())
+                .companyAddr(companyUser.getCompanyAddr())
+                .companyLogo(companyUser.getCompanyLogo())
+                .companyCeo(companyUser.getCompanyCeo())
+                .companyYear(companyUser.getCompanyYear())
+                .user(userDTO)
+                .build();
+    }
+
+    private PersonalUserDTO convertToPersonalUserDTO(User user, PersonalUser personalUser) {
+        UserDTO userDTO = convertUserToDTO(user);
+
+        List<JobPositionDTO> jobPositionDTOS = jobPositionRepository.findByPersonalUserPersonalId(personalUser.getPersonalId())
+                .stream()
+                .map(this::convertJobPositionToDTO)
+                .collect(Collectors.toList());
+
+        List<TechStackDTO> techStackDTOS = techStackRepository.findByPersonalUserPersonalId(personalUser.getPersonalId())
+                .stream()
+                .map(this::convertTechStackToDTO)
+                .collect(Collectors.toList());
+
+        return PersonalUserDTO.builder()
+                .personalId(personalUser.getPersonalId())
+                .personalCareer(personalUser.getPersonalCareer())
+                .isPersonalVisible(personalUser.isPersonalVisible())
+                .isCompanyVisible(personalUser.isCompanyVisible())
+                .user(userDTO)
+                .resumes(null)
+                .jobPositions(jobPositionDTOS)
+                .techStacks(techStackDTOS)
+                .build();
+    }
+
+    private PersonalUserDTO convertToPersonalUserDTO(PersonalUser personalUser) {
+        return convertToPersonalUserDTO(personalUser.getUser(), personalUser);
+    }
+
+    private UserDTO convertUserToDTO(User user) {
+        return UserDTO.builder()
+                .userId(user.getUserId())
+                .email(user.getEmail())
+                .userName(user.getUserName())
+                .userType(user.getUserType().name())
+                .userIntro(user.getUserIntro())
+                .build();
+    }
+
+    private JobPositionDTO convertJobPositionToDTO(JobPosition jobPosition) {
+        JobDTO jobDTO = JobDTO.builder()
+                .jobId(jobPosition.getJob().getJobId())
+                .jobName(jobPosition.getJob().getJobName())
+                .build();
+
+        return JobPositionDTO.builder()
+                .userJobId(jobPosition.getUserJobId())
+                .job(jobDTO)
+                .build();
+    }
+
+    private TechStackDTO convertTechStackToDTO(TechStack techStack) {
+        TechDTO techDTO = TechDTO.builder()
+                .techId(techStack.getTech().getTechId())
+                .techName(techStack.getTech().getTechName())
+                .techUrl(techStack.getTech().getTechUrl())
+                .build();
+
+        return TechStackDTO.builder()
+                .userTechId(techStack.getUserTechId())
+                .tech(techDTO)
+                .build();
+    }
+
+    private PersonalUser convertPersonalUserToEntity(PersonalUserDTO personalUserDTO) {
+        return PersonalUser.builder()
+                .personalCareer(personalUserDTO.getPersonalCareer())
+                .isPersonalVisible(personalUserDTO.isPersonalVisible())
+                .isCompanyVisible(personalUserDTO.isCompanyVisible())
+                .gender(Gender.valueOf(personalUserDTO.getGender()))
+                .user(userRepository.findById(personalUserDTO.getUser().getUserId()).orElse(null))
+                .build();
+    }
 }

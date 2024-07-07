@@ -2,11 +2,12 @@ package org.zerock.ziczone.service.Email;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-import org.zerock.ziczone.dto.Email.EmailAuth;
+import org.zerock.ziczone.domain.member.User;
+import org.zerock.ziczone.dto.Email.EmailAuthDTO;
+import org.zerock.ziczone.repository.member.UserRepository;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -21,15 +22,16 @@ import java.util.Random;
 public class EmailAuthServiceImpl implements EmailAuthService {
 
     private final JavaMailSender mailSender; //메일을 보내기 위한 객체
+    private final UserRepository userRepository;
 
     // <이메일, 인증코드> : 이메일을 key값으로 가짐
-    private Map<String, EmailAuth> emailCodeMap = new HashMap<>();
+    private Map<String, EmailAuthDTO> emailCodeMap = new HashMap<>();
 
     // 이메일 전송
     @Override
     public void sendVerificationEmail(String email){
         String authCode = generateAuthCode(); // 난수 생성
-        emailCodeMap.put(email, new EmailAuth(email, authCode, LocalDateTime.now())); // 이메일, 난수, 생성 시간 삽입
+        emailCodeMap.put(email, new EmailAuthDTO(email, authCode, LocalDateTime.now())); // 이메일, 난수, 생성 시간 삽입
         try {
             sendEmail(email, authCode);
         } catch (Exception e) {
@@ -37,10 +39,10 @@ public class EmailAuthServiceImpl implements EmailAuthService {
         }
     }
 
-    //코드건증함수
+    //코드검증함수
     @Override
     public boolean verifyEmailCode(String email, String code) {
-        EmailAuth savedAuth = emailCodeMap.get(email); // 받은 이메일주소에 해당하는 EamilAuth객체
+        EmailAuthDTO savedAuth = emailCodeMap.get(email); // 받은 이메일주소에 해당하는 EamilAuth객체
         if (savedAuth == null) { //만약 해당 객체에 코드가 없으면 false반환
             return false;
         }
@@ -84,5 +86,16 @@ public class EmailAuthServiceImpl implements EmailAuthService {
 
         log.info("@@@@@@@@@@authCode: " + authCode.toString()); // 확인log
         return authCode.toString();
+    }
+
+    //해당 이메일을 가진 유저가 있는지 검사
+    @Override
+    public boolean EmailDuplication(String email) {
+        User user = userRepository.findByEmail(email);
+        log.info("@@@@@@@@@@user: " + user); // 확인log
+        if (user == null) {
+            return false;
+        }
+        return true;
     }
 }
