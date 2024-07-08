@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.zerock.ziczone.dto.help.BoardDTO;
+import org.zerock.ziczone.dto.help.BoardProfileCardDTO;
 import org.zerock.ziczone.dto.page.PageRequestDTO;
 import org.zerock.ziczone.dto.page.PageResponseDTO;
 import org.zerock.ziczone.service.help.BoardService;
@@ -101,5 +102,15 @@ public class BoardServiceTests {
 
 //        "작성자만 삭제할 수 있습니다."(게시물 삭제 안됨)
 //        boardService.boardDelete(1L, 10L);
+    }
+
+    // 작성자 프로필 카드 조회
+    @Test
+    public void testBoardProfileCard() {
+        Long corrId = 37L;
+
+        BoardProfileCardDTO boardProfileCard = boardService.boardUserProfile(corrId);
+
+        log.info("BoardProfileCardDTO: " + boardProfileCard);
     }
 }

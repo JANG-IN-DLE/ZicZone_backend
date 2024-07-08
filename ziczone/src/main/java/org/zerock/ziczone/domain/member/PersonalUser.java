@@ -38,9 +38,11 @@ public class PersonalUser {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @ToString.Exclude
     @OneToMany(mappedBy = "personalUser", fetch = FetchType.LAZY)
     private List<JobPosition> jobPositions;
 
+    @ToString.Exclude
     @OneToMany(mappedBy = "personalUser", fetch = FetchType.LAZY)
     private List<TechStack> techStacks;
 

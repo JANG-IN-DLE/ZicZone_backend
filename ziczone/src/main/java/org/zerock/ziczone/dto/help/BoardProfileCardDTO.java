@@ -11,21 +11,21 @@ import org.zerock.ziczone.domain.member.Gender;
 @AllArgsConstructor
 @NoArgsConstructor
 public class BoardProfileCardDTO {
-    private Long userId;
+    private Long userId; // 게시물 작성자 회원 ID
 
-    private Long personalId;
+    private Long personalId; // 게시물 작성자 개인 회원 ID
 
-    private String jobName;
+    private String jobName; // 직무 이름
 
-    private Gender gender;
+    private Gender gender; // 성별
 
-    private String userName;
+    private String userName; // 게시물 작성자 이름
 
-    private String personalCareer;
+    private String personalCareer; // 경력
 
-    private Integer corrPoint;
+    private Long berryPoint; // 보유 포인트
 
-    private String userIntro;
+    private String userIntro; // 한줄 소개
 
-    private String techName;
+    private String techName; // 기술 이름
 }
