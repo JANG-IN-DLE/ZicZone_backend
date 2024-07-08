@@ -1,18 +1,19 @@
 package org.zerock.ziczone.service.pick;
 
 import org.zerock.ziczone.domain.PayHistory;
-import org.zerock.ziczone.dto.pick.OpenCardDTO;
-import org.zerock.ziczone.dto.pick.PickCardDTO;
-import org.zerock.ziczone.dto.pick.PickJobDTO;
-import org.zerock.ziczone.dto.pick.PickResumeDTO;
+import org.zerock.ziczone.domain.PickAndScrap;
+import org.zerock.ziczone.dto.pick.*;
 
 import java.util.List;
 
 public interface PickService {
 
-    List<PickCardDTO> getPickCards();
+    List<PickCardDTO> getPickCards(Long loggedInPersonalId);
     List<PickJobDTO> getAllJobs();
-    PickCardDTO getPickCardsById(Long personalId);
+    PickDetailDTO getPickCardsById(Long companyId, Long personalId);
+    PickPersonalDetailDTO getPickCardsByPersonalId(Long loggedInPersonalId, Long personalId);
     PickResumeDTO getResumeById(Long personalId);
     boolean handlePayment(OpenCardDTO openCardDTO);
+    PickAndScrapDTO scrapUser(PickAndScrapDTO pickAndScrapDTO);
+    PickAndScrapDTO pickUser(PickAndScrapDTO pickAndScrapDTO);
 }

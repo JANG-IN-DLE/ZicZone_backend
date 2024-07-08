@@ -34,13 +34,16 @@ public class PersonalUser {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
+    @ToString.Exclude
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
+    @ToString.Exclude
     @OneToMany(mappedBy = "personalUser", fetch = FetchType.LAZY)
     private List<JobPosition> jobPositions;
 
+    @ToString.Exclude
     @OneToMany(mappedBy = "personalUser", fetch = FetchType.LAZY)
     private List<TechStack> techStacks;
 

@@ -27,13 +27,20 @@ public class PickAndScrap {
     @Column(columnDefinition = "TINYINT(1)")
     private boolean scrap;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
     private CompanyUser companyUser;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "personal_id")
     private PersonalUser personalUser;
 
-
+    // scrap을 true false 전환하는 메서드
+    public void toggleScrap(){
+        this.scrap = !this.scrap;
+    }
+    // pick을 true false 전환하는 메서드
+    public void togglePick(){
+        this.pick = !this.pick;
+    }
 }
