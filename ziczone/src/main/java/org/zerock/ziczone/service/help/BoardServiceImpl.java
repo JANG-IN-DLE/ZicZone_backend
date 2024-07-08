@@ -117,6 +117,7 @@ public class BoardServiceImpl implements BoardService {
                             .userId(user.getUserId())
                             .userName(user.getUserName())
                             .personalCareer(personalUser.getPersonalCareer())
+                            .commentList(null)
                             .build();
                 })
                 .collect(Collectors.toList());

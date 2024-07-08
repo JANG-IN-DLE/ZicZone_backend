@@ -8,12 +8,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.domain.PickAndScrap;
+import org.zerock.ziczone.domain.board.Board;
+import org.zerock.ziczone.domain.board.Comment;
 import org.zerock.ziczone.domain.job.JobPosition;
 import org.zerock.ziczone.domain.member.CompanyUser;
 import org.zerock.ziczone.domain.member.Gender;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.domain.tech.TechStack;
+import org.zerock.ziczone.dto.help.CommentDTO;
 import org.zerock.ziczone.dto.mypage.*;
 import org.zerock.ziczone.repository.AppPaymentRepository;
 import org.zerock.ziczone.repository.PayHistoryRepository;
@@ -224,8 +227,9 @@ public class MyPageServiceImpl implements  MyPageService{
 
     /**
      * Pick 탭 기업정보 리스트 조회
-     * @param personalUserId 유저 아이디
-     * @return List<CompanyUserDTO> 회사 유저 정보 리스트
+     * 기업의 Pick 탭에는 개인회원의 정보를 담는 카드를 보여주기때문에 Pick 페이지와 비슷한 폼을 사용
+     * @param personalUserId 개인 유저 아이디
+     * @return List<PersonalUserDTO> 개인 유저 정보 리스트
      */
     @Override
     public List<PersonalUserDTO> getPicksByCompanyUsers(Long personalUserId) {
@@ -270,6 +274,8 @@ public class MyPageServiceImpl implements  MyPageService{
                 .toList();
     }
 
+//    나의 게시물 리스트 조회는 BoardService에
+
     /**
      * Pick 탭 개인정보 조회
      * @param personalUserId 개인 유저 아이디
@@ -279,12 +285,43 @@ public class MyPageServiceImpl implements  MyPageService{
     public List<CompanyUserDTO> getPicksByPersonalUsers(Long personalUserId) {
         CompanyUser companyUser = getCompanyUserById(personalUserId);
         List<PickAndScrap> pickAndScrapList = pickAndScrapRepository.findByCompanyUserAndPickTrue(companyUser);
-
         return pickAndScrapList.stream()
                 .map(pick -> convertToCompanyUserDTO(pick.getCompanyUser().getUser(), pick.getCompanyUser()))
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 나의 댓글 리스트 조회
+     * @param personalUserId 개인 유저 아이디
+     * @return List<MyCommentListDTO>
+     */
+    @Override
+    public List<MyCommentListDTO> MyCommList(Long personalUserId) {
+
+        List<Comment> comments = commentRepository.findByUserUserId(personalUserId);
+
+        return comments.stream()
+                .map(comment -> {
+                    User user = comment.getUser();
+                    PersonalUser personalUser = user.getPersonalUser();
+                    Board board = comment.getBoard();
+
+                    return MyCommentListDTO.builder()
+                            .commId(comment.getCommId())
+                            .commContent(comment.getCommContent())
+                            .commSelection(comment.isCommSelection())
+                            .userId(user.getUserId())
+                            .userName(user.getUserName())
+                            .personalCareer(personalUser.getPersonalCareer())
+                            .corrId(board.getCorrId())
+                            .corrPoint(board.getCorrPoint())
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+
+    //    ---------------------------------------------------------------------
     private User getUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("user not found"));
@@ -303,7 +340,7 @@ public class MyPageServiceImpl implements  MyPageService{
     private CompanyUserDTO convertToCompanyUserDTO(User user, CompanyUser companyUser) {
         UserDTO userDTO = convertUserToDTO(user);
         return CompanyUserDTO.builder()
-                .userId(user.getUserId())
+                .userId(null)
                 .companyId(companyUser.getCompanyId())
                 .companyNum(companyUser.getCompanyNum())
                 .companyAddr(companyUser.getCompanyAddr())
@@ -333,6 +370,7 @@ public class MyPageServiceImpl implements  MyPageService{
                 .isPersonalVisible(personalUser.isPersonalVisible())
                 .isCompanyVisible(personalUser.isCompanyVisible())
                 .user(userDTO)
+                .gender(personalUser.getGender().name())
                 .resumes(null)
                 .jobPositions(jobPositionDTOS)
                 .techStacks(techStackDTOS)
