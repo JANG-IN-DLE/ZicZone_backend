@@ -39,6 +39,9 @@ dependencies {
 	runtimeOnly group: 'io.jsonwebtoken', name: 'jjwt-jackson', version: '0.11.2'
 
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+	//	AWS S3 서비스를 사용하기 위한 라이브러리
+	implementation 'com.amazonaws:aws-java-sdk-s3:1.11.238'
 }
 
 tasks.named('test') {

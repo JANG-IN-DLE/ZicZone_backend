@@ -21,5 +21,4 @@ public class Tech {
 
     @Column(length = 100)
     private String techName;
-
 }

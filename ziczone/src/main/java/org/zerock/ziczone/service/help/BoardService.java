@@ -1,6 +1,8 @@
 package org.zerock.ziczone.service.help;
 
+import org.zerock.ziczone.domain.board.Board;
 import org.zerock.ziczone.dto.help.BoardDTO;
+import org.zerock.ziczone.dto.help.BoardProfileCardDTO;
 import org.zerock.ziczone.dto.page.PageRequestDTO;
 import org.zerock.ziczone.dto.page.PageResponseDTO;
 
@@ -20,5 +22,7 @@ public interface BoardService {
     // 게시물 삭제
     void boardDelete(Long userId, Long corrId);
     // 정보 추가(userName, personalCareer)된 BoardDTO
-    BoardDTO boardUserRead(BoardDTO boardDTO);
+    BoardDTO boardUserRead(Board board);
+    // 게시물 작성자 프로필 카드 조회
+    BoardProfileCardDTO boardUserProfile(Long corrId);
 }

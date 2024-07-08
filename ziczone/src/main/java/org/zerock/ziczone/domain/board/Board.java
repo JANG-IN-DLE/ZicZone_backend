@@ -24,10 +24,10 @@ public class Board {
     @Column(length = 100, nullable = false)
     private String corrTitle;
 
-    @Column(length = 255, nullable = false)
+    @Column(length = 500, nullable = false)
     private String corrContent;
 
-    @Column(length = 100, nullable = false)
+    @Column(length = 2048, nullable = false)
     private String corrPdf;
 
     @Column(nullable = false)
