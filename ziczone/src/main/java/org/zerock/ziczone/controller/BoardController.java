@@ -11,6 +11,7 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 import lombok.RequiredArgsConstructor;
 import org.zerock.ziczone.dto.help.BoardDTO;
+import org.zerock.ziczone.dto.help.BoardProfileCardDTO;
 import org.zerock.ziczone.dto.page.PageRequestDTO;
 import org.zerock.ziczone.dto.page.PageResponseDTO;
 import org.zerock.ziczone.service.help.BoardService;
@@ -75,6 +76,19 @@ public class BoardController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "서버 오류: " + e.getMessage()));
         }
+    }
+
+    /**
+     * 특정 게시물 작성자 프로필 카드 조회
+     *
+     * @param corrId 게시물 ID
+     * @return ResponseEntity<BoardProfileCardDTO> 조회된 프로필 카드 정보
+     */
+    @GetMapping("/profile/{corrId}")
+    public ResponseEntity<BoardProfileCardDTO> getBoardProfileCard(@PathVariable Long corrId) {
+        BoardProfileCardDTO profileCardDTO = boardService.boardUserProfile(corrId);
+
+        return ResponseEntity.ok(profileCardDTO);
     }
 
     /**
