@@ -5,14 +5,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.dto.mypage.CompanyUserDTO;
 import org.zerock.ziczone.dto.mypage.PersonalUserDTO;
 import org.zerock.ziczone.dto.mypage.ResumeDTO;
 import org.zerock.ziczone.repository.AppPaymentRepository;
+import org.zerock.ziczone.repository.PayHistoryRepository;
 import org.zerock.ziczone.repository.application.ResumeRepository;
+import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.service.myPage.MyPageService;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @SpringBootTest
@@ -21,6 +25,10 @@ public class MyPageServiceTests {
 
     @Autowired
     private MyPageService myPageService;
+    @Autowired
+    private PayHistoryRepository payHistoryRepository;
+    @Autowired
+    private PersonalUserRepository personalUserRepository;
 
     // 테스트용 유저 User 테이블 PK
     private final Long user_id = 1L;
@@ -72,16 +80,6 @@ public class MyPageServiceTests {
         List<Long> id =  myPageService.getVisibleCompanyIds();
         log.info("id: " + id);
     }
-
-    /**
-     * @용도 : 구매한 개인회원 이력서 조회
-     * @request : Long user_id
-     * @response  : List<Long> ResumeDTO
-     */
-    @Test
-    public void getPurchasedResumes() {
-        List<ResumeDTO> resume =  myPageService.getPurchasedResumes(user_id);
-        log.info("resume: " + resume);
-    }
+    
 
 }
