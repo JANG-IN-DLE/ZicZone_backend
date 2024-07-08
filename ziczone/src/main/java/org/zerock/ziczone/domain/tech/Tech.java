@@ -21,7 +21,4 @@ public class Tech {
 
     @Column(length = 100)
     private String techName;
-//
-//    @Column(length = 100)
-//    private String techUrl;
 }

@@ -27,13 +27,13 @@ public class JoinServiceTests {
     public void testPersonalJoin() {
         PersonalUserDTO personalUserDTO = PersonalUserDTO.builder()
                 .userName("testUser")
-                .email("test@example.com")
+                .email("test11@example.com")
                 .password("password")
                 .userIntro("intro")
                 .userType(UserType.PERSONAL)
                 .personalCareer("career")
                 .gender(Gender.MALE)
-                .jobIds(Arrays.asList(1L, 2L))
+                .jobIds(Arrays.asList(2L, 3L))
                 .techIds(Arrays.asList(1L, 2L))
                 .build();
 
@@ -48,7 +48,7 @@ public class JoinServiceTests {
     public void testCompanyJoin() {
         CompanyUserDTO companyUserDTO = CompanyUserDTO.builder()
                 .userName("CompanytestUser")
-                .email("CompanytestUser@example.com")
+                .email("CompanytestUser1@example.com")
                 .password("password1")
                 .userIntro("intro1")
                 .userType(UserType.COMPANY)

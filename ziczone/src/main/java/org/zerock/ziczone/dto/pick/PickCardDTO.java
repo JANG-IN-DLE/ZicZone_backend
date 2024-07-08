@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.zerock.ziczone.domain.member.Gender;
 
+import java.util.List;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -21,5 +23,6 @@ public class PickCardDTO {
     private String personalCareer;
     private String techName;
     private String jobName;
+
 
 }
