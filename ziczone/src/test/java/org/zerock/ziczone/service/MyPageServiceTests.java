@@ -5,18 +5,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
-import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.dto.mypage.CompanyUserDTO;
 import org.zerock.ziczone.dto.mypage.PersonalUserDTO;
-import org.zerock.ziczone.dto.mypage.ResumeDTO;
-import org.zerock.ziczone.repository.AppPaymentRepository;
 import org.zerock.ziczone.repository.PayHistoryRepository;
 import org.zerock.ziczone.repository.application.ResumeRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.service.myPage.MyPageService;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @SpringBootTest
@@ -32,8 +28,6 @@ public class MyPageServiceTests {
 
     // 테스트용 유저 User 테이블 PK
     private final Long user_id = 1L;
-    @Autowired
-    private AppPaymentRepository appPaymentRepository;
     @Autowired
     private ResumeRepository resumeRepository;
 

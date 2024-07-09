@@ -15,13 +15,13 @@ public class TechStack {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userTechId;
+    private Long userTechId; // id
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "personal_id")
-    private PersonalUser personalUser;
+    private PersonalUser personalUser; // 개인 회원 테이블
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "tech_id")
-    private Tech tech;
+    private Tech tech; // 테크 테이블
 }

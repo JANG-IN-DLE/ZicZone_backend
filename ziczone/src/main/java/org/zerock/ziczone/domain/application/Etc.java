@@ -14,15 +14,15 @@ public class Etc {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long etcId;
+    private Long etcId;         // id
 
     @Column(length = 100)
-    private String etcContent;
+    private String etcContent;  // 기타 내용
 
     @Column(length = 100)
-    private String etcDate;
+    private String etcDate;     // 기타 날짜
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resume_id")
-    private Resume resume;
+    private Resume resume;      // 지원서 테이블
 }

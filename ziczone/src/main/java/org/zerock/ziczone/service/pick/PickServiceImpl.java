@@ -303,7 +303,7 @@ public class PickServiceImpl implements PickService {
         }
 
         // 포인트 차감
-        buyerPayment.subtractBerryPoints(50L);
+        buyerPayment.subtractBerryPoints(500);
         paymentRepository.save(buyerPayment);
 
         // 결제 내역 저장

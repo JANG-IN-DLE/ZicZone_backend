@@ -14,22 +14,22 @@ public class Career {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long careerId;
+    private Long careerId;          // id
 
     @Column(length = 100)
-    private String careerName;
+    private String careerName;      // 경력 회사 이름
 
     @Column(length = 100)
-    private String careerJob;
+    private String careerJob;       // 경력 회사 직무
 
     @Column(length = 100)
-    private String careerPosition;
+    private String careerPosition;  // 경력 회사 직책
 
     @Column(length = 100)
-    private String careerDate;
+    private String careerDate;      // 경력 날짜
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resume_id")
-    private Resume resume;
+    private Resume resume;          // 지원서 테이블
 
 }

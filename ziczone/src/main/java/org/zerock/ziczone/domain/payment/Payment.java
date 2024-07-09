@@ -17,28 +17,28 @@ public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long payId;
+    private Long payId;             // id
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private PayState payState;
+    private PayState payState;      // 결제 상태
 
     @Column(nullable = false)
-    private Long payNum;
+    private Integer payNum;            // 결제 금액
 
     @CreationTimestamp
     @Column(nullable = false)
-    private LocalDateTime payDate;
+    private LocalDateTime payDate;      // 결제 날짜
 
     @Column(nullable = false)
-    private Long berryPoint;
+    private Integer berryPoint;         // 저장포인트
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "personal_id")
-    private PersonalUser personalUser;
+    private PersonalUser personalUser;  // 개인 회원 테이블
     
     // berry_point를 차감하는 메서드
-    public void subtractBerryPoints(Long points) {
+    public void subtractBerryPoints(Integer points) {
         if(this.berryPoint < points) {
             throw new IllegalArgumentException("Not enough berry points");
         }

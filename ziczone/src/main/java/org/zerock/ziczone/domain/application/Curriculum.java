@@ -14,19 +14,19 @@ public class Curriculum {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long curriId;
+    private Long curriId;           // id
 
     @Column(length = 100)
-    private String curriContent;
+    private String curriContent;    // 교육 과정명
 
     @Column(length = 100)
-    private String curriCompany;
+    private String curriCompany;    // 교육 기관
 
     @Column(length = 100)
-    private String curriDate;
+    private String curriDate;       // 교육 날짜
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resume_id")
-    private Resume resume;
+    private Resume resume;          // 지원서 테이블
 
 }

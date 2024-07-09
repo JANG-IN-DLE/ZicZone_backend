@@ -3,7 +3,6 @@ package org.zerock.ziczone.service.myPage;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.zerock.ziczone.domain.PayHistory;
@@ -16,9 +15,7 @@ import org.zerock.ziczone.domain.member.Gender;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.domain.tech.TechStack;
-import org.zerock.ziczone.dto.help.CommentDTO;
 import org.zerock.ziczone.dto.mypage.*;
-import org.zerock.ziczone.repository.AppPaymentRepository;
 import org.zerock.ziczone.repository.PayHistoryRepository;
 import org.zerock.ziczone.repository.PickAndScrapRepository;
 import org.zerock.ziczone.repository.application.ResumeRepository;
@@ -33,7 +30,6 @@ import org.zerock.ziczone.repository.tech.TechRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -45,7 +41,6 @@ public class MyPageServiceImpl implements  MyPageService{
     private final CompanyUserRepository companyUserRepository;
     private final PersonalUserRepository personalUserRepository;
     private final PaymentRepository paymentRepository;
-    private final AppPaymentRepository appPaymentRepository;
     private final ResumeRepository resumeRepository;
     private final JobRepository jobRepository;
     private final TechRepository techRepository;;
@@ -143,6 +138,16 @@ public class MyPageServiceImpl implements  MyPageService{
             throw new RuntimeException("personal not found");
         }
 
+
+/*
+프론트에서 받아온 현재비밀번호와 데이터베이스에 저장된 비밀번호 검사하는 로직 추가
+현재비밀번호와 DB비밀번호 검증 시 예외처리 (프론트로 전달할 예외처리)
+String 타입으로 전달해서 비밀번호 교차검증 실패, 비밀번호 형식 맞지 않음,
+
+검증해야 할 것
+1. 입력한 비밀번호가 현재 비밀번호와 같은지 비교
+2. 변경할 비밀번호가 비밀번호등록 조건에 부합하는지 검사
+ */
         PersonalUser updatedPersonalUser = PersonalUser.builder()
                 //기존 아이디 유지
                 .personalId(personalUser.getPersonalId())

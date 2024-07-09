@@ -18,27 +18,27 @@ public class Comment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long commId;
+    private Long commId;                // id
+    
+    private String commContent;         // 댓글 내용
 
-    private String commContent;
-
-    private boolean commSelection;
+    private boolean commSelection;      // 채택 여부
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
-    private LocalDateTime commCreate;
+    private LocalDateTime commCreate;   // 댓글 등록 날짜
 
     @UpdateTimestamp
-    @Column(nullable = false, updatable = true)
-    private LocalDateTime commModify;
+    @Column(nullable = false)
+    private LocalDateTime commModify;   // 댓글 수정 날짜
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "corr_id")
-    private Board board;
+    private Board board;                // 게시판 테이블
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private User user;
+    private User user;                  // 유저 테이블
 
     public void change(String commContent) {
         this.commContent = commContent;

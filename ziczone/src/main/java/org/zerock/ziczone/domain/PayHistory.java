@@ -17,28 +17,26 @@ public class PayHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long payHistoryId;
+    private Long payHistoryId;              // id
 
-    // 팔리는 사람
-    private Long sellerId;
+    private Long sellerId;                  // 파는 유저테이블 아이디
 
-    // 사는 사람
     @Column(nullable = false)
-    private Long buyerId;
+    private Long buyerId;                   // 사는 유저테이블 아이디
 
     // 포인트 (ex. -50)
     @Column(length = 100, nullable = false)
-    private String berryBucket;
+    private String berryBucket;             //  지원서 구매 포인트, 채택 포인트, 첨삭 게시물 등록
 
-    // 내용 (ex. "이력서 조회")
+    // 내용 (ex. "이력서조회")
     @Column(nullable = false)
-    private String payHistoryContent;
+    private String payHistoryContent;       // 유형별 내용
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
-    private LocalDateTime payHistoryDate;
+    private LocalDateTime payHistoryDate;   // 결제 날짜
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "personal_id")
-    private PersonalUser personalUser;
+    private PersonalUser personalUser;      // 개인 회원 테이블
 }

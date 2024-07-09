@@ -17,23 +17,23 @@ public class PickAndScrap {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long pickId;
+    private Long pickId;                // id
 
     @ColumnDefault("false")
     @Column(columnDefinition = "TINYINT(1)")
-    private boolean pick;
+    private boolean pick;               // pick 선택 유무 : 선택(1), 미선택(0)
 
     @ColumnDefault("false")
     @Column(columnDefinition = "TINYINT(1)")
-    private boolean scrap;
+    private boolean scrap;              // scrap 선택 유무 : 선택(1), 미선택(0)
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
-    private CompanyUser companyUser;
+    private CompanyUser companyUser;    // 기업 회원 테이블
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "personal_id")
-    private PersonalUser personalUser;
+    private PersonalUser personalUser;  // 개인 회원 테이블
 
     // scrap을 true false 전환하는 메서드
     public void toggleScrap(){

@@ -14,8 +14,8 @@ public class Job {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long jobId;
+    private Long jobId;         // id
 
     @Column(length = 100)
-    private String jobName;
+    private String jobName;     // 직무 이름
 }

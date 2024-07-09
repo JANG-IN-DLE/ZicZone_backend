@@ -23,7 +23,7 @@ public class BoardProfileCardDTO {
 
     private String personalCareer; // 경력
 
-    private Long berryPoint; // 보유 포인트
+    private Integer berryPoint; // 보유 포인트
 
     private String userIntro; // 한줄 소개
 

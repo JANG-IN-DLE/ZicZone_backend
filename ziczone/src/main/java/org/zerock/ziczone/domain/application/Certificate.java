@@ -14,16 +14,16 @@ public class Certificate {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long certId;
+    private Long certId;        // id
 
     @Column(length = 100)
-    private String cert;
+    private String cert;        // 자격증
 
     @Column(length = 100)
-    private String certDate;
+    private String certDate;    // 자격증 취득 날짜
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resume_id")
-    private Resume resume;
+    private Resume resume;      // 지원서 테이블
     
 }

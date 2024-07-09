@@ -239,7 +239,7 @@ public class BoardServiceImpl implements BoardService {
 
         // 포인트 조회
         Payment payment = paymentRepository.findByPersonalUser(personalUser);
-        Long berryPoint = payment.getBerryPoint();
+        Integer berryPoint = payment.getBerryPoint();
 
         // 기술 스택 조회
         List<String> techNames = techStackRepository.findByPersonalUser(personalUser).stream()
