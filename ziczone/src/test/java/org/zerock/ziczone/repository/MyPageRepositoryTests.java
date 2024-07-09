@@ -29,8 +29,6 @@ public class MyPageRepositoryTests {
     @Autowired
     private  PaymentRepository paymentRepository;
     @Autowired
-    private  AppPaymentRepository appPaymentRepository;
-    @Autowired
     private  ResumeRepository resumeRepository;
     @Autowired
     private  PickAndScrapRepository pickAndScrapRepository;

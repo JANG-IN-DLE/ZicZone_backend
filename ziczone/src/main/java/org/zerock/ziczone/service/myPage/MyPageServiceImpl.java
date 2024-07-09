@@ -3,11 +3,12 @@ package org.zerock.ziczone.service.myPage;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.domain.PickAndScrap;
+import org.zerock.ziczone.domain.board.Board;
+import org.zerock.ziczone.domain.board.Comment;
 import org.zerock.ziczone.domain.job.JobPosition;
 import org.zerock.ziczone.domain.member.CompanyUser;
 import org.zerock.ziczone.domain.member.Gender;
@@ -15,7 +16,6 @@ import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.domain.tech.TechStack;
 import org.zerock.ziczone.dto.mypage.*;
-import org.zerock.ziczone.repository.AppPaymentRepository;
 import org.zerock.ziczone.repository.PayHistoryRepository;
 import org.zerock.ziczone.repository.PickAndScrapRepository;
 import org.zerock.ziczone.repository.application.ResumeRepository;
@@ -30,7 +30,6 @@ import org.zerock.ziczone.repository.tech.TechRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -42,7 +41,6 @@ public class MyPageServiceImpl implements  MyPageService{
     private final CompanyUserRepository companyUserRepository;
     private final PersonalUserRepository personalUserRepository;
     private final PaymentRepository paymentRepository;
-    private final AppPaymentRepository appPaymentRepository;
     private final ResumeRepository resumeRepository;
     private final JobRepository jobRepository;
     private final TechRepository techRepository;;
@@ -140,6 +138,16 @@ public class MyPageServiceImpl implements  MyPageService{
             throw new RuntimeException("personal not found");
         }
 
+
+/*
+프론트에서 받아온 현재비밀번호와 데이터베이스에 저장된 비밀번호 검사하는 로직 추가
+현재비밀번호와 DB비밀번호 검증 시 예외처리 (프론트로 전달할 예외처리)
+String 타입으로 전달해서 비밀번호 교차검증 실패, 비밀번호 형식 맞지 않음,
+
+검증해야 할 것
+1. 입력한 비밀번호가 현재 비밀번호와 같은지 비교
+2. 변경할 비밀번호가 비밀번호등록 조건에 부합하는지 검사
+ */
         PersonalUser updatedPersonalUser = PersonalUser.builder()
                 //기존 아이디 유지
                 .personalId(personalUser.getPersonalId())
@@ -224,8 +232,9 @@ public class MyPageServiceImpl implements  MyPageService{
 
     /**
      * Pick 탭 기업정보 리스트 조회
-     * @param personalUserId 유저 아이디
-     * @return List<CompanyUserDTO> 회사 유저 정보 리스트
+     * 기업의 Pick 탭에는 개인회원의 정보를 담는 카드를 보여주기때문에 Pick 페이지와 비슷한 폼을 사용
+     * @param personalUserId 개인 유저 아이디
+     * @return List<PersonalUserDTO> 개인 유저 정보 리스트
      */
     @Override
     public List<PersonalUserDTO> getPicksByCompanyUsers(Long personalUserId) {
@@ -270,6 +279,8 @@ public class MyPageServiceImpl implements  MyPageService{
                 .toList();
     }
 
+//    나의 게시물 리스트 조회는 BoardService에
+
     /**
      * Pick 탭 개인정보 조회
      * @param personalUserId 개인 유저 아이디
@@ -279,12 +290,43 @@ public class MyPageServiceImpl implements  MyPageService{
     public List<CompanyUserDTO> getPicksByPersonalUsers(Long personalUserId) {
         CompanyUser companyUser = getCompanyUserById(personalUserId);
         List<PickAndScrap> pickAndScrapList = pickAndScrapRepository.findByCompanyUserAndPickTrue(companyUser);
-
         return pickAndScrapList.stream()
                 .map(pick -> convertToCompanyUserDTO(pick.getCompanyUser().getUser(), pick.getCompanyUser()))
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 나의 댓글 리스트 조회
+     * @param personalUserId 개인 유저 아이디
+     * @return List<MyCommentListDTO>
+     */
+    @Override
+    public List<MyCommentListDTO> MyCommList(Long personalUserId) {
+
+        List<Comment> comments = commentRepository.findByUserUserId(personalUserId);
+
+        return comments.stream()
+                .map(comment -> {
+                    User user = comment.getUser();
+                    PersonalUser personalUser = user.getPersonalUser();
+                    Board board = comment.getBoard();
+
+                    return MyCommentListDTO.builder()
+                            .commId(comment.getCommId())
+                            .commContent(comment.getCommContent())
+                            .commSelection(comment.isCommSelection())
+                            .userId(user.getUserId())
+                            .userName(user.getUserName())
+                            .personalCareer(personalUser.getPersonalCareer())
+                            .corrId(board.getCorrId())
+                            .corrPoint(board.getCorrPoint())
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+
+    //    ---------------------------------------------------------------------
     private User getUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("user not found"));
@@ -303,7 +345,7 @@ public class MyPageServiceImpl implements  MyPageService{
     private CompanyUserDTO convertToCompanyUserDTO(User user, CompanyUser companyUser) {
         UserDTO userDTO = convertUserToDTO(user);
         return CompanyUserDTO.builder()
-                .userId(user.getUserId())
+                .userId(null)
                 .companyId(companyUser.getCompanyId())
                 .companyNum(companyUser.getCompanyNum())
                 .companyAddr(companyUser.getCompanyAddr())
@@ -333,6 +375,7 @@ public class MyPageServiceImpl implements  MyPageService{
                 .isPersonalVisible(personalUser.isPersonalVisible())
                 .isCompanyVisible(personalUser.isCompanyVisible())
                 .user(userDTO)
+                .gender(personalUser.getGender().name())
                 .resumes(null)
                 .jobPositions(jobPositionDTOS)
                 .techStacks(techStackDTOS)

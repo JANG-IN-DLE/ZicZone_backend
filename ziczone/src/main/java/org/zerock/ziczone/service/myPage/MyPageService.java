@@ -1,5 +1,6 @@
 package org.zerock.ziczone.service.myPage;
 
+import org.zerock.ziczone.dto.help.CommentDTO;
 import org.zerock.ziczone.dto.mypage.*;
 
 import java.util.List;
@@ -31,4 +32,8 @@ public interface MyPageService {
 
     // Pick 탭 개인정보 조회
     List<CompanyUserDTO> getPicksByPersonalUsers(Long personalUserId);
+
+    // 커스텀 내가 쓴 댓글 조회
+    List<MyCommentListDTO> MyCommList(Long personalUserId);
+
 }

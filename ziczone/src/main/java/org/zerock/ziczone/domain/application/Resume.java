@@ -18,35 +18,35 @@ public class Resume {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long resumeId;
+    private Long resumeId; // id
 
     @Column(length = 100, nullable = false)
-    private String resumeName;
+    private String resumeName; // 지원서에 들어갈 이름
 
     @Column(length = 100, nullable = false)
-    private String resumeDate;
+    private String resumeDate; // 생년월일
 
     @Column(length = 100, nullable = false)
-    private String resumeEmail;
+    private String resumeEmail; //이메일
 
     @Column(length = 100, nullable = false)
-    private String phoneNum;
+    private String phoneNum; // 전화번호
 
-    @Column(length = 255)
-    private String resumePhoto;
+    @Column
+    private String resumePhoto; // 지원서 증명사진
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
-    private LocalDateTime resumeCreate;
+    private LocalDateTime resumeCreate; // 지원서 생성 날짜
 
     @UpdateTimestamp
-    @Column(nullable = false, updatable = true)
-    private LocalDateTime resumeUpdate;
+    @Column(nullable = false)
+    private LocalDateTime resumeUpdate; // 지원서 업데이트 날짜
 
-    @Column(length = 255)
-    private String personalState;
+    @Column(length = 2048)
+    private String personalState; // 자소서 PDF
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "personal_id")
-    private PersonalUser personalUser;
+    private PersonalUser personalUser; // 개인회원 테이블
 }

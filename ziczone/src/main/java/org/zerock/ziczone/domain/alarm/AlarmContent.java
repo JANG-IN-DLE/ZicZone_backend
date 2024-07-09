@@ -14,9 +14,9 @@ public class AlarmContent {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long alarmContentId;
+    private Long alarmContentId;    // id
 
     @Column(length = 100)
-    private String alarmType;
+    private String alarmType;       // 알림 유형
 
 }

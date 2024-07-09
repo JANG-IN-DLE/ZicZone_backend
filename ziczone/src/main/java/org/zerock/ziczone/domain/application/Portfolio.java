@@ -14,12 +14,12 @@ public class Portfolio {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long portId;
+    private Long portId;        // id
 
-    @Column(length = 255)
-    private String portFile;
+    @Column(length = 2048)
+    private String portFile;    // PDF 파일명
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resume_id")
-    private Resume resume;
+    private Resume resume;      // 지원서 테이블
 }

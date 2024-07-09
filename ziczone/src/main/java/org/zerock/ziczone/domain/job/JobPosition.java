@@ -15,14 +15,14 @@ public class JobPosition {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userJobId;
+    private Long userJobId;             // id
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "personal_id")
-    private PersonalUser personalUser;
+    private PersonalUser personalUser;  // 개인 회원 유저 테이블
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "job_id")
-    private Job job;
+    private Job job;                    // 직무 테이블
 
 }

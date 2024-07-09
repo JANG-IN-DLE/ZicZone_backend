@@ -14,19 +14,19 @@ public class Archive {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long archId;
+    private Long archId;        // id
 
     @Column(length = 100)
-    private String archGit;
+    private String archGit;     // Git 주소
 
     @Column(length = 100)
-    private String archNotion;
+    private String archNotion;  // 노션 주소
 
     @Column(length = 100)
-    private String archBlog;
+    private String archBlog;    // 블로그 주소
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resume_id")
-    private Resume resume;
+    private Resume resume;      // 지원서 테이블
 
 }

@@ -1,6 +1,7 @@
 package org.zerock.ziczone.domain.board;
 
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.zerock.ziczone.domain.member.User;
@@ -19,35 +20,35 @@ public class Board {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long corrId;
+    private Long corrId;            // id
 
     @Column(length = 100, nullable = false)
-    private String corrTitle;
+    private String corrTitle;       // 게시물 제목
 
     @Column(length = 500, nullable = false)
-    private String corrContent;
+    private String corrContent;     // 게시물 내용
 
     @Column(length = 2048, nullable = false)
-    private String corrPdf;
+    private String corrPdf;         // 게시물 파일
 
     @Column(nullable = false)
-    private Integer corrPoint;
+    private Integer corrPoint;      // 게시물 등록 포인트
 
     @Builder.Default
     @Column(nullable = false)
-    private Integer corrView = 0;
+    private Integer corrView = 0;   // 게시물 조회수
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
-    private LocalDateTime corrCreate;
+    private LocalDateTime corrCreate;   // 게시물 생성 날짜
 
     @UpdateTimestamp
-    @Column(nullable = false, updatable = true)
-    private LocalDateTime corrModify;
+    @Column(nullable = false)
+    private LocalDateTime corrModify;   // 게시물 업데이트 날짜
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private User user;
+    private User user;                  // 유저 테이블
 
     public void change(String corrTitle, String corrContent, String corrPdf) {
         this.corrTitle = corrTitle;

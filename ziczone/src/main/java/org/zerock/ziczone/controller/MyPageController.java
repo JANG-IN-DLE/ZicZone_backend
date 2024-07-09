@@ -142,15 +142,25 @@ public class MyPageController {
         return ResponseEntity.ok(companyUserDTOS);
     }
 
+    /**
+     * 내가 쓴 게시물 리스트 조회
+     * @param userId
+     * @return
+     */
     @GetMapping("myboard/{userId}")
     public ResponseEntity<List<BoardDTO>> getBoardUserList(@PathVariable Long userId) {
         List<BoardDTO> boardDTOS = boardService.userReadAll(userId);
         return ResponseEntity.ok(boardDTOS);
     }
 
+    /**
+     * 내가 쓴 댓글 게시물 리스트 조회
+     * @param userId
+     * @return
+     */
     @GetMapping("mycomm/{userId}")
-    public ResponseEntity<List<CommentDTO>> getCommentUserList(@PathVariable Long userId) {
-        List<CommentDTO> commentDTOS = commentService.userReadAllComment(userId);
+    public ResponseEntity<List<MyCommentListDTO>> getCommentUserList(@PathVariable Long userId) {
+        List<MyCommentListDTO> commentDTOS = mypageService.MyCommList(userId);
         return ResponseEntity.ok(commentDTOS);
     }
 
