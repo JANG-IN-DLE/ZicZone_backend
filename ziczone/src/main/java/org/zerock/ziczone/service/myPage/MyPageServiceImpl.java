@@ -16,6 +16,10 @@ import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.domain.tech.TechStack;
 import org.zerock.ziczone.dto.mypage.*;
+import org.zerock.ziczone.exception.mypage.CompanyNotFoundException;
+import org.zerock.ziczone.exception.mypage.InvalidPasswordException;
+import org.zerock.ziczone.exception.mypage.PersonalNotFoundException;
+import org.zerock.ziczone.exception.mypage.UserNotFoundException;
 import org.zerock.ziczone.repository.PayHistoryRepository;
 import org.zerock.ziczone.repository.PickAndScrapRepository;
 import org.zerock.ziczone.repository.application.ResumeRepository;
@@ -30,6 +34,7 @@ import org.zerock.ziczone.repository.tech.TechRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
 
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -63,11 +68,7 @@ public class MyPageServiceImpl implements  MyPageService{
     @Override
     public CompanyUserDTO getCompanyUserDTO(Long userId) {
         User user = getUserById(userId);
-        CompanyUser companyUser = companyUserRepository.findByUser_UserId(userId);
-        if (companyUser == null) {
-            throw new RuntimeException("company not found");
-        }
-
+        CompanyUser companyUser = getCompanyUserById(userId);
         return convertToCompanyUserDTO(user, companyUser);
     }
 
@@ -80,10 +81,7 @@ public class MyPageServiceImpl implements  MyPageService{
     @Override
     public CompanyUserDTO updateCompanyUser(Long userId, CompanyUserUpdateDTO companyUserUpdateDTO) {
         User user = getUserById(userId);
-        CompanyUser companyUser = companyUserRepository.findByUser_UserId(userId);
-        if (companyUser == null) {
-            throw new RuntimeException("company not found");
-        }
+        CompanyUser companyUser = getCompanyUserById(userId);
 
         // 비밀번호 업데이트 처리
         if (companyUserUpdateDTO.getCompanyUserPassword() != null && !companyUserUpdateDTO.getCompanyUserPassword().isEmpty()) {
@@ -117,10 +115,7 @@ public class MyPageServiceImpl implements  MyPageService{
     @Override
     public PersonalUserDTO getPersonalUserDTO(Long userId) {
         User user = getUserById(userId);
-        PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
-        if (personalUser == null) {
-            throw new RuntimeException("personal not found");
-        }
+        PersonalUser personalUser = getPersonalUserById(userId);
         return convertToPersonalUserDTO(user, personalUser);
     }
 
@@ -133,21 +128,22 @@ public class MyPageServiceImpl implements  MyPageService{
     @Override
     public PersonalUserDTO updatePersonalUser(Long userId, PersonalUserUpdateDTO personalUserUpdateDTO) {
         User user = getUserById(userId);
-        PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
-        if (personalUser == null) {
-            throw new RuntimeException("personal not found");
+        PersonalUser personalUser = getPersonalUserById(userId);
+
+        // 기존 비밀번호 검증
+        if (personalUserUpdateDTO.getCurrentPassword() != null) {
+            if (!passwordEncoder.matches(personalUserUpdateDTO.getCurrentPassword(), user.getPassword())) {
+                throw new InvalidPasswordException("Current password is incorrect");
+            }
         }
-
-
-/*
-프론트에서 받아온 현재비밀번호와 데이터베이스에 저장된 비밀번호 검사하는 로직 추가
-현재비밀번호와 DB비밀번호 검증 시 예외처리 (프론트로 전달할 예외처리)
-String 타입으로 전달해서 비밀번호 교차검증 실패, 비밀번호 형식 맞지 않음,
-
-검증해야 할 것
-1. 입력한 비밀번호가 현재 비밀번호와 같은지 비교
-2. 변경할 비밀번호가 비밀번호등록 조건에 부합하는지 검사
- */
+        // 새로운 비밀번호 검증
+        if (personalUserUpdateDTO.getChangePassword() != null && !personalUserUpdateDTO.getChangePassword().isEmpty()) {
+            validatePassword(personalUserUpdateDTO.getChangePassword());
+            String hashedPassword = hashPassword(personalUserUpdateDTO.getChangePassword());
+            user = user.toBuilder()
+                    .password(hashedPassword)
+                    .build();
+        }
         PersonalUser updatedPersonalUser = PersonalUser.builder()
                 //기존 아이디 유지
                 .personalId(personalUser.getPersonalId())
@@ -167,44 +163,15 @@ String 타입으로 전달해서 비밀번호 교차검증 실패, 비밀번호 
                 .userType(user.getUserType())
                 .build();
 
-        if(personalUserUpdateDTO.getPersonalUserPassword() != null && !personalUserUpdateDTO.getPersonalUserPassword().isEmpty()) {
-            String hashedPassword = hashPassword(personalUserUpdateDTO.getPersonalUserPassword());
+        if(personalUserUpdateDTO.getChangePassword() != null && !personalUserUpdateDTO.getChangePassword().isEmpty()) {
+            String hashedPassword = hashPassword(personalUserUpdateDTO.getChangePassword());
             updatedUser = updatedUser.toBuilder()
                     .password(hashedPassword)
                     .build();
-            /**
-             * 빌더 패턴을 사용하여 updatedUser 객체를 업데이트하는 방식은 새 객체를 생성하는 것입니다.
-             * toBuilder 메서드는 Lombok이 제공하는 기능으로, 기존 객체의 값을 복사하여 새로운 빌더를 생성합니다.
-             * 이를 통해 기존 값은 유지하고 필요한 필드만 변경할 수 있습니다.
-             * toBuilder 메서드를 사용하려면 Lombok의 @Builder 어노테이션을 클래스 수준에 추가하면서 toBuilder = true 속성을 설정해야 합니다.
-             * 이는 Lombok이 해당 클래스에 대해 toBuilder 메서드를 생성하도록 지시합니다.
-             *
-             * 먼저, User 엔티티에 @Builder(toBuilder = true)를 추가해야 합니다.
-             */
-
-
         }
         userRepository.save(updatedUser);
         personalUserRepository.save(updatedPersonalUser);
         return convertToPersonalUserDTO(updatedUser, updatedPersonalUser);
-    }
-
-    /**
-     * 지원서 개인 공개 설정 유저 아이디 리스트 조회
-     * @return List<Long> 개인 유저 아이디 리스트
-     */
-    @Override
-    public List<Long> getVisiblePersonalIds() {
-        return personalUserRepository.findPersonalUserIdsByIsPersonalVisibleTrue();
-    }
-
-    /**
-     * 지원서 기업 공개 설정 유저 아이디 리스트 조회
-     * @return List<Long> 기업 유저 아이디 리스트
-     */
-    @Override
-    public List<Long> getVisibleCompanyIds() {
-        return personalUserRepository.findPersonalUserIdsByIsCompanyVisibleTrue();
     }
 
     /**
@@ -214,16 +181,13 @@ String 타입으로 전달해서 비밀번호 교차검증 실패, 비밀번호 
      */
     @Override
     public AggregatedDataDTO getAggregatedData(Long userId) {
-        List<Long> sellerIds = payHistoryRepository.findByBuyerId(userId)
-                .stream()
-                .map(PayHistory::getSellerId)
-                .distinct()
-                .collect(Collectors.toList());
+        getPersonalUserById(userId);
+        List<Long> buyerIds = payHistoryRepository.findBuyerIdsBySellerId(userId);
 
-        List<PersonalUserDTO> personalUsers = personalUserRepository.findByPersonalIdIn(sellerIds)
+        List<PersonalUserDTO> personalUsers = personalUserRepository.findByUserIds(buyerIds)
                 .stream()
                 .map(this::convertToPersonalUserDTO)
-                .collect(Collectors.toList());
+                .toList();
 
         return AggregatedDataDTO.builder()
                 .personalUsers(personalUsers)
@@ -231,19 +195,17 @@ String 타입으로 전달해서 비밀번호 교차검증 실패, 비밀번호 
     }
 
     /**
-     * Pick 탭 기업정보 리스트 조회
+     * Pick 탭 조회 (기업)
      * 기업의 Pick 탭에는 개인회원의 정보를 담는 카드를 보여주기때문에 Pick 페이지와 비슷한 폼을 사용
-     * @param personalUserId 개인 유저 아이디
+     * @param userId 유저 아이디
      * @return List<PersonalUserDTO> 개인 유저 정보 리스트
      */
     @Override
-    public List<PersonalUserDTO> getPicksByCompanyUsers(Long personalUserId) {
-        PersonalUser personalUser = personalUserRepository.findById(personalUserId)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 개인 사용자 ID: " + personalUserId));
-
-        List<PickAndScrap> pickAndScrapList = pickAndScrapRepository.findByPersonalUserAndPickTrue(personalUser);
-
-        return pickAndScrapList.stream()
+    public List<PersonalUserDTO> getPicksByCompanyUsers(Long userId) {
+        User user = getUserById(userId);
+        CompanyUser companyUser = getCompanyUserById(user.getUserId());
+        List<PickAndScrap> picks = pickAndScrapRepository.findByCompanyUserAndPickTrue(companyUser);
+        return picks.stream()
                 .map(pickAndScrap -> {
                     PersonalUser pUser = pickAndScrap.getPersonalUser();
                     UserDTO userDTOs = UserDTO.builder()
@@ -279,31 +241,79 @@ String 타입으로 전달해서 비밀번호 교차검증 실패, 비밀번호 
                 .toList();
     }
 
-//    나의 게시물 리스트 조회는 BoardService에
+    /**
+     * Scrap 탭 조회 (기업)
+     * @param userId
+     * @return
+     */
+    @Override
+    public List<PersonalUserDTO> getScrapByCompanyUsers(Long userId) {
+        User user = getUserById(userId);
+        CompanyUser companyUser = getCompanyUserById(user.getUserId());
+        List<PickAndScrap> picks = pickAndScrapRepository.findByCompanyUserAndScrapTrue(companyUser);
+        return picks.stream()
+                .map(pickAndScrap -> {
+                    PersonalUser pUser = pickAndScrap.getPersonalUser();
+                    UserDTO userDTOs = UserDTO.builder()
+                            .userId(pUser.getUser().getUserId())
+                            .email(pUser.getUser().getEmail())
+                            .userName(pUser.getUser().getUserName())
+                            .userIntro(pUser.getUser().getUserIntro())
+                            .userType(pUser.getUser().getUserType().name())
+                            .build();
+
+                    List<JobPositionDTO> jobPositionDTOS = jobPositionRepository.findByPersonalUserPersonalId(pUser.getPersonalId())
+                            .stream()
+                            .map(this::convertJobPositionToDTO)
+                            .toList();
+
+                    List<TechStackDTO> techStackDTOS = techStackRepository.findByPersonalUserPersonalId(pUser.getPersonalId())
+                            .stream()
+                            .map(this::convertTechStackToDTO)
+                            .toList();
+
+                    return PersonalUserDTO.builder()
+                            .personalId(pUser.getPersonalId())
+                            .personalCareer(pUser.getPersonalCareer())
+                            .isPersonalVisible(pUser.isPersonalVisible())
+                            .isCompanyVisible(pUser.isCompanyVisible())
+                            .gender(pUser.getGender().name())
+                            .user(userDTOs)
+                            .resumes(null)
+                            .jobPositions(jobPositionDTOS)
+                            .techStacks(techStackDTOS)
+                            .build();
+                })
+                .toList();
+    }
+
+//    나의 게시물 리스트 조회는 BoardService 에 작성되어 있습니다.
 
     /**
-     * Pick 탭 개인정보 조회
-     * @param personalUserId 개인 유저 아이디
+     * Pick 탭 조회 (개인)
+     * @param userId 개인 유저 아이디
      * @return List<CompanyUserDTO> 개인 유저 정보 리스트
      */
     @Override
-    public List<CompanyUserDTO> getPicksByPersonalUsers(Long personalUserId) {
-        CompanyUser companyUser = getCompanyUserById(personalUserId);
-        List<PickAndScrap> pickAndScrapList = pickAndScrapRepository.findByCompanyUserAndPickTrue(companyUser);
-        return pickAndScrapList.stream()
+    public List<CompanyUserDTO> getPicksByPersonalUsers(Long userId) {
+        User user = getUserById(userId);
+        PersonalUser personalUser = getPersonalUserById(user.getUserId());
+        List<PickAndScrap> picks = pickAndScrapRepository.findByPersonalUserAndPickTrue(personalUser);
+        return picks.stream()
                 .map(pick -> convertToCompanyUserDTO(pick.getCompanyUser().getUser(), pick.getCompanyUser()))
                 .collect(Collectors.toList());
     }
 
     /**
      * 나의 댓글 리스트 조회
-     * @param personalUserId 개인 유저 아이디
+     * @param userId 개인 유저 아이디
      * @return List<MyCommentListDTO>
      */
     @Override
-    public List<MyCommentListDTO> MyCommList(Long personalUserId) {
-
-        List<Comment> comments = commentRepository.findByUserUserId(personalUserId);
+    public List<MyCommentListDTO> MyCommList(Long userId) {
+        User userCheck = getUserById(userId);
+        getPersonalUserById(userCheck.getUserId());
+        List<Comment> comments = commentRepository.findByUserUserId(userId);
 
         return comments.stream()
                 .map(comment -> {
@@ -326,20 +336,41 @@ String 타입으로 전달해서 비밀번호 교차검증 실패, 비밀번호 
     }
 
 
-    //    ---------------------------------------------------------------------
+
+
+
+    //    --------------------------------------------------------------------- 형변환 메서드
+
+    /**
+     * 비밀번호 규칙 검증 메서드
+     * @param password
+     */
+    private void validatePassword(String password) {
+        String passwordPattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
+        if (!Pattern.matches(passwordPattern, password)) {
+            throw new InvalidPasswordException("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
+        }
+    }
+
     private User getUserById(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("user not found"));
+                .orElseThrow(() -> new UserNotFoundException("User Not Found"));
     }
 
     private PersonalUser getPersonalUserById(Long personalUserId) {
-        return personalUserRepository.findById(personalUserId)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 개인 사용자 ID: " + personalUserId));
+        PersonalUser personalUser = personalUserRepository.findByUser_UserId(personalUserId);
+                if (personalUser == null) {
+                    throw new PersonalNotFoundException("Personal User Not Found");
+                }
+        return personalUser;
     }
 
     private CompanyUser getCompanyUserById(Long companyUserId) {
-        return companyUserRepository.findById(companyUserId)
-                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 기업 사용자 ID: " + companyUserId));
+        CompanyUser companyUser =  companyUserRepository.findByUser_UserId(companyUserId);
+        if (companyUser == null) {
+            throw new CompanyNotFoundException("Company User Not Found");
+        }
+        return companyUser;
     }
 
     private CompanyUserDTO convertToCompanyUserDTO(User user, CompanyUser companyUser) {
