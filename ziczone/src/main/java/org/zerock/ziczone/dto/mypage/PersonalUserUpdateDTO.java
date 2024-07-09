@@ -12,7 +12,8 @@ import lombok.*;
 public class PersonalUserUpdateDTO {
     private String intro;
     private String personalCareer;
-    private String personalUserPassword;
+    private String changePassword;
+    private String currentPassword;
     private boolean isPersonalVisible;
     private boolean isCompanyVisible;
 }

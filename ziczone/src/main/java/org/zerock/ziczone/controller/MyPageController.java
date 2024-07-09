@@ -42,9 +42,9 @@ public class MyPageController {
 
     /**
      * 기업 회원 정보 수정
-     * @param companyUserUpdateDTO
-     * @param userId
-     * @return
+     * @param  @RequestBody companyUserUpdateDTO
+     * @param  @PathVariable userId
+     * @return ResponseEntity.ok
      */
     @PutMapping("/company-user/{userId}")
     public ResponseEntity<CompanyUserDTO> companyUserUpdate(@RequestBody CompanyUserUpdateDTO companyUserUpdateDTO, @PathVariable Long userId) {
@@ -62,6 +62,12 @@ public class MyPageController {
         return ResponseEntity.ok(personalUserDTO);
     }
 
+    /**
+     * 개인 회원 정보 수정
+     * @param  @RequestBody personalUserUpdateDTO
+     * @param  @PathVariable userId
+     * @return ResponseEntity.ok
+     */
     @PutMapping("/personal-user/{userId}")
     public ResponseEntity<PersonalUserDTO> personalUserUpdate(@RequestBody PersonalUserUpdateDTO personalUserUpdateDTO, @PathVariable Long userId){
         return ResponseEntity.ok(mypageService.updatePersonalUser(userId, personalUserUpdateDTO));
@@ -83,63 +89,51 @@ public class MyPageController {
     /**
      * 구매한 이력서 목록 조회
      *
-     * @param personalId 유저 아이디
+     * @param userId 유저 아이디
      * @return ResponseEntity<List<ResumeDTO>> 구매한 이력서 리스트
      */
-    @GetMapping("/purchased/{personalId}")
-    public ResponseEntity<AggregatedDataDTO> getAggregatedData(@PathVariable Long personalId) {
-        AggregatedDataDTO aggregatedData = mypageService.getAggregatedData(personalId);
+    @GetMapping("/purchased/{userId}")
+    public ResponseEntity<AggregatedDataDTO> getAggregatedData(@PathVariable Long userId) {
+        AggregatedDataDTO aggregatedData = mypageService.getAggregatedData(userId);
         log.info(aggregatedData.toString());
         return new ResponseEntity<>(aggregatedData, HttpStatus.OK);
     }
 
 
     /**
-     * 개인 공개 설정된 유저 아이디 리스트 조회
-     *
-     * @return ResponseEntity<List<Long>> 개인 공개 설정된 유저 아이디 리스트
-     */
-    @GetMapping("/visible-user")
-    public ResponseEntity<List<Long>> getVisiblePersonalIds() {
-        List<Long> visiblePersonalIds = mypageService.getVisiblePersonalIds();
-        return ResponseEntity.ok(visiblePersonalIds);
-    }
-
-    /**
-     * 기업 공개 설정된 유저 아이디 리스트 조회
-     *
-     * @return List<Long>
-     */
-    @GetMapping("/visible-company")
-    public ResponseEntity<List<Long>> getVisibleCompanyIds() {
-        List<Long> visibleCompanyIds = mypageService.getVisibleCompanyIds();
-        return ResponseEntity.ok(visibleCompanyIds);
-    }
-
-
-    /**
-     * 개인회원 마이페이지 Pick 탭 조회
+     * 기업회원 마이페이지 Pick 탭 조회
      * 기업의 픽 탭에는 유저의 이력서를 조회할 수 있는 카드형식의 리스트 데이터를 전송
      * @PathVariable  companyUserId 기업유저 아이디
      * @return ResponseEntity<List<companyUserDTOs>> 기업 공개 설정된 유저 아이디 리스트
      */
-    @GetMapping("/company-user-picks/{companyUserId}")
-    public ResponseEntity<List<PersonalUserDTO>> getPicksByCompanyUsersId(@PathVariable Long companyUserId) {
-        List<PersonalUserDTO> personalUserDTOs = mypageService.getPicksByCompanyUsers(companyUserId);
+    @GetMapping("/company-user-picks/{userId}")
+    public ResponseEntity<List<PersonalUserDTO>> getPicksByCompanyUsersId(@PathVariable Long userId) {
+        List<PersonalUserDTO> personalUserDTOs = mypageService.getPicksByCompanyUsers(userId);
         return ResponseEntity.ok(personalUserDTOs);
     }
 
     /**
-     * 기업회원 마이페이지 Pick 탭 조회
+     * 개인회원 마이페이지 Pick 탭 조회
      * 유저의 픽 탭에는 기업의 정보를 조회할 수 있는 카드형식의 리스트 데이터를 전송
-     * @PathVariable personalUserId 개인유저 아이디
+     * @PathVariable userId 개인유저 아이디
      * @return ResponseEntity<List<PersonalUserDTO>> 개인 유저 정보 리스트
      */
-    @GetMapping("/personal-user-picks/{personalUserId}")
-    public ResponseEntity<List<CompanyUserDTO>> getPicksByPersonalUserId(@PathVariable Long personalUserId) {
-        List<CompanyUserDTO> companyUserDTOS = mypageService.getPicksByPersonalUsers(personalUserId);
+    @GetMapping("/personal-user-picks/{userId}")
+    public ResponseEntity<List<CompanyUserDTO>> getPicksByPersonalUserId(@PathVariable Long userId) {
+        List<CompanyUserDTO> companyUserDTOS = mypageService.getPicksByPersonalUsers(userId);
 
         return ResponseEntity.ok(companyUserDTOS);
+    }
+    /**
+     * 기업회원 마이페이지 Pick 탭 조회
+     * 기업의 픽 탭에는 기업의 정보를 조회할 수 있는 카드형식의 리스트 데이터를 전송
+     * @PathVariable userId 개인유저 아이디
+     * @return ResponseEntity<List<PersonalUserDTO>> 개인 유저 정보 리스트
+     */
+    @GetMapping("/company-user-scraps/{userId}")
+    public ResponseEntity<List<PersonalUserDTO>> getScrapsByPersonalUserId(@PathVariable Long userId) {
+        List<PersonalUserDTO> personalUserDTOS = mypageService.getScrapByCompanyUsers(userId);
+        return ResponseEntity.ok(personalUserDTOS);
     }
 
     /**
@@ -163,6 +157,7 @@ public class MyPageController {
         List<MyCommentListDTO> commentDTOS = mypageService.MyCommList(userId);
         return ResponseEntity.ok(commentDTOS);
     }
+
 
 
 }

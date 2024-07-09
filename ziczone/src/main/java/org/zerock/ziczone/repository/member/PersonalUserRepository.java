@@ -2,6 +2,7 @@ package org.zerock.ziczone.repository.member;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.zerock.ziczone.domain.member.PersonalUser;
 
 import java.util.List;
@@ -19,5 +20,7 @@ public interface PersonalUserRepository extends JpaRepository<PersonalUser, Long
     @Query("SELECT p.personalId FROM PersonalUser p WHERE p.isCompanyVisible = true")
     List<Long> findPersonalUserIdsByIsCompanyVisibleTrue();
 
-    List<PersonalUser> findByPersonalIdIn(List<Long> sellerIds);
+    // 특정 BuyerId 리스트로 PersonalUser 조회
+    @Query("SELECT p FROM PersonalUser p WHERE p.user.userId IN :userIds")
+    List<PersonalUser> findByUserIds(@Param("userIds") List<Long> userIds);
 }

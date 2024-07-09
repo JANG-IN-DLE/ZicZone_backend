@@ -53,27 +53,7 @@ public class MyPageServiceTests {
         PersonalUserDTO personalUserDTO = myPageService.getPersonalUserDTO(user_id);
         log.info("PersonalUserDTO: " + personalUserDTO);
     }
-    /**
-     * @용도 : 개인회원들에게 지원서 공개 여부 (True만)
-     * @request :
-     * @response  : List<Long> user_id
-     */
-    @Test
-    public void getVisiblePersonalIds() {
-        List<Long> id =  myPageService.getVisiblePersonalIds();
-        log.info("id: " + id);
-    }
-
-    /**
-     * @용도 : 기업회원들에게 지원서 공개 여부 (True만)
-     * @request :
-     * @response  : List<Long> user_id
-     */
-    @Test
-    public void getVisibleCompanyIds() {
-        List<Long> id =  myPageService.getVisibleCompanyIds();
-        log.info("id: " + id);
-    }
+    
     
 
 }
