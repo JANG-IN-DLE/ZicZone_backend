@@ -79,7 +79,7 @@ public class MyPageServiceImpl implements  MyPageService{
      * @return
      */
     @Override
-    public CompanyUserDTO updateCompanyUser(Long userId, CompanyUserUpdateDTO companyUserUpdateDTO) {
+    public String updateCompanyUser(Long userId, CompanyUserUpdateDTO companyUserUpdateDTO) {
         User user = getUserById(userId);
         CompanyUser companyUser = getCompanyUserById(userId);
 
@@ -104,7 +104,7 @@ public class MyPageServiceImpl implements  MyPageService{
 
         userRepository.save(user);
         companyUserRepository.save(updatedCompanyUser);
-        return convertToCompanyUserDTO(user, updatedCompanyUser);
+        return "User Information Updated Successfully";
     }
 
     /**
@@ -123,10 +123,10 @@ public class MyPageServiceImpl implements  MyPageService{
      * 마이페이지 개인유저 정보 수정
      * @param userId
      * @param personalUserUpdateDTO
-     * @return
+     * @return 성공 메시지
      */
     @Override
-    public PersonalUserDTO updatePersonalUser(Long userId, PersonalUserUpdateDTO personalUserUpdateDTO) {
+    public String updatePersonalUser(Long userId, PersonalUserUpdateDTO personalUserUpdateDTO) {
         User user = getUserById(userId);
         PersonalUser personalUser = getPersonalUserById(userId);
 
@@ -136,6 +136,7 @@ public class MyPageServiceImpl implements  MyPageService{
                 throw new InvalidPasswordException("Current password is incorrect");
             }
         }
+
         // 새로운 비밀번호 검증
         if (personalUserUpdateDTO.getChangePassword() != null && !personalUserUpdateDTO.getChangePassword().isEmpty()) {
             validatePassword(personalUserUpdateDTO.getChangePassword());
@@ -144,6 +145,7 @@ public class MyPageServiceImpl implements  MyPageService{
                     .password(hashedPassword)
                     .build();
         }
+
         PersonalUser updatedPersonalUser = PersonalUser.builder()
                 //기존 아이디 유지
                 .personalId(personalUser.getPersonalId())
@@ -169,9 +171,11 @@ public class MyPageServiceImpl implements  MyPageService{
                     .password(hashedPassword)
                     .build();
         }
+
         userRepository.save(updatedUser);
         personalUserRepository.save(updatedPersonalUser);
-        return convertToPersonalUserDTO(updatedUser, updatedPersonalUser);
+
+        return "User Information Updated Successfully";
     }
 
     /**
