@@ -47,7 +47,7 @@ public class MyPageController {
      * @return ResponseEntity.ok
      */
     @PutMapping("/company-user/{userId}")
-    public ResponseEntity<CompanyUserDTO> companyUserUpdate(@RequestBody CompanyUserUpdateDTO companyUserUpdateDTO, @PathVariable Long userId) {
+    public ResponseEntity<String> companyUserUpdate(@RequestBody CompanyUserUpdateDTO companyUserUpdateDTO, @PathVariable Long userId) {
         return ResponseEntity.ok(mypageService.updateCompanyUser(userId, companyUserUpdateDTO));
     }
     /**
@@ -69,7 +69,7 @@ public class MyPageController {
      * @return ResponseEntity.ok
      */
     @PutMapping("/personal-user/{userId}")
-    public ResponseEntity<PersonalUserDTO> personalUserUpdate(@RequestBody PersonalUserUpdateDTO personalUserUpdateDTO, @PathVariable Long userId){
+    public ResponseEntity<String> personalUserUpdate(@RequestBody PersonalUserUpdateDTO personalUserUpdateDTO, @PathVariable Long userId){
         return ResponseEntity.ok(mypageService.updatePersonalUser(userId, personalUserUpdateDTO));
     }
 //    /**
