@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class MyCommentListDTO {
-    private Long commId; // 뎃글 ID
+    private Long commId; // 댓글 ID
 
     private String commContent; // 댓글 내용
 
