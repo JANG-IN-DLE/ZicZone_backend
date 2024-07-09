@@ -54,9 +54,9 @@ public class JoinServiceTests {
                 .userType(UserType.COMPANY)
                 .companyAddr("companyAddr")
                 .companyCeo("companyCeo")
-                .companyLogo("companyLogo")
+                .companyLogo("https://kr.object.ncloudstorage.com/ziczone-bucket/CompanyLogo/%ED%86%A0%EC%8A%A4%EB%B1%85%ED%81%AC")
                 .companyNum("companyNum")
-                .companyYear(LocalDate.now())
+                .companyYear(LocalDate.now().toString())
                 .build();
 
         String result = joinService.companyJoin(companyUserDTO);

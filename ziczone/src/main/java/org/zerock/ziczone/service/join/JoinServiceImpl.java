@@ -24,7 +24,9 @@ import org.zerock.ziczone.repository.tech.TechRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
 
 import javax.transaction.Transactional;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -110,6 +112,10 @@ public class JoinServiceImpl implements JoinService {
 
     @Override
     public String companyJoin(CompanyUserDTO companyUserDTO) {
+
+        // 설립날짜 String -> LocalDate
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
         //회원
         User user = User.builder()
                 .userName(companyUserDTO.getUserName())
@@ -126,8 +132,8 @@ public class JoinServiceImpl implements JoinService {
                 .user(user)
                 .companyNum(companyUserDTO.getCompanyNum())
                 .companyAddr(companyUserDTO.getCompanyAddr())
-                .companyYear(companyUserDTO.getCompanyYear())
-                .companyLogo("companyUserDTO.getCompanyLogo()")
+                .companyYear(LocalDate.parse(companyUserDTO.getCompanyYear(), formatter))
+                .companyLogo(companyUserDTO.getCompanyLogo())
                 .companyCeo(companyUserDTO.getCompanyCeo())
                 .build();
         companyUserRepository.save(companyUser);

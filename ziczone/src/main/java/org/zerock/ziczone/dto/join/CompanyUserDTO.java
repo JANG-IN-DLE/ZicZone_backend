@@ -4,10 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 import org.zerock.ziczone.domain.member.UserType;
 
 import java.time.LocalDate;
-import java.util.List;
 
 @Data
 @Builder
@@ -29,7 +29,7 @@ public class CompanyUserDTO {
 
     private String companyAddr;
 
-    private LocalDate companyYear;
+    private String companyYear;
 
     private String companyLogo;
 
