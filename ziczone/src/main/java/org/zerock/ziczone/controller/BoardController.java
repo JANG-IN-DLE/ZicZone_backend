@@ -1,7 +1,6 @@
 package org.zerock.ziczone.controller;
 
 import lombok.extern.log4j.Log4j2;
-import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -61,7 +60,7 @@ public class BoardController {
                     .corrTitle(corrTitle)
                     .corrContent(corrContent)
                     .corrPdf(fileUrl)
-                    .userId(5L) // 임의로 회원번호 5번을 작성자로 설정
+                    .userId(13L) // 임의로 작성자로 설정
                     .build();
 
             Long corrId = boardService.boardRegister(boardDTO);
@@ -76,6 +75,21 @@ public class BoardController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "서버 오류: " + e.getMessage()));
         }
+    }
+
+    /**
+     * 게시물 등록할 때 나의 프로필 카드 조회
+     *
+     * @param userId 유저 ID (로그인 구현되면)
+     * @return ResponseEntity<BoardProfileCardDTO> 조회된 프로필 카드 정보
+     */
+    @GetMapping("/myProfile")
+    public ResponseEntity<BoardProfileCardDTO> getUserProfileCard() {
+        Long userId = 13L; // 임의로 회원 7 설정
+
+        BoardProfileCardDTO profileCardDTO = boardService.UserProfile(userId);
+
+        return ResponseEntity.ok(profileCardDTO);
     }
 
     /**
@@ -123,5 +137,46 @@ public class BoardController {
                 .build();
 
         return boardService.boardFilter(filterType, pageRequestDTO);
+    }
+
+    /**
+     * 게시물 수정
+     *
+     * @param boardDTO 게시물 수정에 필요한 데이터
+     * @return ResponseEntity<Void> 상태 코드 응답
+     */
+    @PutMapping("/modify")
+    public ResponseEntity<Void> modifyBoard(@RequestBody BoardDTO boardDTO) {
+        boardService.boardModify(boardDTO);
+
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 게시물 삭제
+     *
+     * @param userId   사용자 ID
+     * @param corrId   게시물 ID
+     * @return ResponseEntity<Void> 상태 코드 응답
+     */
+    @DeleteMapping("/{userId}/{corrId}")
+    public ResponseEntity<Void> deleteBoard(@PathVariable Long userId, @PathVariable Long corrId) {
+        boardService.boardDelete(userId, corrId);
+
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 게시물 조회수 증가
+     *
+     * @param userId 조회하는 사용자 ID
+     * @param corrId 게시물 ID
+     * @return ResponseEntity<Void> 상태 코드 200을 반환
+     */
+    @PutMapping("/viewCnt/{userId}/{corrId}")
+    public ResponseEntity<Void> boardViewCount(@PathVariable Long userId, @PathVariable Long corrId) {
+        boardService.boardViewCount(userId, corrId);
+
+        return ResponseEntity.ok().build();
     }
 }

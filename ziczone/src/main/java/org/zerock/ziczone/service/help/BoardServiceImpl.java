@@ -2,24 +2,21 @@ package org.zerock.ziczone.service.help;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.zerock.ziczone.domain.board.Board;
-import org.zerock.ziczone.domain.job.Job;
-import org.zerock.ziczone.domain.job.JobPosition;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.domain.member.UserType;
 import org.zerock.ziczone.domain.payment.Payment;
 import org.zerock.ziczone.dto.help.BoardDTO;
 import org.zerock.ziczone.dto.help.BoardProfileCardDTO;
-import org.zerock.ziczone.dto.mypage.TechStackDTO;
 import org.zerock.ziczone.dto.page.PageRequestDTO;
 import org.zerock.ziczone.dto.page.PageResponseDTO;
 import org.zerock.ziczone.repository.board.BoardRepository;
+import org.zerock.ziczone.repository.board.CommentRepository;
 import org.zerock.ziczone.repository.job.JobPositionRepository;
 import org.zerock.ziczone.repository.job.JobRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
@@ -42,10 +39,9 @@ public class BoardServiceImpl implements BoardService {
     private final UserRepository userRepository;
     private final PersonalUserRepository personalUserRepository;
     private final JobPositionRepository jobPositionRepository;
-    private final JobRepository jobRepository;
     private final TechStackRepository techStackRepository;
-    private final TechRepository techRepository;
     private final PaymentRepository paymentRepository;
+    private final CommentRepository commentRepository;
 
     @Override
     @Transactional
@@ -237,13 +233,44 @@ public class BoardServiceImpl implements BoardService {
                 .map(jobPosition -> jobPosition.getJob().getJobName())
                 .collect(Collectors.toList());
 
+        // 기술 스택 조회
+        List<String> techUrls = techStackRepository.findByPersonalUser(personalUser).stream()
+                .map(techStack -> techStack.getTech().getTechUrl())
+                .collect(Collectors.toList());
+
+        BoardProfileCardDTO boardProfileCardDTO = BoardProfileCardDTO.builder()
+                .userId(user.getUserId())
+                .personalId(personalUser.getPersonalId())
+                .corrPoint(Long.valueOf(board.getCorrPoint()))
+                .jobName(String.join(",", jobNames))
+                .gender(personalUser.getGender())
+                .userName(user.getUserName())
+                .personalCareer(personalUser.getPersonalCareer())
+                .userIntro(user.getUserIntro())
+                .techUrl(String.join(",", techUrls))
+                .build();
+
+        return boardProfileCardDTO;
+    }
+
+    @Override
+    public BoardProfileCardDTO UserProfile(Long userId) {
+        // 게시물 작성자 조회
+        User user = userRepository.findByUserId(userId);
+        PersonalUser personalUser = user.getPersonalUser();
+
+        // 직무 이름 조회
+        List<String> jobNames = jobPositionRepository.findByPersonalUser(personalUser).stream()
+                .map(jobPosition -> jobPosition.getJob().getJobName())
+                .collect(Collectors.toList());
+
         // 포인트 조회
         Payment payment = paymentRepository.findByPersonalUser(personalUser);
         Integer berryPoint = payment.getBerryPoint();
 
         // 기술 스택 조회
-        List<String> techNames = techStackRepository.findByPersonalUser(personalUser).stream()
-                .map(techStack -> techStack.getTech().getTechName())
+        List<String> techUrls = techStackRepository.findByPersonalUser(personalUser).stream()
+                .map(techStack -> techStack.getTech().getTechUrl())
                 .collect(Collectors.toList());
 
         BoardProfileCardDTO boardProfileCardDTO = BoardProfileCardDTO.builder()
@@ -255,9 +282,21 @@ public class BoardServiceImpl implements BoardService {
                 .personalCareer(personalUser.getPersonalCareer())
                 .berryPoint(berryPoint)
                 .userIntro(user.getUserIntro())
-                .techName(String.join(",", techNames))
+                .techUrl(String.join(",", techUrls))
                 .build();
 
         return boardProfileCardDTO;
+    }
+
+    @Override
+    public void boardViewCount(Long userId, Long corrId) {
+        Optional<Board> result = boardRepository.findById(corrId);
+
+        Board board = result.orElseThrow(() -> new IllegalArgumentException("게시물 ID가 없습니다."));
+
+        if (board.getUser() == null || !board.getUser().getUserId().equals(userId)) {
+            board.boardViewCount();
+            boardRepository.save(board);
+        }
     }
 }

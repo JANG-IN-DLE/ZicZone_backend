@@ -15,6 +15,8 @@ public class BoardProfileCardDTO {
 
     private Long personalId; // 게시물 작성자 개인 회원 ID
 
+    private Long corrPoint; // 게시물 베리 포인트
+
     private String jobName; // 직무 이름
 
     private Gender gender; // 성별
@@ -27,5 +29,5 @@ public class BoardProfileCardDTO {
 
     private String userIntro; // 한줄 소개
 
-    private String techName; // 기술 이름
+    private String techUrl; // 기술 이름
 }
