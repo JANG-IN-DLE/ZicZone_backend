@@ -23,6 +23,10 @@ public interface BoardService {
     void boardDelete(Long userId, Long corrId);
     // 정보 추가(userName, personalCareer)된 BoardDTO
     BoardDTO boardUserRead(Board board);
-    // 게시물 작성자 프로필 카드 조회
+    // 게시물 작성자 프로필 카드 조회 (게시물 등록할 때)
+    BoardProfileCardDTO UserProfile(Long userId);
+    // 게시물 작성자 프로필 카드 조회 (게시물 조회할 때)
     BoardProfileCardDTO boardUserProfile(Long corrId);
+    // 조회수 (userId가 같으면 조회수 증가안함)
+    void boardViewCount(Long userId, Long corrId);
 }

@@ -50,9 +50,15 @@ public class Board {
     @JoinColumn(name = "user_id")
     private User user;                  // 유저 테이블
 
+    // 게시물 수정할 때 사용하는 메소드(제목, 내용, pdf 파일 변경 가능)
     public void change(String corrTitle, String corrContent, String corrPdf) {
         this.corrTitle = corrTitle;
         this.corrContent = corrContent;
         this.corrPdf = corrPdf;
+    }
+
+    // 조회수 증가 메소드
+    public void boardViewCount() {
+        this.corrView += 1;
     }
 }
