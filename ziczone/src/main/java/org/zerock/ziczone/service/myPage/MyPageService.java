@@ -26,8 +26,14 @@ public interface MyPageService {
     AggregatedDataDTO getAggregatedData(Long userId);
     // Pick 탭 리스트 조회 (개인 회원)
     List<CompanyUserDTO> getPicksByPersonalUsers(Long userId);
-    //(커스텀 DTO) 내가 쓴 댓글 조회
+    // (커스텀 DTO) 내가 쓴 댓글 조회
     List<MyCommentListDTO> MyCommList(Long userId);
+    // 지원서 조회
+    ResumeDTO getResume(Long userId);
+    // 지원서 수정
+    ResumeDTO setResume(Long userId, ResumeDTO resumeDTO);
+    // 지원서 삭제[부기능]
+//    ResumeDTO deleteResume(Long userId, ResumeDTO resumeDTO);
     // 토스 결제
 
 

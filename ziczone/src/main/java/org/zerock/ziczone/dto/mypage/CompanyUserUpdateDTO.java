@@ -24,7 +24,9 @@ public class CompanyUserUpdateDTO {
 
     private String companyLogo;
 
-    private String companyUserPassword;
+    private String changePassword;
+
+    private String currentPassword;
 
 //    private String companyCeo; // 추후 변경할 수 있어 주석 처리
 
