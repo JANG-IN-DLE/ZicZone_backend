@@ -22,12 +22,14 @@ import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.repository.tech.TechRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
+import org.springframework.security.core.userdetails.User.UserBuilder;
 
 import javax.transaction.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -144,8 +146,9 @@ public class JoinServiceImpl implements JoinService {
     //해당 이메일을 가진 유저가 있는지 검사
     @Override
     public User EmailDuplication(String email) {
-        User user = userRepository.findByEmail(email);
-        return user;
+
+        Optional<User> user = userRepository.findByEmail(email);
+        return user.orElse(null);
     }
 
 }
