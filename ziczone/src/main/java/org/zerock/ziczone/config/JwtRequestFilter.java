@@ -57,8 +57,6 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             // UserDetails를 로드
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
 
-            // 토큰에서 역할을 추출
-            String role = jwtService.extractRole(jwt);
 
             //토큰 유효검사
             if (jwtService.validateToken(jwt, userDetails.getUsername())) {
