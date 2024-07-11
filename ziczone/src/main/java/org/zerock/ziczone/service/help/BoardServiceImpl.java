@@ -271,7 +271,6 @@ public class BoardServiceImpl implements BoardService {
 
         // 포인트 조회
         Payment payment = paymentRepository.findByPersonalUser(personalUser);
-        Integer berryPoint = payment.getBerryPoint();
 
         // 기술 스택 조회
         List<String> techUrls = techStackRepository.findByPersonalUser(personalUser).stream()
@@ -285,7 +284,7 @@ public class BoardServiceImpl implements BoardService {
                 .gender(personalUser.getGender())
                 .userName(user.getUserName())
                 .personalCareer(personalUser.getPersonalCareer())
-                .berryPoint(berryPoint)
+                .berryPoint(payment.getBerryPoint())
                 .userIntro(user.getUserIntro())
                 .techUrl(String.join(",", techUrls))
                 .build();
@@ -294,14 +293,13 @@ public class BoardServiceImpl implements BoardService {
     }
 
     @Override
+    @Transactional
     public void boardViewCount(Long userId, Long corrId) {
-        Optional<Board> result = boardRepository.findById(corrId);
-
-        Board board = result.orElseThrow(() -> new IllegalArgumentException("게시물 ID가 없습니다."));
+        Board board = boardRepository.findById(corrId)
+                .orElseThrow(() -> new IllegalArgumentException("게시물 ID가 없습니다."));
 
         if (board.getUser() == null || !board.getUser().getUserId().equals(userId)) {
-            board.boardViewCount();
-            boardRepository.save(board);
+            boardRepository.boardViewCount(corrId);
         }
     }
 }
