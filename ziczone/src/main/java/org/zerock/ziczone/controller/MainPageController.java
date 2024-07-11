@@ -7,8 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.zerock.ziczone.dto.BennerDTO;
-import org.zerock.ziczone.dto.mypage.UserDTO;
 import org.zerock.ziczone.service.mainPage.BennerService;
+import org.zerock.ziczone.service.mainPage.CompanyLogoService;
 
 import java.util.List;
 
@@ -19,6 +19,13 @@ import java.util.List;
 public class MainPageController {
 
     private final BennerService bennerService;
+    private final CompanyLogoService companyLogoService;
+
+    @GetMapping("/companylogolist")
+    public ResponseEntity<List<String>> getCompanyLogo() {
+        List<String> companyLogoList = companyLogoService.companyLogoList();
+        return new ResponseEntity<>(companyLogoList, HttpStatus.OK);
+    }
 
     @GetMapping
     public ResponseEntity<List<BennerDTO>> getAllBenners(){
