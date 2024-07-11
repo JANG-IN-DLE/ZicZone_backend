@@ -11,13 +11,16 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import lombok.RequiredArgsConstructor;
 import org.zerock.ziczone.dto.help.BoardDTO;
 import org.zerock.ziczone.dto.help.BoardProfileCardDTO;
+import org.zerock.ziczone.dto.help.CommentDTO;
 import org.zerock.ziczone.dto.page.PageRequestDTO;
 import org.zerock.ziczone.dto.page.PageResponseDTO;
 import org.zerock.ziczone.service.help.BoardService;
+import org.zerock.ziczone.service.help.CommentService;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -174,9 +177,8 @@ public class BoardController {
      * @return ResponseEntity<Void> 상태 코드 200을 반환
      */
     @PutMapping("/viewCnt/{userId}/{corrId}")
-    public ResponseEntity<Void> boardViewCount(@PathVariable Long userId, @PathVariable Long corrId) {
+    public ResponseEntity<Void> incrementViewCount(@PathVariable Long userId, @PathVariable Long corrId) {
         boardService.boardViewCount(userId, corrId);
-
         return ResponseEntity.ok().build();
     }
 }
