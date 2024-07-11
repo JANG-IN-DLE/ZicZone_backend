@@ -25,11 +25,11 @@ import java.io.IOException;
 public class JwtRequestFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private UserDetailsServiceImpl userDetailsService;
+    private final UserDetailsServiceImpl userDetailsService;
 
     // doFilterInternal : 요청을 처리하고 필터 체인을 통해 다음 필터로 전달하는 역할
     // request : 클라이언트의 HTTP요청
-    // response : 서버가 클라이언트로 보내는 ㅗㅆ쎼dmdekq
+    // response : 서버가 클라이언트로 보내는 응답
     // chain : 필터 체인의 다음 필터를 호출
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
@@ -63,7 +63,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
                 //사용자 정보를 바탕으로 UsernamePasswordAuthenticationToken을 생성
                 UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
+                        userDetails, "", userDetails.getAuthorities());
                 usernamePasswordAuthenticationToken
                         .setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
