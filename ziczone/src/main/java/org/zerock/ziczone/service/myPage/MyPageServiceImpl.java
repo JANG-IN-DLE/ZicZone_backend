@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.domain.PickAndScrap;
 import org.zerock.ziczone.domain.board.Board;
@@ -83,23 +84,29 @@ public class MyPageServiceImpl implements  MyPageService{
         User user = getUserById(userId);
         CompanyUser companyUser = getCompanyUserById(userId);
 
-        // 비밀번호 업데이트 처리
-        if (companyUserUpdateDTO.getCompanyUserPassword() != null && !companyUserUpdateDTO.getCompanyUserPassword().isEmpty()) {
-            String hashedPassword = hashPassword(companyUserUpdateDTO.getCompanyUserPassword());
-            user = user.toBuilder()
-                    .password(hashedPassword)
-                    .build();
-            userRepository.save(user);
+        // 기존 비밀번호 검증
+        if (companyUserUpdateDTO.getCurrentPassword() != null) {
+            if (!passwordEncoder.matches(companyUserUpdateDTO.getCurrentPassword(), user.getPassword())) {
+                throw new InvalidPasswordException("Current password is incorrect");
+            }
+        }else{ // 현재 비밀번호 입력 하지 않았을 경우
+            throw new InvalidPasswordException("Current password is null");
+        }
+        // 새로운 비밀번호 검증
+        if (companyUserUpdateDTO.getCurrentPassword() != null && !companyUserUpdateDTO.getCurrentPassword().isEmpty()) {
+            hashPassword(companyUserUpdateDTO.getChangePassword());
         }
 
         CompanyUser updatedCompanyUser = companyUser.toBuilder()
                 .companyAddr(companyUserUpdateDTO.getCompanyAddr())
                 .companyLogo(companyUserUpdateDTO.getCompanyLogo())
+                .user(user)
                 .build();
 
         user = user.toBuilder()
                 .userName(companyUserUpdateDTO.getUserName() != null ? companyUserUpdateDTO.getUserName() : user.getUserName())
                 .userIntro(companyUserUpdateDTO.getUserIntro() != null ? companyUserUpdateDTO.getUserIntro() : user.getUserIntro())
+                .password(companyUserUpdateDTO.getChangePassword() != null ? hashPassword(companyUserUpdateDTO.getChangePassword()) : user.getPassword())
                 .build();
 
         userRepository.save(user);
@@ -130,49 +137,37 @@ public class MyPageServiceImpl implements  MyPageService{
         User user = getUserById(userId);
         PersonalUser personalUser = getPersonalUserById(userId);
 
-        // 기존 비밀번호 검증
+        // 기존 비밀번호 검증 조건문
         if (personalUserUpdateDTO.getCurrentPassword() != null) {
             if (!passwordEncoder.matches(personalUserUpdateDTO.getCurrentPassword(), user.getPassword())) {
                 throw new InvalidPasswordException("Current password is incorrect");
             }
+        }else{ // 현재 비밀번호 입력 하지 않았을 경우
+            throw new InvalidPasswordException("Current password is null");
         }
 
         // 새로운 비밀번호 검증
         if (personalUserUpdateDTO.getChangePassword() != null && !personalUserUpdateDTO.getChangePassword().isEmpty()) {
             validatePassword(personalUserUpdateDTO.getChangePassword());
-            String hashedPassword = hashPassword(personalUserUpdateDTO.getChangePassword());
-            user = user.toBuilder()
-                    .password(hashedPassword)
-                    .build();
         }
 
         PersonalUser updatedPersonalUser = PersonalUser.builder()
                 //기존 아이디 유지
                 .personalId(personalUser.getPersonalId())
                 .user(user) // 기존 유저또한 유지
-                .personalCareer(personalUserUpdateDTO.getPersonalCareer())
+                .personalCareer(personalUserUpdateDTO.getPersonalCareer() != null ?
+                        personalUserUpdateDTO.getPersonalCareer() : personalUser.getPersonalCareer())
                 .isCompanyVisible(personalUserUpdateDTO.isCompanyVisible())
                 .isPersonalVisible(personalUserUpdateDTO.isPersonalVisible())
                 .gender(user.getPersonalUser().getGender())
                 .build();
 
-        User updatedUser = User.builder()
-                .userId(user.getUserId())
-                .email(user.getEmail())
-                .userName(user.getUserName())
+        user = user.toBuilder()
                 .userIntro(personalUserUpdateDTO.getIntro() != null ? personalUserUpdateDTO.getIntro() : user.getUserIntro())
-                .password(user.getPassword())
-                .userType(user.getUserType())
+                .password(personalUserUpdateDTO.getChangePassword() != null ? hashPassword(personalUserUpdateDTO.getChangePassword()) : user.getPassword())
                 .build();
 
-        if(personalUserUpdateDTO.getChangePassword() != null && !personalUserUpdateDTO.getChangePassword().isEmpty()) {
-            String hashedPassword = hashPassword(personalUserUpdateDTO.getChangePassword());
-            updatedUser = updatedUser.toBuilder()
-                    .password(hashedPassword)
-                    .build();
-        }
-
-        userRepository.save(updatedUser);
+        userRepository.save(user);
         personalUserRepository.save(updatedPersonalUser);
 
         return "User Information Updated Successfully";
@@ -339,8 +334,18 @@ public class MyPageServiceImpl implements  MyPageService{
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public ResumeDTO getResume(Long userId) {
+        User user = getUserById(userId);
+        PersonalUser personalUser = getPersonalUserById(user.getUserId());
 
+        return null;
+    }
 
+    @Override
+    public ResumeDTO setResume(Long userId, ResumeDTO resumeDTO) {
+        return null;
+    }
 
 
     //    --------------------------------------------------------------------- 형변환 메서드
@@ -363,9 +368,9 @@ public class MyPageServiceImpl implements  MyPageService{
 
     private PersonalUser getPersonalUserById(Long personalUserId) {
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(personalUserId);
-                if (personalUser == null) {
-                    throw new PersonalNotFoundException("Personal User Not Found");
-                }
+        if (personalUser == null) {
+            throw new PersonalNotFoundException("Personal User Not Found");
+        }
         return personalUser;
     }
 
