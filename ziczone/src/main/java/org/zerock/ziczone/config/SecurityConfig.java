@@ -47,13 +47,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         //csrf보안은 세션을 활용하는데 Rest서버는 세션을 사용하지 않으므로 disable
-        http.csrf().disable()
+        http.cors().and()
+                .csrf().disable()
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)// Rest서버는 세션 상태를 유지하지 않으므로 STATELESS
                 .and()
                 .authorizeRequests()
                 .anyRequest().permitAll(); // 그 외 모든 요청은 인증 필요
-        //우선 모든 요청 접근가능
 
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
     }
