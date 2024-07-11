@@ -30,7 +30,7 @@ public class JwtService {
 
     // 토큰의 유효기간
     static final long EXPIRE_TIME = 1000 * 60 * 60 * 24; // 1일
-    static final String PREFIX = "Ziczone "; // 토큰을 빨리 찾기 위해 붙여주는 문자열
+    static final String PREFIX = "Bearer "; // 토큰을 빨리 찾기 위해 붙여주는 문자열
     static final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256); // 비밀키
 
     // 비밀키로 서명된 JWT토큰 발급

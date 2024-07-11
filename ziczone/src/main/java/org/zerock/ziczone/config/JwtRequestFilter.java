@@ -46,8 +46,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
 
         //헤더가 존재하고 ziczone으로 시작하는 경우, 토큰에서 username추출
-        if (authorizationHeader != null && authorizationHeader.startsWith("ziczone ")) {
-            jwt = authorizationHeader.substring(8);
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            jwt = authorizationHeader.substring(7);
             username = jwtService.extractUsername(jwt); //토큰에서 사용자이름 추출(email)
         }
 
