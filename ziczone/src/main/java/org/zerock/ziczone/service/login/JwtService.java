@@ -36,14 +36,16 @@ public class JwtService {
     // 비밀키로 서명된 JWT토큰 발급
     public String getToken(String email) {
 
-        Optional<UserType> optionalUserType = userRepository.findUserTypeByEmail(email);
-        if(!optionalUserType.isPresent()) {
+        Optional<User> user = userRepository.findByEmail(email);
+        if(!user.isPresent()) {
             throw new IllegalArgumentException("User not found");
         }
-        String role = optionalUserType.get().name();
+        String role = user.get().getUserType().toString();
+        Long userId = user.get().getUserId();
         String token = Jwts.builder()
                 .setSubject(email)
                 .claim("role", role)
+                .claim("userId", userId)
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRE_TIME))
                 .signWith(key)
                 .compact();
