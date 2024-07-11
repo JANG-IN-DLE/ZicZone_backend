@@ -49,10 +49,7 @@ public class CommentServiceImpl implements CommentService {
 
         commentRepository.save(comment);
 
-        CommentDTO updatedDTO = commentUserRead(commentDTO);
-        log.info(updatedDTO);
-
-        return commentDTO.getCommId();
+        return comment.getCommId();
     }
 
     @Transactional
@@ -76,7 +73,6 @@ public class CommentServiceImpl implements CommentService {
                             .build();
                 })
                 .collect(Collectors.toList());
-
     }
 
     @Transactional
@@ -96,6 +92,7 @@ public class CommentServiceImpl implements CommentService {
                             .userId(user.getUserId())
                             .userName(user.getUserName())
                             .personalCareer(personalUser.getPersonalCareer())
+                            .gender(personalUser.getGender())
                             .corrId(board.getCorrId())
                             .build();
                 })
@@ -137,7 +134,7 @@ public class CommentServiceImpl implements CommentService {
     @Transactional
     public CommentDTO commentUserRead(CommentDTO commentDTO) {
         User user = userRepository.findByUserId(commentDTO.getUserId());
-        PersonalUser personalUser = personalUserRepository.findByPersonalId(commentDTO.getUserId());
+        PersonalUser personalUser = user.getPersonalUser();
 
         return CommentDTO.builder()
                 .commId(commentDTO.getCommId())
@@ -147,6 +144,8 @@ public class CommentServiceImpl implements CommentService {
                 .userName(user.getUserName())
                 .personalCareer(personalUser.getPersonalCareer())
                 .corrId(commentDTO.getCorrId())
+                .gender(commentDTO.getGender())
                 .build();
     }
+
 }
