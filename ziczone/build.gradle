@@ -49,6 +49,23 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+sourceSets {
+	main {
+		java {
+			srcDirs = ["$projectDir/src/main/java", "$projectDir/build/generated"]
+		}
+	}
+}
+
+def querydslSrcDir = 'src/main/generated'
+clean {
+	delete file(querydslSrcDir)
+}
+
+tasks.withType(JavaCompile) {
+	options.generatedSourceOutputDirectory = file(querydslSrcDir)
+}
+
 node {
 	version = '16.13.0'
 	npmVersion = '8.1.0'
