@@ -7,19 +7,15 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.zerock.ziczone.dto.join.CompanyUserDTO;
-import org.zerock.ziczone.dto.join.PersonalUserDTO;
+import org.zerock.ziczone.dto.join.CompanyUserJoinDTO;
+import org.zerock.ziczone.dto.join.PersonalUserJoinDTO;
 import org.zerock.ziczone.dto.join.TechDTO;
 import org.zerock.ziczone.service.join.JoinService;
 
 import java.io.IOException;
-import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -36,8 +32,8 @@ public class JoinController {
     public List<TechDTO> techs() { return joinService.getAllTechs(); }
 
     @PostMapping("/personal")
-    public ResponseEntity<String> personalUserSignup(@RequestBody PersonalUserDTO personalUserDTO) {
-        String SignUpSuccess = joinService.personalSignUp(personalUserDTO);
+    public ResponseEntity<String> personalUserSignup(@RequestBody PersonalUserJoinDTO personalUserJoinDTO) {
+        String SignUpSuccess = joinService.personalSignUp(personalUserJoinDTO);
 
         if(Objects.equals(SignUpSuccess, "signUp success")) {
             return ResponseEntity.ok("Personal user signup successful");
@@ -55,16 +51,16 @@ public class JoinController {
         String SignUpSuccess;
 
         // companyUserDTOJson을 CompanyUserDTO 객체로 변환
-        CompanyUserDTO companyUserDTO;
+        CompanyUserJoinDTO companyUserJoinDTO;
         try {
-            companyUserDTO = new ObjectMapper().readValue(companyUserDTOJson, CompanyUserDTO.class);
+            companyUserJoinDTO = new ObjectMapper().readValue(companyUserDTOJson, CompanyUserJoinDTO.class);
         } catch (IOException e) {
             log.error("Failed to parse companyUserDTO", e);
             return ResponseEntity.badRequest().body("Invalid JSON data");
         }
 
         //저장될 객체의 이름
-        String objectName = folderName + companyUserDTO.getUserName();
+        String objectName = folderName + companyUserJoinDTO.getUserName();
 
         //Amazon S3에 파일을 업로드
         try {
@@ -81,9 +77,9 @@ public class JoinController {
             String fileUrl = amazonS3.getUrl(bucketName, objectName).toString();
 
             //파일의 URL을 DTO에 설정
-            companyUserDTO.setCompanyLogo(fileUrl);
+            companyUserJoinDTO.setCompanyLogo(fileUrl);
 
-            SignUpSuccess = joinService.companyJoin(companyUserDTO);
+            SignUpSuccess = joinService.companyJoin(companyUserJoinDTO);
 
         } catch (IOException e) {
             throw new RuntimeException(e);

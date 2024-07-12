@@ -12,8 +12,8 @@ import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.domain.member.UserType;
 import org.zerock.ziczone.domain.tech.Tech;
 import org.zerock.ziczone.domain.tech.TechStack;
-import org.zerock.ziczone.dto.join.CompanyUserDTO;
-import org.zerock.ziczone.dto.join.PersonalUserDTO;
+import org.zerock.ziczone.dto.join.CompanyUserJoinDTO;
+import org.zerock.ziczone.dto.join.PersonalUserJoinDTO;
 import org.zerock.ziczone.dto.join.TechDTO;
 import org.zerock.ziczone.repository.job.JobPositionRepository;
 import org.zerock.ziczone.repository.job.JobRepository;
@@ -22,7 +22,6 @@ import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.repository.tech.TechRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
-import org.springframework.security.core.userdetails.User.UserBuilder;
 
 import javax.transaction.Transactional;
 import java.time.LocalDate;
@@ -66,15 +65,15 @@ public class JoinServiceImpl implements JoinService {
 
     //개인회원가입
     @Override
-    public String personalSignUp(PersonalUserDTO personalUserDTO) {
+    public String personalSignUp(PersonalUserJoinDTO personalUserJoinDTO) {
 
         //회원
         User user = User.builder()
-                .userName(personalUserDTO.getUserName())
-                .email(personalUserDTO.getEmail())
-                .password(passwordEncoder.encode(personalUserDTO.getPassword()))
+                .userName(personalUserJoinDTO.getUserName())
+                .email(personalUserJoinDTO.getEmail())
+                .password(passwordEncoder.encode(personalUserJoinDTO.getPassword()))
                 .userType(UserType.PERSONAL)
-                .userIntro(personalUserDTO.getUserIntro())
+                .userIntro(personalUserJoinDTO.getUserIntro())
                 .userCreate(LocalDateTime.now())
                 .build();
         userRepository.save(user);
@@ -82,13 +81,13 @@ public class JoinServiceImpl implements JoinService {
         //개인회원
         PersonalUser personalUser = PersonalUser.builder()
                 .user(user)
-                .personalCareer(personalUserDTO.getPersonalCareer())
-                .gender(personalUserDTO.getGender())
+                .personalCareer(personalUserJoinDTO.getPersonalCareer())
+                .gender(personalUserJoinDTO.getGender())
                 .build();
         personalUserRepository.save(personalUser);
 
         //희망직무
-        for (Long jobId : personalUserDTO.getJobIds()) {
+        for (Long jobId : personalUserJoinDTO.getJobIds()) {
             Job job = jobRepository.findById(jobId)
                     .orElseThrow(() -> new RuntimeException("없는 직무입니다."));
             JobPosition jobPosition = JobPosition.builder()
@@ -99,7 +98,7 @@ public class JoinServiceImpl implements JoinService {
         }
 
         // 기술 스택 정보 저장
-        for (Long techId : personalUserDTO.getTechIds()) {
+        for (Long techId : personalUserJoinDTO.getTechIds()) {
             Tech tech = techRepository.findById(techId)
                     .orElseThrow(() -> new RuntimeException("없는 스택입니다."));
             TechStack techStack = TechStack.builder()
@@ -113,18 +112,18 @@ public class JoinServiceImpl implements JoinService {
     }
 
     @Override
-    public String companyJoin(CompanyUserDTO companyUserDTO) {
+    public String companyJoin(CompanyUserJoinDTO companyUserJoinDTO) {
 
         // 설립날짜 String -> LocalDate
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         //회원
         User user = User.builder()
-                .userName(companyUserDTO.getUserName())
-                .email(companyUserDTO.getEmail())
-                .password(passwordEncoder.encode(companyUserDTO.getPassword()))
+                .userName(companyUserJoinDTO.getUserName())
+                .email(companyUserJoinDTO.getEmail())
+                .password(passwordEncoder.encode(companyUserJoinDTO.getPassword()))
                 .userType(UserType.COMPANY)
-                .userIntro(companyUserDTO.getUserIntro())
+                .userIntro(companyUserJoinDTO.getUserIntro())
                 .userCreate(LocalDateTime.now())
                 .build();
         userRepository.save(user);
@@ -132,11 +131,11 @@ public class JoinServiceImpl implements JoinService {
         //기업회원
         CompanyUser companyUser = CompanyUser.builder()
                 .user(user)
-                .companyNum(companyUserDTO.getCompanyNum())
-                .companyAddr(companyUserDTO.getCompanyAddr())
-                .companyYear(LocalDate.parse(companyUserDTO.getCompanyYear(), formatter))
-                .companyLogo(companyUserDTO.getCompanyLogo())
-                .companyCeo(companyUserDTO.getCompanyCeo())
+                .companyNum(companyUserJoinDTO.getCompanyNum())
+                .companyAddr(companyUserJoinDTO.getCompanyAddr())
+                .companyYear(LocalDate.parse(companyUserJoinDTO.getCompanyYear(), formatter))
+                .companyLogo(companyUserJoinDTO.getCompanyLogo())
+                .companyCeo(companyUserJoinDTO.getCompanyCeo())
                 .build();
         companyUserRepository.save(companyUser);
 
