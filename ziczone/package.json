@@ -1,0 +1,15 @@
+{
+  "name": "ziczone-spring-boot",
+  "version": "1.0.0",
+  "description": "ZicZone Spring Boot Project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.24.0",
+    "react": "^17.0.2"
+  }
+}
