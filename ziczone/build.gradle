@@ -67,11 +67,9 @@ tasks.withType(JavaCompile) {
 }
 
 node {
-	version = '16.13.0'
-	npmVersion = '8.1.0'
+	version = '17.6.0'
+	npmVersion = '8.5.1'
 	download = true
-	workDir = file("${project.buildDir}/nodejs")
-	npmWorkDir = file("${project.buildDir}/npm")
 }
 
 task cleanNpmCache(type: NpmTask) {
@@ -79,13 +77,26 @@ task cleanNpmCache(type: NpmTask) {
 }
 
 task appNpmInstall(type: NpmTask) {
-	workingDir = file("${project.projectDir}/src/main/resources/static")
-	args = ['install']
+	description = "Installs dependencies from package.json"
+	workingDir = file("${projectDir}/src/main/resources/static");
+	args = ["install"]
 }
+processResources{
+	dependsOn "appNpmInstall"
+}
+
+group = 'bitcamp'
+version = '0.0.1-SNAPSHOT'
 
 appNpmInstall.dependsOn(cleanNpmCache)
 build.dependsOn(appNpmInstall)
 
 tasks.withType(Test) {
 	enabled = false
+}
+
+tasks.withType(JavaCompile) {
+	options.encoding = 'UTF-8'
+	sourceCompatibility = '17'
+	targetCompatibility = '17'
 }
