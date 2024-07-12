@@ -347,6 +347,35 @@ public class MyPageServiceImpl implements  MyPageService{
         return null;
     }
 
+    @Override
+    public List<CompanyUserDTO> getCompanyUserList() {
+        List<CompanyUser> companyUsers = companyUserRepository.findAll();
+
+        return companyUsers.stream()
+                .map(companyUser -> {
+                    User user = companyUser.getUser();
+                    UserDTO userDTO = UserDTO.builder()
+                            .userId(user.getUserId())
+                            .email(user.getEmail())
+                            .userName(user.getUserName())
+                            .userIntro(user.getUserIntro())
+                            .userType(null)
+                            .build();
+
+                    return CompanyUserDTO.builder()
+                            .userId(user.getUserId())
+                            .user(userDTO)
+                            .companyId(companyUser.getCompanyId())
+                            .companyNum(companyUser.getCompanyNum())
+                            .companyAddr(companyUser.getCompanyAddr())
+                            .companyLogo(companyUser.getCompanyLogo())
+                            .companyCeo(companyUser.getCompanyCeo())
+                            .companyYear(companyUser.getCompanyYear())
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
 
     //    --------------------------------------------------------------------- 형변환 메서드
 
