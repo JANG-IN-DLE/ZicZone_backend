@@ -7,8 +7,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.zerock.ziczone.dto.BennerDTO;
+import org.zerock.ziczone.dto.join.CompanyUserJoinDTO;
+import org.zerock.ziczone.dto.join.PersonalUserJoinDTO;
+import org.zerock.ziczone.dto.mypage.CompanyUserDTO;
 import org.zerock.ziczone.service.mainPage.BennerService;
-import org.zerock.ziczone.service.mainPage.CompanyLogoService;
+import org.zerock.ziczone.service.mainPage.MainPageService;
 
 import java.util.List;
 
@@ -19,12 +22,26 @@ import java.util.List;
 public class MainPageController {
 
     private final BennerService bennerService;
-    private final CompanyLogoService companyLogoService;
+    private final MainPageService mainPageService;
 
     @GetMapping("/companylogolist")
     public ResponseEntity<List<String>> getCompanyLogo() {
-        List<String> companyLogoList = companyLogoService.companyLogoList();
+        List<String> companyLogoList = mainPageService.companyLogoList();
         return new ResponseEntity<>(companyLogoList, HttpStatus.OK);
+    }
+
+    //기업 프로필
+    @GetMapping("/companyUser/{id}")
+    public ResponseEntity<CompanyUserJoinDTO> getCompanyUserProfile(@PathVariable Long id) {
+        CompanyUserJoinDTO companyUser = mainPageService.getCompanyUser(id);
+        return new ResponseEntity<>(companyUser, HttpStatus.OK);
+    }
+
+    //개인 프로필
+    @GetMapping("/personalUser/{id}")
+    public ResponseEntity<PersonalUserJoinDTO> getPersonalUserProfile(@PathVariable Long id) {
+        PersonalUserJoinDTO personalUser = mainPageService.getPersonalUser(id);
+        return new ResponseEntity<>(personalUser, HttpStatus.OK);
     }
 
     @GetMapping
