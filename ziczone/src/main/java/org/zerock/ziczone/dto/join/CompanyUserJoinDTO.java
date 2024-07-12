@@ -1,19 +1,18 @@
 package org.zerock.ziczone.dto.join;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.web.multipart.MultipartFile;
 import org.zerock.ziczone.domain.member.UserType;
-
-import java.time.LocalDate;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class CompanyUserDTO {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class CompanyUserJoinDTO {
 
     private String userName;
 
