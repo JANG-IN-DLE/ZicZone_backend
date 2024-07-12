@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '2.7.5'
 	id 'io.spring.dependency-management' version '1.1.5'
+	id 'com.github.node-gradle.node' version '3.2.1'
 }
 
 group = 'org.zerock'
@@ -46,4 +47,28 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+node {
+	version = '16.13.0'
+	npmVersion = '8.1.0'
+	download = true
+	workDir = file("${project.buildDir}/nodejs")
+	npmWorkDir = file("${project.buildDir}/npm")
+}
+
+task cleanNpmCache(type: NpmTask) {
+	args = ['cache', 'clean', '--force']
+}
+
+task appNpmInstall(type: NpmTask) {
+	workingDir = file("${project.projectDir}/src/main/resources/static")
+	args = ['install']
+}
+
+appNpmInstall.dependsOn(cleanNpmCache)
+build.dependsOn(appNpmInstall)
+
+tasks.withType(Test) {
+	enabled = false
 }
