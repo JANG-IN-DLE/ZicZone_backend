@@ -125,23 +125,38 @@ public class BoardServiceImpl implements BoardService {
     }
 
     @Override
-    public PageResponseDTO<BoardDTO> boardFilter(String filterType, PageRequestDTO pageRequestDTO) {
+    public PageResponseDTO<BoardDTO> boardFilter(String filterType, PageRequestDTO pageRequestDTO, boolean showSelect) {
         Pageable pageable = PageRequest.of(pageRequestDTO.getPage() -1, pageRequestDTO.getSize());
         Page<Board> result;
 
-        switch (filterType) {
-            case "latest":   // 최신순
-                result = boardRepository.findAllByOrderByCorrCreateDesc(pageable);
-                break;
-            case "views":    // 조회순
-                result = boardRepository.findAllByOrderByCorrViewDesc(pageable);
-                break;
-            case "berry":    // 포인트(베리)순
-                result = boardRepository.findAllByOrderByCorrPointDesc(pageable);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid filter type: " + filterType);
-
+        if (showSelect) {
+            switch (filterType) {
+                case "latest":   // 최신순
+                    result = boardRepository.findAllByOrderByCorrCreateDescAndCommSelectionFalse(pageable);
+                    break;
+                case "views":    // 조회순
+                    result = boardRepository.findAllByOrderByCorrViewDescAndCommSelectionFalse(pageable);
+                    break;
+                case "berry":    // 포인트(베리)순
+                    result = boardRepository.findAllByOrderByCorrPointDescAndCommSelectionFalse(pageable);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid filter type: " + filterType);
+            }
+        } else {
+            switch (filterType) {
+                case "latest":   // 최신순
+                    result = boardRepository.findAllByOrderByCorrCreateDesc(pageable);
+                    break;
+                case "views":    // 조회순
+                    result = boardRepository.findAllByOrderByCorrViewDesc(pageable);
+                    break;
+                case "berry":    // 포인트(베리)순
+                    result = boardRepository.findAllByOrderByCorrPointDesc(pageable);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid filter type: " + filterType);
+            }
         }
 
         List<BoardDTO> dtoList = result.stream()
