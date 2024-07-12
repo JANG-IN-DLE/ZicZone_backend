@@ -37,5 +37,7 @@ public interface MyPageService {
     // 토스 결제
 
 
+    //company존 기업리스트
+    List<CompanyUserDTO> getCompanyUserList();
 
 }
