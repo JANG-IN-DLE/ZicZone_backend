@@ -20,6 +20,7 @@ public class CommentController {
             return ResponseEntity.badRequest().body(null);
         }
 
+        Long createdCommentId = commentService.commentRegister(commentDTO);
         CommentDTO createdComment = commentService.commentUserRead(commentDTO);
 
         return ResponseEntity.ok(createdComment);
@@ -30,5 +31,26 @@ public class CommentController {
         List<CommentDTO> comments = commentService.boardReadAllComment(corrId);
 
         return ResponseEntity.ok(comments);
+    }
+
+    @PutMapping("/{commentId}/{userId}")
+    public ResponseEntity<CommentDTO> updateComment(@PathVariable Long commentId, @PathVariable Long userId, @RequestBody CommentDTO commentDTO) {
+        commentDTO.setCommId(commentId);
+        commentDTO.setUserId(userId);
+
+        if (commentDTO.getUserId() == null || commentDTO.getCorrId() == null) {
+            return ResponseEntity.badRequest().body(null);
+        }
+
+        CommentDTO updatedComment = commentService.commentModify(commentDTO);
+
+        return ResponseEntity.ok(updatedComment);
+    }
+
+    @DeleteMapping("/{commentId}/{userId}")
+    public ResponseEntity<Void> deleteComment(@PathVariable Long commentId, @PathVariable Long userId) {
+        commentService.commentDelete(userId, commentId);
+
+        return ResponseEntity.ok().build();
     }
 }

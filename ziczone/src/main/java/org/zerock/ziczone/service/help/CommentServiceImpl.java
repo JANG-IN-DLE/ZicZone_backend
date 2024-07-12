@@ -100,7 +100,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Transactional
-    public void commentModify(CommentDTO commentDTO) {
+    public CommentDTO commentModify(CommentDTO commentDTO) {
         Optional<Comment> result = commentRepository.findById(commentDTO.getCommId());
 
         Comment comment = result.orElseThrow(() -> new IllegalArgumentException("댓글 ID가 없습니다."));
@@ -110,20 +110,18 @@ public class CommentServiceImpl implements CommentService {
         }
 
         comment.change(commentDTO.getCommContent());
-
         commentRepository.save(comment);
 
-        CommentDTO updatedDTO = commentUserRead(commentDTO);
-        log.info(updatedDTO);
+        return commentUserRead(commentDTO);
     }
 
-    @Override
+    @Transactional
     public void commentDelete(Long userId, Long commentId) {
         Optional<Comment> result = commentRepository.findById(commentId);
 
         Comment comment = result.orElseThrow(() -> new IllegalArgumentException("댓글 ID가 없습니다."));
 
-        if(!comment.getUser().getUserId().equals(userId)) {
+        if (!comment.getUser().getUserId().equals(userId)) {
             throw new IllegalArgumentException("작성자만 삭제할 수 있습니다.");
         }
 
