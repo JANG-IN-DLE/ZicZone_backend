@@ -6,8 +6,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import com.amazonaws.services.s3.AmazonS3;
-import lombok.RequiredArgsConstructor;
 import org.zerock.ziczone.dto.help.BoardDTO;
 import org.zerock.ziczone.dto.help.BoardProfileCardDTO;
 import org.zerock.ziczone.dto.page.PageRequestDTO;
@@ -86,7 +84,7 @@ public class BoardController {
     /**
      * 게시물 등록할 때 작성자 프로필 카드 조회
      *
-     * @param userId 사용자 ID
+     * @param () 유저 ID (로그인 구현되면)
      * @return ResponseEntity<BoardProfileCardDTO> 조회된 프로필 카드 정보
      */
     @GetMapping("/api/personal/board/myProfile/{userId}")
