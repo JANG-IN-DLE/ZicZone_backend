@@ -29,8 +29,9 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final PersonalUserRepository personalUserRepository;
 
+    @Override
     @Transactional
-    public Long commentRegister(CommentDTO commentDTO) {
+    public CommentDTO commentRegister(CommentDTO commentDTO) {
         User user = userRepository.findById(commentDTO.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("회원 ID가 없습니다."));
 
@@ -47,9 +48,9 @@ public class CommentServiceImpl implements CommentService {
                 .board(board)
                 .build();
 
-        commentRepository.save(comment);
+        Comment savedComment = commentRepository.save(comment);
 
-        return comment.getCommId();
+        return commentUserRead(savedComment);
     }
 
     @Transactional
@@ -112,12 +113,12 @@ public class CommentServiceImpl implements CommentService {
         comment.change(commentDTO.getCommContent());
         commentRepository.save(comment);
 
-        return commentUserRead(commentDTO);
+        return commentUserRead(comment);
     }
 
     @Transactional
-    public void commentDelete(Long userId, Long commentId) {
-        Optional<Comment> result = commentRepository.findById(commentId);
+    public void commentDelete(Long userId, Long commId) {
+        Optional<Comment> result = commentRepository.findById(commId);
 
         Comment comment = result.orElseThrow(() -> new IllegalArgumentException("댓글 ID가 없습니다."));
 
@@ -125,24 +126,26 @@ public class CommentServiceImpl implements CommentService {
             throw new IllegalArgumentException("작성자만 삭제할 수 있습니다.");
         }
 
-        commentRepository.deleteById(commentId);
+        commentRepository.deleteById(commId);
     }
 
-    // CommentDTO 객체를 받아 userId를 이용해 관련 사용자 정보(이름, 경력)을 조회하여 새로운 DTO 객체에 설정
+    // Comment 객체를 받아 userId를 이용해 관련 사용자 정보(이름, 경력)을 조회하여 새로운 DTO 객체에 설정
     @Transactional
-    public CommentDTO commentUserRead(CommentDTO commentDTO) {
-        User user = userRepository.findByUserId(commentDTO.getUserId());
+    public CommentDTO commentUserRead(Comment comment) {
+        User user = userRepository.findById(comment.getUser().getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("회원 ID가 없습니다."));
         PersonalUser personalUser = user.getPersonalUser();
 
         return CommentDTO.builder()
-                .commId(commentDTO.getCommId())
-                .commContent(commentDTO.getCommContent())
-                .commSelection(commentDTO.isCommSelection())
-                .userId(commentDTO.getUserId())
+                .commId(comment.getCommId())
+                .commContent(comment.getCommContent())
+                .commSelection(comment.isCommSelection())
+                .userId(comment.getUser().getUserId())
+                .personalId(personalUser.getPersonalId())
                 .userName(user.getUserName())
-                .personalCareer(personalUser.getPersonalCareer())
-                .corrId(commentDTO.getCorrId())
-                .gender(commentDTO.getGender())
+                .personalCareer(personalUser != null ? personalUser.getPersonalCareer() : null)
+                .corrId(comment.getBoard().getCorrId())
+                .gender(personalUser != null ? personalUser.getGender() : null)
                 .build();
     }
 

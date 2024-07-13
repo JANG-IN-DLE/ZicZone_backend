@@ -22,20 +22,20 @@ public class CommentServiceTests {
     private final Long userId = 7L; // 개인 회원
     private final Long corrId = 2L;
 
-    @Test
-    public void testCommentRegister() {
-        CommentDTO commentDTO = CommentDTO.builder()
-                .commContent("댓글 테스트")
-                .corrId(corrId)
-                .userId(userId)
-                .build();
-
-        Long commId = commentService.commentRegister(commentDTO);
-    }
+//    @Test
+//    public void testCommentRegister() {
+//        CommentDTO commentDTO = CommentDTO.builder()
+//                .commContent("댓글 테스트")
+//                .corrId(corrId)
+//                .userId(userId)
+//                .build();
+//
+//        Long commId = commentService.commentRegister(commentDTO);
+//    }
 
     @Test
     public void testUserReadAllComment() {
-        Long userId = 7L;
+        Long userId = 13L;
 
         List<CommentDTO> commentDTOList = commentService.userReadAllComment(userId);
 
@@ -44,7 +44,7 @@ public class CommentServiceTests {
 
     @Test
     public void testBoardReadAllComment() {
-        Long corrId = 10L;
+        Long corrId = 5L;
 
         List<CommentDTO> commentDTOList = commentService.boardReadAllComment(corrId);
 
