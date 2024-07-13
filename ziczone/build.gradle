@@ -1,4 +1,5 @@
 plugins {
+	id 'application'
 	id 'java'
 	id 'org.springframework.boot' version '2.7.5'
 	id 'io.spring.dependency-management' version '1.1.5'
@@ -16,6 +17,12 @@ java {
 
 repositories {
 	mavenCentral()
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
 }
 
 dependencies {
@@ -49,22 +56,6 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
-sourceSets {
-	main {
-		java {
-			srcDirs = ["$projectDir/src/main/java", "$projectDir/build/generated"]
-		}
-	}
-}
-
-def querydslSrcDir = 'src/main/generated'
-clean {
-	delete file(querydslSrcDir)
-}
-
-tasks.withType(JavaCompile) {
-	options.generatedSourceOutputDirectory = file(querydslSrcDir)
-}
 
 node {
 	version = '17.6.0'
@@ -72,31 +63,29 @@ node {
 	download = true
 }
 
-task cleanNpmCache(type: NpmTask) {
-	args = ['cache', 'clean', '--force']
-}
 
 task appNpmInstall(type: NpmTask) {
 	description = "Installs dependencies from package.json"
 	workingDir = file("${projectDir}/src/main/resources/static");
 	args = ["install"]
 }
+
 processResources{
 	dependsOn "appNpmInstall"
-}
-
-group = 'bitcamp'
-version = '0.0.1-SNAPSHOT'
-
-appNpmInstall.dependsOn(cleanNpmCache)
-build.dependsOn(appNpmInstall)
-
-tasks.withType(Test) {
-	enabled = false
 }
 
 tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
 	sourceCompatibility = '17'
 	targetCompatibility = '17'
+}
+
+application {
+	mainClass = 'org.zerock.ziczone.ZiczoneApplication'
+}
+
+task buildWithoutTests {
+	dependsOn 'assemble'
+	description = 'Builds the project without running tests'
+	group = 'build'
 }
