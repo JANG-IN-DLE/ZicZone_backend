@@ -497,7 +497,6 @@ public class UserRepositoryTests {
 
         Payment payment = Payment.builder()
                 .payState(PayState.SUCCESS)
-                .payNum(1000)
                 .berryPoint(100)
                 .personalUser(personalUser)
                 .build();

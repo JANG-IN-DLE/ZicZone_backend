@@ -3,6 +3,7 @@ package org.zerock.ziczone.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.zerock.ziczone.dto.mypage.ResumeDTO;
 import org.zerock.ziczone.service.myPage.ResumeService;
 
@@ -48,9 +49,11 @@ public class MyPageResumeConroller {
      * @return ResponseEntity.ok || status
      */
     @PutMapping("/{userId}")
-    public ResponseEntity<String> updateResume(@PathVariable Long userId, @RequestBody ResumeDTO resumeDTO) {
+    public ResponseEntity<String> updateResume(@PathVariable Long userId,
+                                               @RequestBody ResumeDTO resumeDTO,
+                                               @RequestPart(value = "resumePhoto", required = false) MultipartFile resumePhotoFile) {
         try {
-            resumeService.updateResume(userId, resumeDTO);
+            ResumeDTO updatedResume = resumeService.updateResume(userId, resumeDTO, resumePhotoFile);
             return ResponseEntity.ok("Resume updated successfully");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Failed to update resume");

@@ -22,18 +22,21 @@ public class ResumeDTO {
     private String phoneNum;
     private String resumePhoto;
     private String resumeEmail;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime resumeCreate;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime resumeUpdate;
     private String personalState;
     private Long personalId;
-    private ArchiveDTO archive; // One-to-One relationship
-    private List<EtcDTO> etcs; // One-to-Many relationship
-    private List<CurriculumDTO> curriculums; // One-to-Many relationship
-    private List<CareerDTO> careers; // One-to-Many relationship
-    private List<EducationDTO> educations; // One-to-Many relationship
-    private List<CertificateDTO> certificates; // One-to-Many relationship
+    private ArchiveDTO archive;
+    private List<EtcDTO> etcs;
+    private List<CurriculumDTO> curriculums;
+    private List<CareerDTO> careers;
+    private List<EducationDTO> educations;
+    private List<CertificateDTO> certificates;
+    private List<JobPositionDTO> jobPositions;
+    private List<TechStackDTO> techStacks;
+    private List<PortfolioDTO> portfolios;
 
     // DTO to Entity
     public Resume toEntity() {

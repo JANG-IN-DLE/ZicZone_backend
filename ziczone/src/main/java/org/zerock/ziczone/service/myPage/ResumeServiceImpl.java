@@ -1,23 +1,34 @@
 package org.zerock.ziczone.service.myPage;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.zerock.ziczone.domain.application.*;
+import org.zerock.ziczone.domain.job.Job;
+import org.zerock.ziczone.domain.job.JobPosition;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
+import org.zerock.ziczone.domain.tech.Tech;
+import org.zerock.ziczone.domain.tech.TechStack;
 import org.zerock.ziczone.dto.mypage.*;
 import org.zerock.ziczone.exception.mypage.PersonalNotFoundException;
 import org.zerock.ziczone.exception.mypage.UserNotFoundException;
 import org.zerock.ziczone.repository.application.*;
+import org.zerock.ziczone.repository.job.JobPositionRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
+import org.zerock.ziczone.repository.tech.TechStackRepository;
+import org.zerock.ziczone.service.storage.StorageService;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResumeServiceImpl implements ResumeService {
@@ -31,6 +42,9 @@ public class ResumeServiceImpl implements ResumeService {
     private final CertificateRepository certificateRepository;
     private final UserRepository userRepository;
     private final PersonalUserRepository personalUserRepository;
+    private final JobPositionRepository jobPositionRepository;
+    private final TechStackRepository techStackRepository;
+    private final StorageService storageService;
 
 
     /**
@@ -97,6 +111,13 @@ public class ResumeServiceImpl implements ResumeService {
         List<EducationDTO> educations = getOrCreateEducations(resume);
         List<CertificateDTO> certificates = getOrCreateCertificates(resume);
 
+        List<JobPositionDTO> jobPositions = getJobPositionsByPersonalId(personalUser.getPersonalId());
+        log.info("jobPositions : {}",jobPositions);
+        List<TechStackDTO> techStacks = getTechStacksByPersonalId(personalUser.getPersonalId());
+        log.info("techStacks : {}",techStacks);
+
+
+
         resumeDTO = resumeDTO.toBuilder()
                 .archive(archiveDTO)
                 .etcs(etcs)
@@ -104,8 +125,11 @@ public class ResumeServiceImpl implements ResumeService {
                 .careers(careers)
                 .educations(educations)
                 .certificates(certificates)
+                .jobPositions(jobPositions)
+                .techStacks(techStacks)
                 .build();
 
+        log.info("resumeDTO : {}", resumeDTO);
         return resumeDTO;
     }
 
@@ -118,7 +142,7 @@ public class ResumeServiceImpl implements ResumeService {
      */
     @Override
     @Transactional
-    public ResumeDTO updateResume(Long userId, ResumeDTO resumeDTO) {
+    public ResumeDTO updateResume(Long userId, ResumeDTO resumeDTO, MultipartFile resumePhotoFile) {
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
         if (personalUser == null) {
             throw new PersonalNotFoundException("Personal user not found");
@@ -128,14 +152,24 @@ public class ResumeServiceImpl implements ResumeService {
         if (resumesOptional.isPresent() && !resumesOptional.get().isEmpty()) {
             Resume resume = resumesOptional.get().get(0);
 
-            Resume.ResumeBuilder resumeBuilder = resume.toBuilder();
+            // 사진 업로드 처리
+            String resumePhotoUrl = resume.getResumePhoto();
+            if (resumePhotoFile != null && !resumesOptional.get().isEmpty()) {
+                // 클라우드 오브젝트 스토리지 버켓 관련 설정
+                String folderName = "ziczone-bucket";
+                String bucketName = "resumePhoto";
+                String objectName = folderName+ resumePhotoFile.getOriginalFilename();
+                resumePhotoUrl = storageService.uploadFile(resumePhotoFile, folderName, objectName, bucketName);
 
+            }
+
+            Resume.ResumeBuilder resumeBuilder = resume.toBuilder();
             resumeBuilder.resumeName(getValueOrEmpty(resumeDTO.getResumeName(), resume.getResumeName()));
             resumeBuilder.resumeDate(getValueOrEmpty(resumeDTO.getResumeDate(), resume.getResumeDate()));
             resumeBuilder.phoneNum(getValueOrEmpty(resumeDTO.getPhoneNum(), resume.getPhoneNum()));
-            resumeBuilder.resumePhoto(getValueOrEmpty(resumeDTO.getResumePhoto(), resume.getResumePhoto()));
+            resumeBuilder.resumePhoto(resumePhotoUrl);
             resumeBuilder.resumeCreate(getValueOrEmpty(resumeDTO.getResumeCreate(), resume.getResumeCreate()));
-            resumeBuilder.resumeUpdate(getValueOrEmpty(resumeDTO.getResumeUpdate(), resume.getResumeUpdate()));
+            resumeBuilder.resumeUpdate(LocalDateTime.now()); // Update timestamp
             resumeBuilder.personalState(getValueOrEmpty(resumeDTO.getPersonalState(), resume.getPersonalState()));
             resumeBuilder.resumeEmail(getValueOrEmpty(resumeDTO.getResumeEmail(), resume.getResumeEmail()));
 
@@ -147,6 +181,8 @@ public class ResumeServiceImpl implements ResumeService {
             saveOrUpdateCareers(resumeDTO.getCareers(), updatedResume);
             saveOrUpdateEducations(resumeDTO.getEducations(), updatedResume);
             saveOrUpdateCertificates(resumeDTO.getCertificates(), updatedResume);
+            saveOrUpdateJobPositions(resumeDTO.getJobPositions(), personalUser);
+            saveOrUpdateTechStacks(resumeDTO.getTechStacks(), personalUser);
 
             return getResumeDTOWithDefaults(updatedResume);
         } else {
@@ -207,6 +243,8 @@ public class ResumeServiceImpl implements ResumeService {
                 .careers(getOrCreateCareers(resume))
                 .educations(getOrCreateEducations(resume))
                 .certificates(getOrCreateCertificates(resume))
+                .jobPositions(getOrCreateJobPositionsDTO(resume.getPersonalUser().getPersonalId()))
+                .techStacks(getOrCreateTechStacksDTO(resume.getPersonalUser().getPersonalId()))
                 .build();
         return resumeDTO;
     }
@@ -301,6 +339,38 @@ public class ResumeServiceImpl implements ResumeService {
                     .certDate(getValueOrEmpty(certificate.getCert_date(), ""))
                     .resume(resume)
                     .build());
+        }
+    }
+    private void saveOrUpdateJobPositions(List<JobPositionDTO> jobPositions, PersonalUser personalUser) {
+        jobPositionRepository.deleteByPersonalUser(personalUser);
+        if (jobPositions != null) {
+            List<JobPosition> jobPositionEntities = jobPositions.stream()
+                    .map(jobPositionDTO -> JobPosition.builder()
+                            .personalUser(personalUser)
+                            .job(Job.builder()
+                                    .jobId(jobPositionDTO.getJob().getJobId())
+                                    .jobName(jobPositionDTO.getJob().getJobName())
+                                    .build())
+                            .build())
+                    .collect(Collectors.toList());
+            jobPositionRepository.saveAll(jobPositionEntities);
+        }
+    }
+
+    private void saveOrUpdateTechStacks(List<TechStackDTO> techStacks, PersonalUser personalUser) {
+        techStackRepository.deleteByPersonalUser(personalUser);
+        if (techStacks != null) {
+            List<TechStack> techStackEntities = techStacks.stream()
+                    .map(techStackDTO -> TechStack.builder()
+                            .personalUser(personalUser)
+                            .tech(Tech.builder()
+                                    .techId(techStackDTO.getTech().getTechId())
+                                    .techName(techStackDTO.getTech().getTechName())
+                                    .techUrl(techStackDTO.getTech().getTechUrl())
+                                    .build())
+                            .build())
+                    .collect(Collectors.toList());
+            techStackRepository.saveAll(techStackEntities);
         }
     }
 
@@ -415,4 +485,50 @@ public class ResumeServiceImpl implements ResumeService {
         }
         return certificates;
     }
+
+    private List<JobPositionDTO> getOrCreateJobPositionsDTO(Long personalId) {
+        return getJobPositionsByPersonalId(personalId);
+    }
+
+    private List<TechStackDTO> getOrCreateTechStacksDTO(Long personalId) {
+        return getTechStacksByPersonalId(personalId);
+    }
+
+    private List<JobPositionDTO> getJobPositionsByPersonalId(Long personalId) {
+        List<JobPosition> jobPositions = jobPositionRepository.findByPersonalUser_PersonalId(personalId);
+
+        return jobPositions.stream()
+                .map(this::convertToJobPositionDTO)
+                .collect(Collectors.toList());
+    }
+
+    private List<TechStackDTO> getTechStacksByPersonalId(Long personalId) {
+        List<TechStack> techStacks = techStackRepository.findByPersonalUser_PersonalId(personalId);
+
+        return techStacks.stream()
+                .map(this::convertToTechStackDTO)
+                .collect(Collectors.toList());
+    }
+
+    private JobPositionDTO convertToJobPositionDTO(JobPosition jobPosition) {
+        return JobPositionDTO.builder()
+                .userJobId(jobPosition.getUserJobId())
+                .job(JobDTO.builder()
+                        .jobId(jobPosition.getJob().getJobId())
+                        .jobName(jobPosition.getJob().getJobName())
+                        .build())
+                .build();
+    }
+
+    private TechStackDTO convertToTechStackDTO(TechStack techStack) {
+        return TechStackDTO.builder()
+                .userTechId(techStack.getUserTechId())
+                .tech(TechDTO.builder()
+                        .techId(techStack.getTech().getTechId())
+                        .techName(techStack.getTech().getTechName())
+                        .techUrl(techStack.getTech().getTechUrl())
+                        .build())
+                .build();
+    }
+
 }
