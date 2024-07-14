@@ -71,6 +71,8 @@ public class CommentServiceImpl implements CommentService {
                             .userName(user.getUserName())
                             .personalCareer(personalUser.getPersonalCareer())
                             .corrId(board.getCorrId())
+                            .personalId(personalUser.getPersonalId())
+                            .gender(personalUser.getGender())
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -94,6 +96,7 @@ public class CommentServiceImpl implements CommentService {
                             .userName(user.getUserName())
                             .personalCareer(personalUser.getPersonalCareer())
                             .gender(personalUser.getGender())
+                            .personalId(personalUser.getPersonalId())
                             .corrId(board.getCorrId())
                             .build();
                 })
@@ -147,6 +150,35 @@ public class CommentServiceImpl implements CommentService {
                 .corrId(comment.getBoard().getCorrId())
                 .gender(personalUser != null ? personalUser.getGender() : null)
                 .build();
+    }
+
+    @Transactional
+    public void selectComment(Long commentId, Long userId) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("댓글 ID가 없습니다."));
+
+        Board board = comment.getBoard();
+
+        // 게시물 작성자인지 확인
+        if (!board.getUser().getUserId().equals(userId)) {
+            throw new IllegalArgumentException("게시물 작성자만 댓글을 채택할 수 있습니다.");
+        }
+
+        // 자신의 댓글인지 확인
+        if (comment.getUser().getUserId().equals(userId)) {
+            throw new IllegalArgumentException("자신의 댓글은 채택할 수 없습니다.");
+        }
+
+        // 이미 채택된 댓글이 있는지 확인
+        List<Comment> comments = commentRepository.findByBoardCorrId(board.getCorrId());
+        for (Comment c : comments) {
+            if (c.isCommSelection()) {
+                throw new IllegalArgumentException("이미 채택된 댓글이 있습니다.");
+            }
+        }
+
+        comment.changeSelection(true);
+        commentRepository.save(comment);
     }
 
 }

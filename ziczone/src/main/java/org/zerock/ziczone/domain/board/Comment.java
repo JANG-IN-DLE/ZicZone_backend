@@ -43,4 +43,8 @@ public class Comment {
     public void change(String commContent) {
         this.commContent = commContent;
     }
+
+    public void changeSelection(boolean commSelection) {
+        this.commSelection = commSelection;
+    }
 }

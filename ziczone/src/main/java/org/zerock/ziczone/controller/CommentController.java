@@ -62,4 +62,14 @@ public class CommentController {
             return ResponseEntity.badRequest().build();
         }
     }
+
+    @PostMapping("/{commId}/select")
+    public ResponseEntity<String> selectComment(@PathVariable Long commId, @RequestParam Long userId) {
+        try {
+            commentService.selectComment(commId, userId);
+            return ResponseEntity.ok("댓글이 채택되었습니다.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

@@ -18,4 +18,6 @@ public interface CommentService {
     void commentDelete(Long userId, Long commId);
     // 정보 추가(userName, personalCareer)된 CommentDTO
     CommentDTO commentUserRead(Comment comment);
+    // 댓글 채택
+    void selectComment(Long commentId, Long userId);
 }
