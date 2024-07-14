@@ -49,4 +49,9 @@ public class StorageServiceImpl implements StorageService {
 
         return fileUrl;
     }
+
+    @Override
+    public void deleteFile(String fileUrl) {
+
+    }
 }

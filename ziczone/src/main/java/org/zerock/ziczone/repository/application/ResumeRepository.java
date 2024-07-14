@@ -13,6 +13,7 @@ public interface ResumeRepository extends JpaRepository<Resume, Long> {
     Resume findByPersonalUser_PersonalId(Long personalId);
     Optional<List<Resume>> findByPersonalUser(PersonalUser personalUser);
 
+
     List<Resume> findByPersonalUserPersonalIdIn(List<Long> sellerIds);
 
     List<Resume> findByPersonalUserPersonalId(Long personalId);

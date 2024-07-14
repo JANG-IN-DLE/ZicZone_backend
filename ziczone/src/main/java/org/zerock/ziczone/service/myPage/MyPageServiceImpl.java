@@ -96,7 +96,7 @@ public class MyPageServiceImpl implements  MyPageService{
             throw new InvalidPasswordException("Current password is null");
         }
         // 새로운 비밀번호 검증
-        if (companyUserUpdateDTO.getCurrentPassword() != null && !companyUserUpdateDTO.getCurrentPassword().isEmpty()) {
+        if (companyUserUpdateDTO.getChangePassword() != null && !companyUserUpdateDTO.getChangePassword().isEmpty()) {
             hashPassword(companyUserUpdateDTO.getChangePassword());
         }
 

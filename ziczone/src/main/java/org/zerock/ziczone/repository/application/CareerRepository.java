@@ -9,4 +9,7 @@ public interface CareerRepository extends JpaRepository<Career, Long> {
     List<Career> findByResume_ResumeId(Long resumeId);
 
     void deleteByResume_ResumeId(Long resumeId);
+
+
+    void deleteByResumeResumeId(Long resumeId);
 }
