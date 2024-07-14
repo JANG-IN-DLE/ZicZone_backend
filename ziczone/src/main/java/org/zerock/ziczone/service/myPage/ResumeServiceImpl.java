@@ -156,9 +156,9 @@ public class ResumeServiceImpl implements ResumeService {
             String resumePhotoUrl = resume.getResumePhoto();
             if (resumePhotoFile != null && !resumesOptional.get().isEmpty()) {
                 // 클라우드 오브젝트 스토리지 버켓 관련 설정
-                String folderName = "ziczone-bucket";
-                String bucketName = "resumePhoto";
-                String objectName = folderName+ resumePhotoFile.getOriginalFilename();
+                String bucketName = "ziczone-bucket";
+                String folderName = "CorrPdf/";
+                String objectName = folderName + resumePhotoFile.getOriginalFilename();
                 resumePhotoUrl = storageService.uploadFile(resumePhotoFile, folderName, objectName, bucketName);
 
             }

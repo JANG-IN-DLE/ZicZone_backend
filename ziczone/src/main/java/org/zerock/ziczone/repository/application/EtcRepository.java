@@ -9,4 +9,7 @@ public interface EtcRepository extends JpaRepository<Etc, Long> {
     List<Etc> findByResume_ResumeId(Long resumeId);
 
     void deleteByResume_ResumeId(Long resumeId);
+
+
+    void deleteByResumeResumeId(Long resumeId);
 }

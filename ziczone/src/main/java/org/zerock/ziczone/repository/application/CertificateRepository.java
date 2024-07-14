@@ -9,4 +9,7 @@ public interface CertificateRepository extends JpaRepository<Certificate, Long> 
     List<Certificate> findByResume_ResumeId(Long ResumeId);
 
     void deleteByResume_ResumeId(Long resumeId);
+
+
+    void deleteByResumeResumeId(Long resumeId);
 }
