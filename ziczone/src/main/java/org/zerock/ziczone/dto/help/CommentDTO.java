@@ -29,4 +29,6 @@ public class CommentDTO {
     private Gender gender; // 성별
 
     private Long corrId; // 게시물 ID
+
+    private Integer corrPoint; // 게시물에서 선택한 베리
 }

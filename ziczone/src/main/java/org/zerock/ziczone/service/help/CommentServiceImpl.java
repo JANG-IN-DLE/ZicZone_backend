@@ -72,6 +72,7 @@ public class CommentServiceImpl implements CommentService {
                             .personalCareer(personalUser.getPersonalCareer())
                             .corrId(board.getCorrId())
                             .personalId(personalUser.getPersonalId())
+                            .corrPoint(board.getCorrPoint())
                             .gender(personalUser.getGender())
                             .build();
                 })
@@ -97,6 +98,7 @@ public class CommentServiceImpl implements CommentService {
                             .personalCareer(personalUser.getPersonalCareer())
                             .gender(personalUser.getGender())
                             .personalId(personalUser.getPersonalId())
+                            .corrPoint(board.getCorrPoint())
                             .corrId(board.getCorrId())
                             .build();
                 })
@@ -138,6 +140,7 @@ public class CommentServiceImpl implements CommentService {
         User user = userRepository.findById(comment.getUser().getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("회원 ID가 없습니다."));
         PersonalUser personalUser = user.getPersonalUser();
+        Board board = comment.getBoard();
 
         return CommentDTO.builder()
                 .commId(comment.getCommId())
@@ -149,6 +152,7 @@ public class CommentServiceImpl implements CommentService {
                 .personalCareer(personalUser != null ? personalUser.getPersonalCareer() : null)
                 .corrId(comment.getBoard().getCorrId())
                 .gender(personalUser != null ? personalUser.getGender() : null)
+                .corrPoint(board.getCorrPoint())
                 .build();
     }
 
