@@ -19,4 +19,7 @@ public class AlarmContent {
     @Column(length = 100)
     private String alarmType;       // 알림 유형
 
+    @Column
+    private Long senderId;      //보내는 사람 Id
+
 }
