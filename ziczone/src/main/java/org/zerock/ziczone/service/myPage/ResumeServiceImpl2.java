@@ -41,6 +41,8 @@ public class ResumeServiceImpl2 implements ResumeService2 {
                 .map(file -> storageService.uploadFile(file, "portfolio/", generateFileName("portfolio/",file), bucketName))
                 .collect(Collectors.toList());
 
+
+
         Resume resume = resumeDTO.toEntity().toBuilder()
                 .resumePhoto(resumePhotoUrl)
                 .personalState(personalStateUrl)
@@ -49,6 +51,10 @@ public class ResumeServiceImpl2 implements ResumeService2 {
         resume = resumeRepository.save(resume);
         saveRelatedEntities(resume, resumeDTO, portfolioUrls);
         return ResumeDTO.fromEntity(resume);
+    }
+
+    private String resumePhotoUrl(MultipartFile resumePhoto, String folderName, String bucketName) {
+
     }
 
     @Transactional
