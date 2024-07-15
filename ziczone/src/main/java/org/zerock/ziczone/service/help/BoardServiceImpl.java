@@ -7,7 +7,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.zerock.ziczone.domain.board.Board;
-import org.zerock.ziczone.domain.board.Comment;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.domain.member.UserType;
@@ -78,12 +77,14 @@ public class BoardServiceImpl implements BoardService {
 
         User user = board.getUser();
         PersonalUser personalUser = user.getPersonalUser();
+        boolean isCommentSelected = commentRepository.existsByBoardCorrIdAndCommSelection(board.getCorrId(), true);
 
         return BoardDTO.builder()
                 .corrId(board.getCorrId())
                 .corrPoint(board.getCorrPoint())
                 .corrTitle(board.getCorrTitle())
                 .corrContent(board.getCorrContent())
+                .commSelection(isCommentSelected)
                 .corrPdf(board.getCorrPdf())
                 .corrView(board.getCorrView())
                 .corrModify(board.getCorrModify())
@@ -114,7 +115,7 @@ public class BoardServiceImpl implements BoardService {
                             .corrContent(board.getCorrContent())
                             .corrPdf(board.getCorrPdf())
                             .corrView(board.getCorrView())
-                            .commSelection(isCommentSelected) // 채택 여부 설정
+                            .commSelection(isCommentSelected)
                             .corrModify(board.getCorrModify())
                             .userId(user.getUserId())
                             .userName(user.getUserName())
