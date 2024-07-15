@@ -10,5 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AlarmDTO {
-    private String message;
+    private String Type;
+    private Long senderId;
+    private Long receiverId;
 }
