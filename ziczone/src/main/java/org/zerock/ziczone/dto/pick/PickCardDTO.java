@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.zerock.ziczone.domain.member.Gender;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -35,5 +36,6 @@ public class PickCardDTO {
     // 결제 여부 알기위해서
     private List<Long> payHistoryId;
 
+    private LocalDateTime resumeUpdate;
 
 }
