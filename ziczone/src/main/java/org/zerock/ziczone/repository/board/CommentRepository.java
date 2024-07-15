@@ -9,5 +9,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     // 회원별 조회
     List<Comment> findByUserUserId(Long userId);
     // 게시물별 조회
-    List<Comment> findByBoardCorrId(Long boardId);
+    List<Comment> findByBoardCorrId(Long corrId);
+    // 채택된 게시물 여부
+    boolean existsByBoardCorrIdAndCommSelection(Long corrId, boolean commSelection);
 }

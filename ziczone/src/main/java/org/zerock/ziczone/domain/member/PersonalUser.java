@@ -47,5 +47,4 @@ public class PersonalUser {
     @ToString.Exclude
     @OneToMany(mappedBy = "personalUser", fetch = FetchType.LAZY)
     private List<TechStack> techStacks; // 기술 스택 테이블
-
 }

@@ -16,7 +16,7 @@ public interface BoardService {
     // 회원별 게시물 조회
     List<BoardDTO> userReadAll(Long userId);
     // 게시물 전체 조회 (필터링 및 페이지네이션)
-    PageResponseDTO<BoardDTO> boardFilter(String filterType, PageRequestDTO pageRequestDTO);
+    PageResponseDTO<BoardDTO> boardFilter(String filterType, PageRequestDTO pageRequestDTO, boolean showSelect);
     // 게시물 수정
     void boardModify(BoardDTO boardDTO);
     // 게시물 삭제

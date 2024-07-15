@@ -133,13 +133,14 @@ public class BoardController {
     public PageResponseDTO<BoardDTO> boardFilter(
             @RequestParam String filterType,
             @RequestParam int page,
-            @RequestParam int size) {
+            @RequestParam int size,
+            @RequestParam(required = false, defaultValue = "false") boolean showSelect) {
         PageRequestDTO pageRequestDTO = PageRequestDTO.builder()
                 .page(page)
                 .size(size)
                 .build();
 
-        return boardService.boardFilter(filterType, pageRequestDTO);
+        return boardService.boardFilter(filterType, pageRequestDTO, showSelect);
     }
 
     /**

@@ -19,6 +19,21 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
     Page<Board> findAllByOrderByCorrViewDesc(Pageable pageable);
     // 포인트(베리)순 조회
     Page<Board> findAllByOrderByCorrPointDesc(Pageable pageable);
+    // 채택되지 않은 게시물을 최신순으로 조회
+    @Query("SELECT b FROM Board b " +
+            "WHERE (SELECT COUNT(c) FROM Comment c WHERE c.board = b AND c.commSelection = true) = 0 " +
+            "ORDER BY b.corrCreate DESC")
+    Page<Board> findAllByOrderByCorrCreateDescAndCommSelectionFalse(Pageable pageable);
+    // 채택되지 않은 게시물을 조회순으로
+    @Query("SELECT b FROM Board b " +
+            "WHERE (SELECT COUNT(c) FROM Comment c WHERE c.board = b AND c.commSelection = true) = 0 " +
+            "ORDER BY b.corrView DESC")
+    Page<Board> findAllByOrderByCorrViewDescAndCommSelectionFalse(Pageable pageable);
+    // 채택되지 않은 게시물을 포인트(베리)순으로 조회
+    @Query("SELECT b FROM Board b " +
+            "WHERE (SELECT COUNT(c) FROM Comment c WHERE c.board = b AND c.commSelection = true) = 0 " +
+            "ORDER BY b.corrPoint DESC")
+    Page<Board> findAllByOrderByCorrPointDescAndCommSelectionFalse(Pageable pageable);
     // 조회수 증가
     @Modifying
     @Query("UPDATE Board b SET b.corrView = b.corrView + 1 WHERE b.corrId = :corrId")

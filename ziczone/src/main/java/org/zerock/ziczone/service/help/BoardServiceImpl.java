@@ -19,11 +19,9 @@ import org.zerock.ziczone.exception.mypage.PersonalNotFoundException;
 import org.zerock.ziczone.repository.board.BoardRepository;
 import org.zerock.ziczone.repository.board.CommentRepository;
 import org.zerock.ziczone.repository.job.JobPositionRepository;
-import org.zerock.ziczone.repository.job.JobRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.repository.payment.PaymentRepository;
-import org.zerock.ziczone.repository.tech.TechRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
 
 import javax.transaction.Transactional;
@@ -79,12 +77,14 @@ public class BoardServiceImpl implements BoardService {
 
         User user = board.getUser();
         PersonalUser personalUser = user.getPersonalUser();
+        boolean isCommentSelected = commentRepository.existsByBoardCorrIdAndCommSelection(board.getCorrId(), true);
 
         return BoardDTO.builder()
                 .corrId(board.getCorrId())
                 .corrPoint(board.getCorrPoint())
                 .corrTitle(board.getCorrTitle())
                 .corrContent(board.getCorrContent())
+                .commSelection(isCommentSelected)
                 .corrPdf(board.getCorrPdf())
                 .corrView(board.getCorrView())
                 .corrModify(board.getCorrModify())
@@ -106,6 +106,7 @@ public class BoardServiceImpl implements BoardService {
                 .map(board -> {
                     User user = board.getUser();
                     PersonalUser personalUser = user.getPersonalUser();
+                    boolean isCommentSelected = commentRepository.existsByBoardCorrIdAndCommSelection(board.getCorrId(), true);
 
                     return BoardDTO.builder()
                             .corrId(board.getCorrId())
@@ -114,6 +115,7 @@ public class BoardServiceImpl implements BoardService {
                             .corrContent(board.getCorrContent())
                             .corrPdf(board.getCorrPdf())
                             .corrView(board.getCorrView())
+                            .commSelection(isCommentSelected)
                             .corrModify(board.getCorrModify())
                             .userId(user.getUserId())
                             .userName(user.getUserName())
@@ -125,29 +127,45 @@ public class BoardServiceImpl implements BoardService {
     }
 
     @Override
-    public PageResponseDTO<BoardDTO> boardFilter(String filterType, PageRequestDTO pageRequestDTO) {
+    public PageResponseDTO<BoardDTO> boardFilter(String filterType, PageRequestDTO pageRequestDTO, boolean showSelect) {
         Pageable pageable = PageRequest.of(pageRequestDTO.getPage() -1, pageRequestDTO.getSize());
         Page<Board> result;
 
-        switch (filterType) {
-            case "latest":   // 최신순
-                result = boardRepository.findAllByOrderByCorrCreateDesc(pageable);
-                break;
-            case "views":    // 조회순
-                result = boardRepository.findAllByOrderByCorrViewDesc(pageable);
-                break;
-            case "berry":    // 포인트(베리)순
-                result = boardRepository.findAllByOrderByCorrPointDesc(pageable);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid filter type: " + filterType);
-
+        if (showSelect) {
+            switch (filterType) {
+                case "latest":   // 최신순
+                    result = boardRepository.findAllByOrderByCorrCreateDescAndCommSelectionFalse(pageable);
+                    break;
+                case "views":    // 조회순
+                    result = boardRepository.findAllByOrderByCorrViewDescAndCommSelectionFalse(pageable);
+                    break;
+                case "berry":    // 포인트(베리)순
+                    result = boardRepository.findAllByOrderByCorrPointDescAndCommSelectionFalse(pageable);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid filter type: " + filterType);
+            }
+        } else {
+            switch (filterType) {
+                case "latest":   // 최신순
+                    result = boardRepository.findAllByOrderByCorrCreateDesc(pageable);
+                    break;
+                case "views":    // 조회순
+                    result = boardRepository.findAllByOrderByCorrViewDesc(pageable);
+                    break;
+                case "berry":    // 포인트(베리)순
+                    result = boardRepository.findAllByOrderByCorrPointDesc(pageable);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid filter type: " + filterType);
+            }
         }
 
         List<BoardDTO> dtoList = result.stream()
                 .map(board -> {
                     User user = board.getUser();
                     PersonalUser personalUser = user.getPersonalUser();
+                    boolean isCommentSelected = commentRepository.existsByBoardCorrIdAndCommSelection(board.getCorrId(), true);
 
                     return BoardDTO.builder()
                             .corrId(board.getCorrId())
@@ -159,6 +177,7 @@ public class BoardServiceImpl implements BoardService {
                             .corrModify(board.getCorrModify())
                             .userId(user.getUserId())
                             .userName(user.getUserName())
+                            .commSelection(isCommentSelected)
                             .personalCareer(personalUser.getPersonalCareer())
                             .build();
                 })
