@@ -32,7 +32,7 @@ public class BoardDTO {
 
     private Long userId; // 게시물 작성자 ID
 
-//    private Boolean commSelection; // 채택 여부
+    private Boolean commSelection; // 채택 여부
 
     private String userName; // 게시물 작성자 이름
 

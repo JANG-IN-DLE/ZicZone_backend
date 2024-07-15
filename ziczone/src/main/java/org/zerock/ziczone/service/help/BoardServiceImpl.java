@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.zerock.ziczone.domain.board.Board;
+import org.zerock.ziczone.domain.board.Comment;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.domain.member.UserType;
@@ -19,11 +20,9 @@ import org.zerock.ziczone.exception.mypage.PersonalNotFoundException;
 import org.zerock.ziczone.repository.board.BoardRepository;
 import org.zerock.ziczone.repository.board.CommentRepository;
 import org.zerock.ziczone.repository.job.JobPositionRepository;
-import org.zerock.ziczone.repository.job.JobRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.repository.payment.PaymentRepository;
-import org.zerock.ziczone.repository.tech.TechRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
 
 import javax.transaction.Transactional;
@@ -106,6 +105,7 @@ public class BoardServiceImpl implements BoardService {
                 .map(board -> {
                     User user = board.getUser();
                     PersonalUser personalUser = user.getPersonalUser();
+                    boolean isCommentSelected = commentRepository.existsByBoardCorrIdAndCommSelection(board.getCorrId(), true);
 
                     return BoardDTO.builder()
                             .corrId(board.getCorrId())
@@ -114,6 +114,7 @@ public class BoardServiceImpl implements BoardService {
                             .corrContent(board.getCorrContent())
                             .corrPdf(board.getCorrPdf())
                             .corrView(board.getCorrView())
+                            .commSelection(isCommentSelected) // 채택 여부 설정
                             .corrModify(board.getCorrModify())
                             .userId(user.getUserId())
                             .userName(user.getUserName())
@@ -163,6 +164,7 @@ public class BoardServiceImpl implements BoardService {
                 .map(board -> {
                     User user = board.getUser();
                     PersonalUser personalUser = user.getPersonalUser();
+                    boolean isCommentSelected = commentRepository.existsByBoardCorrIdAndCommSelection(board.getCorrId(), true);
 
                     return BoardDTO.builder()
                             .corrId(board.getCorrId())
@@ -174,6 +176,7 @@ public class BoardServiceImpl implements BoardService {
                             .corrModify(board.getCorrModify())
                             .userId(user.getUserId())
                             .userName(user.getUserName())
+                            .commSelection(isCommentSelected)
                             .personalCareer(personalUser.getPersonalCareer())
                             .build();
                 })
