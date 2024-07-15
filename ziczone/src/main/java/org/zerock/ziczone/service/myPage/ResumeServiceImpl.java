@@ -251,14 +251,14 @@ public class ResumeServiceImpl implements ResumeService {
 
     private void saveOrUpdateArchive(ArchiveDTO archiveDTO, Resume resume) {
         if (archiveDTO == null) {
-            archiveDTO = ArchiveDTO.builder().arch_git("").arch_notion("").arch_blog("").build();
+            archiveDTO = ArchiveDTO.builder().archGit("").archNotion("").archBlog("").build();
         }
         Archive archive = archiveRepository.findByResume_ResumeId(resume.getResumeId())
                 .stream().findFirst().orElse(new Archive());
         archiveRepository.save(archive.toBuilder()
-                .archGit(getValueOrEmpty(archiveDTO.getArch_git(), archive.getArchGit()))
-                .archNotion(getValueOrEmpty(archiveDTO.getArch_notion(), archive.getArchNotion()))
-                .archBlog(getValueOrEmpty(archiveDTO.getArch_blog(), archive.getArchBlog()))
+                .archGit(getValueOrEmpty(archiveDTO.getArchGit(), archive.getArchGit()))
+                .archNotion(getValueOrEmpty(archiveDTO.getArchNotion(), archive.getArchNotion()))
+                .archBlog(getValueOrEmpty(archiveDTO.getArchBlog(), archive.getArchBlog()))
                 .resume(resume)
                 .build());
     }

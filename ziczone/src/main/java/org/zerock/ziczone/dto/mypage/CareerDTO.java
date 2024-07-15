@@ -1,5 +1,6 @@
 package org.zerock.ziczone.dto.mypage;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,10 +12,16 @@ import org.zerock.ziczone.domain.application.Career;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CareerDTO {
+
+    @JsonProperty("careerId")
     private Long career_id;
+    @JsonProperty("careerName")
     private String career_name;
+    @JsonProperty("careerJob")
     private String career_job;
+    @JsonProperty("careerPosition")
     private String career_position;
+    @JsonProperty("careerDate")
     private String career_date;
 
     // DTO to Entity

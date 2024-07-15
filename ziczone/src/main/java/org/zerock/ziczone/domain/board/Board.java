@@ -31,6 +31,9 @@ public class Board {
     @Column(length = 2048, nullable = false)
     private String corrPdf;         // 게시물 파일
 
+//    @Column(length = 2048, nullable = false)
+//    private String corrPdfUrl;         // 게시물 파일 URL
+
     @Column(nullable = false)
     private Integer corrPoint;      // 게시물 등록 포인트
 
