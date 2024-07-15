@@ -30,6 +30,9 @@ public class CompanyUser {
     @Column(nullable = false,length = 500)
     private String companyLogo;     // 기업 로고 이미지 경로 (스토리지)
 
+//    @Column(nullable = false,length = 500)
+//    private String companyLogoUrl;     // 기업 로고 이미지 경로 URL
+
     @Column(nullable = false)
     private String companyCeo;      // 대표 이름
 

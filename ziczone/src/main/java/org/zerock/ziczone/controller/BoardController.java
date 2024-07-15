@@ -1,8 +1,7 @@
 package org.zerock.ziczone.controller;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
@@ -21,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/board")
+@RequestMapping("/api/persnoal/board")
 @RequiredArgsConstructor
 @Log4j2
 public class BoardController {
@@ -48,11 +47,17 @@ public class BoardController {
         String folderName = "CorrPdf/";
 
         String objectName = folderName + corrPdf.getOriginalFilename();
-
         try {
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(corrPdf.getSize());
             amazonS3.putObject(new PutObjectRequest(bucketName, objectName, corrPdf.getInputStream(), metadata));
+
+            // 업로드된 파일의 접근 제어 리스트 가져오기
+            AccessControlList accessControlList = amazonS3.getObjectAcl(bucketName, objectName);
+            //  모든 사용자에게 읽기 권한 부여
+            accessControlList.grantPermission(GroupGrantee.AllUsers, Permission.Read);
+            amazonS3.setObjectAcl(bucketName, objectName, accessControlList);
+
             String fileUrl = amazonS3.getUrl(bucketName, objectName).toString();
 
             BoardDTO boardDTO = BoardDTO.builder()

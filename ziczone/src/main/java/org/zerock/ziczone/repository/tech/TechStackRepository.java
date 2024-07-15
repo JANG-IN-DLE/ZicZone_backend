@@ -4,7 +4,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.tech.TechStack;
 
-import java.util.Collection;
 import java.util.List;
 
 public interface TechStackRepository extends JpaRepository<TechStack, Long> {
@@ -19,4 +18,6 @@ public interface TechStackRepository extends JpaRepository<TechStack, Long> {
     List<TechStack> findByPersonalUser_PersonalId(Long personalId);
 
     void deleteByPersonalUser(PersonalUser personalUser);
+
+    void deleteByPersonalUserPersonalId(Long personalUserId);
 }

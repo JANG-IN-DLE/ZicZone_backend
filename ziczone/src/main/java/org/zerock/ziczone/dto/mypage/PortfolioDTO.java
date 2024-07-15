@@ -21,7 +21,7 @@ public class PortfolioDTO {
         return Portfolio.builder()
                 .portId(this.portId)
                 .portFile(this.portFile)
-                .resume(Resume.builder().resumeId(this.resumeId).build()) // Assuming you only need the ID here
+                .resume(Resume.builder().resumeId(this.resumeId).build())
                 .build();
     }
 

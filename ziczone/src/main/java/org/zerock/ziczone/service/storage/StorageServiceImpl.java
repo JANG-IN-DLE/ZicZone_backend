@@ -1,8 +1,7 @@
 package org.zerock.ziczone.service.storage;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.s3.model.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -35,6 +34,12 @@ public class StorageServiceImpl implements StorageService {
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(file.getSize());
             amazonS3.putObject(new PutObjectRequest(bucketName, objectName, file.getInputStream(), metadata));
+            // 업로드된 파일의 접근 제어 리스트 가져오기
+            AccessControlList accessControlList = amazonS3.getObjectAcl(bucketName, objectName);
+            //  모든 사용자에게 읽기 권한 부여
+            accessControlList.grantPermission(GroupGrantee.AllUsers, Permission.Read);
+            amazonS3.setObjectAcl(bucketName, objectName, accessControlList);
+            // 업로드된 파일의 URL 가져오기
             fileUrl = amazonS3.getUrl(bucketName, objectName).toString();
 
         } catch (IOException ioException) {
@@ -52,6 +57,8 @@ public class StorageServiceImpl implements StorageService {
 
     @Override
     public void deleteFile(String fileUrl) {
-
+        if (fileUrl != null && !fileUrl.isEmpty()) {
+            amazonS3.deleteObject("ziczone-bucket-jangindle-optimizer", fileUrl);
+        }
     }
 }

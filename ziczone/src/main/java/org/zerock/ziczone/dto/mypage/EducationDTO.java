@@ -1,5 +1,6 @@
 package org.zerock.ziczone.dto.mypage;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,9 +12,11 @@ import org.zerock.ziczone.domain.application.Education;
 @AllArgsConstructor
 @NoArgsConstructor
 public class EducationDTO {
+    @JsonProperty("eduId")
     private Long edu_id;
     private String edu;
     private String credit;
+    @JsonProperty("eduDate")
     private String edu_date;
 
     // DTO to Entity
