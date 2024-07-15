@@ -19,45 +19,57 @@ import java.util.List;
 public class PickController {
 
     private final PickService pickService;
-//  pickzone card 회원들 정보 가져오기
+    // main페이지에서 로그인 안된 회원들을 위한 Get요청
     @GetMapping("/api/pickcards")
-    public List<PickCardDTO> getPickCards(@RequestParam Long loggedInPersonalId) {
-        return pickService.getPickCards(loggedInPersonalId);
+    public List<PickCardDTO> getPickCards() {
+        return pickService.getPickCards();
     }
-//    // pickzone card company로 로그인했을 때
-//    @GetMapping("/api/pickcards/{companyId}")
-//    public List<PickCardDTO> getPickCards(){
-//        return pickService.getPickCards
-//    }
+    
+//  (personal회원이 로그인한 경우) pickzone card 회원들 정보 가져오기
+    @GetMapping("/api/personal/pickcards")
+    public List<PickCardDTO> getPersonalPickCards(@RequestParam Long loggedInPersonalId) {
+        return pickService.getPersonalPickCards(loggedInPersonalId);
+    }
+//    (company회원이 로그인한 경우) pickzone card 회원들 정보 가져오기
+    @GetMapping("/api/company/pickcards")
+    public List<PickCardDTO> getCompanyPickCards(@RequestParam Long loggedInCompanyId){
+        return pickService.getCompanyPickCards(loggedInCompanyId);
+    }
     // pickzone 해시태그에 들어가는 정보 가져오기
     @GetMapping("/api/jobs")
     public List<PickJobDTO> getPickJobs() {
         return pickService.getAllJobs();
     }
-    // (CompanyId로 로그인되어을때) personalId가지고 해당하는 회원 정보 가져오기(pickDetail)
-    @GetMapping("/api/pickcards/{companyId}/{personalId}")
+    // (CompanyId로 로그인되어을때) personalId가지고 해당하는 회원 정보 가져오기(pickDetail  왼쪽 회원 정보)
+    @GetMapping("/api/company/pickcards/{companyId}/{personalId}")
     public PickDetailDTO getPickCardsByCompanyId(@PathVariable Long companyId, @PathVariable Long personalId) {
         return pickService.getPickCardsById(companyId, personalId);
     }
-    // (PersonalId로 로그인되었을때) personalId가지고 해당하는 회원 정보 가져오기(pickDetail)
-    @GetMapping("/api/pickcards/personal/{loggedInPersonalId}/{personalId}")
+    // (PersonalId로 로그인되었을때) personalId가지고 해당하는 회원 정보 가져오기(pickDetail 왼쪽 회원정보)
+    @GetMapping("/api/personal/pickcards/{loggedInPersonalId}/{personalId}")
     public PickPersonalDetailDTO getPickCardsByPersonalId(@PathVariable Long loggedInPersonalId , @PathVariable Long personalId) {
         return pickService.getPickCardsByPersonalId(loggedInPersonalId, personalId);
     }
-    // personalId가지고 해당하는 회원 resume 정보 가져오기(pickDetail)
-    @GetMapping("/api/pickresume/{personalId}")
-    public PickResumeDTO getPickResumeByPersonalId(@PathVariable Long personalId) {
+    // (CompanyId로 로그인되었을때) personalId가지고 해당하는 회원 resume 정보 가져오기(pickDetail 오른쪽 정보)
+    @GetMapping("/api/company/pickresume/{personalId}")
+    public PickResumeDTO getCompanyPickResumeByPersonalId(@PathVariable Long personalId) {
         return pickService.getResumeById(personalId);
     }
-    // pickzone에서 card 오픈하려고 할때 처리하는 메서드
-    @PostMapping("/api/open-card")
+    // (PersonalId로 로그인되었을때) personalId가지고 해당하는 회원 resume 정보 가져오기(pickDetail 오른쪽 정보)
+    @GetMapping("/api/personal/pickresume/{personalId}")
+    public PickResumeDTO getPersonalPickResumeByPersonalId(@PathVariable Long personalId) {
+        return pickService.getResumeById(personalId);
+    }
+
+    // (PersonalId로 로그인되었을때) pickzone에서 card 오픈하려고 할때 처리하는 메서드
+    @PostMapping("/api/personal/open-card")
     public ResponseEntity<?> openCard(@RequestBody OpenCardDTO openCardDTO){
         try{
             boolean alreadyPaid = pickService.handlePayment(openCardDTO);
             if(alreadyPaid){
                 // 이미 결제가 존재하는 경우 /pickzone/:personalId로 리다이렉트
                 // GetMapping("/api/pickcards/{personalId}")이 URI로 받아야한다.
-                URI location = URI.create("/api/pickcards/personal/" + openCardDTO.getBuyerId() + "/" + openCardDTO.getSellerId());
+                URI location = URI.create("/api/personal/pickcards/" + openCardDTO.getBuyerId() + "/" + openCardDTO.getSellerId());
                 return ResponseEntity.status(HttpStatus.SEE_OTHER).location(location).build();
             }
             return ResponseEntity.ok().build();
@@ -65,14 +77,14 @@ public class PickController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-    // scrap 요청을 처리하는 메서드
-    @PostMapping("/api/scrap")
+    // (CompanyId로 로그인되었을때) scrap 요청을 처리하는 메서드
+    @PostMapping("/api/company/scrap")
     public ResponseEntity<?> scrapUser(@RequestBody PickAndScrapDTO pickAndScrapDTO){
         PickAndScrapDTO updatedPickAndScrapDTO = pickService.scrapUser(pickAndScrapDTO);
         return ResponseEntity.ok(updatedPickAndScrapDTO);
     }
-    // pick 요청을 처리하는 메서드
-    @PostMapping("/api/pick")
+    // (CompanyId로 로그인되었을때) pick 요청을 처리하는 메서드
+    @PostMapping("/api/company/pick")
     public ResponseEntity<?> pickUser(@RequestBody PickAndScrapDTO pickAndScrapDTO){
         PickAndScrapDTO updatedPickAndScrapDTO = pickService.pickUser(pickAndScrapDTO);
         return ResponseEntity.ok(updatedPickAndScrapDTO);

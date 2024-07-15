@@ -26,6 +26,7 @@ import org.zerock.ziczone.repository.tech.TechStackRepository;
 import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -52,35 +53,33 @@ public class PickServiceImpl implements PickService {
     private final PickAndScrapRepository pickAndScrapRepository;
     private final CompanyUserRepository companyUserRepository;
 
-    //    pickzone 회원 card data 가져오는 메서드
+    // (로그인 안되었을때) 메인페이지에서 pickCards 전송
     @Override
-    public List<PickCardDTO> getPickCards(Long loggedInPersonalId) {
-        List<PersonalUser> users = personalUserRepository.findAll();
+    public List<PickCardDTO> getPickCards() {
+        // 최신 resume 정보를 포함하는 PersonalUser 리스트를 가져오기
+        List<Resume> latestResumes = resumeRepository.findTop4ByOrderByResumeUpdateDesc();
 
+        return latestResumes.stream().map(resume -> {
+            PersonalUser user = resume.getPersonalUser();
 
-        return users.stream().map(user -> {
             List<String> techNames = techStackRepository.findByPersonalUserPersonalId(user.getPersonalId()).stream()
                     .map(techStack -> techStack.getTech().getTechName())
                     .collect(Collectors.toList());
-            // techUrl 받아오는 거 추가
+
             List<String> techUrls = techStackRepository.findByPersonalUserPersonalId(user.getPersonalId()).stream()
                     .map(techStack -> techStack.getTech().getTechUrl())
                     .collect(Collectors.toList());
+
             List<String> jobNames = jobPositionRepository.findByPersonalUserPersonalId(user.getPersonalId()).stream()
                     .map(jobPosition -> jobPosition.getJob().getJobName())
                     .collect(Collectors.toList());
-            // 해당 사용자가 여러명을 scrap할 수 있으니까 List형식으로 가져와야할 것 같다.
+
             List<PickAndScrap> pickAndScraps = pickAndScrapRepository.findByPersonalUser(user);
-            // optionalPickAndScrap에서 isScrap scrap이 있으면 참조해서 List에 묶는다.
             List<Boolean> scrapList = pickAndScraps.stream().map(PickAndScrap::isScrap).collect(Collectors.toList());
-            // optionalPickAndScrap에서 isPick pick이 있으면 참조해서 List에 묶는다.
             List<Boolean> pickList = pickAndScraps.stream().map(PickAndScrap::isPick).collect(Collectors.toList());
             List<Long> companyIdList = pickAndScraps.stream()
                     .map(pickAndScrap -> pickAndScrap.getCompanyUser().getCompanyId())
                     .collect(Collectors.toList());
-            // 결제 내역 추출
-            List<Long> payHistoryId = payHistoryRepository.findBySellerIdAndBuyerId(user.getPersonalId(), loggedInPersonalId).stream()
-                    .map(PayHistory::getPayHistoryId).collect(Collectors.toList());
 
             return PickCardDTO.builder()
                     .userId(user.getUser().getUserId())
@@ -95,12 +94,110 @@ public class PickServiceImpl implements PickService {
                     .scrap(scrapList)
                     .pick(pickList)
                     .companyId(companyIdList)
+                    .resumeUpdate(resume.getResumeUpdate())
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    // (personal회원이 로그인했을 때) pickzone 회원 card data 가져오는 메서드
+    @Override
+    public List<PickCardDTO> getPersonalPickCards(Long loggedInPersonalId) {
+// 최신 resume 정보를 포함하는 PersonalUser 리스트를 가져오기
+        List<Resume> latestResumes = resumeRepository.findAllByPersonalUserIsPersonalVisibleTrueOrderByResumeUpdateDesc();
+
+        return latestResumes.stream().map(resume -> {
+            PersonalUser user = resume.getPersonalUser();
+
+            List<String> techNames = techStackRepository.findByPersonalUserPersonalId(user.getPersonalId()).stream()
+                    .map(techStack -> techStack.getTech().getTechName())
+                    .collect(Collectors.toList());
+
+            List<String> techUrls = techStackRepository.findByPersonalUserPersonalId(user.getPersonalId()).stream()
+                    .map(techStack -> techStack.getTech().getTechUrl())
+                    .collect(Collectors.toList());
+
+            List<String> jobNames = jobPositionRepository.findByPersonalUserPersonalId(user.getPersonalId()).stream()
+                    .map(jobPosition -> jobPosition.getJob().getJobName())
+                    .collect(Collectors.toList());
+
+            List<PickAndScrap> pickAndScraps = pickAndScrapRepository.findByPersonalUser(user);
+            List<Boolean> scrapList = pickAndScraps.stream().map(PickAndScrap::isScrap).collect(Collectors.toList());
+            List<Boolean> pickList = pickAndScraps.stream().map(PickAndScrap::isPick).collect(Collectors.toList());
+            List<Long> companyIdList = pickAndScraps.stream()
+                    .map(pickAndScrap -> pickAndScrap.getCompanyUser().getCompanyId())
+                    .collect(Collectors.toList());
+            // 결제 내역 추출
+            List<Long> payHistoryId = payHistoryRepository.findBySellerIdAndBuyerId(user.getPersonalId(), loggedInPersonalId).stream()
+                    .map(PayHistory::getPayHistoryId).collect(Collectors.toList());
+
+
+            return PickCardDTO.builder()
+                    .userId(user.getUser().getUserId())
+                    .personalId(user.getPersonalId())
+                    .userName(user.getUser().getUserName())
+                    .userIntro(user.getUser().getUserIntro())
+                    .gender(user.getGender())
+                    .personalCareer(user.getPersonalCareer())
+                    .techName(String.join(",", techNames))
+                    .techUrl(String.join(",", techUrls))
+                    .jobName(String.join(",", jobNames))
+                    .scrap(scrapList)
+                    .pick(pickList)
+                    .companyId(companyIdList)
+                    .resumeUpdate(resume.getResumeUpdate())
                     .payHistoryId(payHistoryId)
                     .build();
         }).collect(Collectors.toList());
 
     }
-//  pickzone Job 데이터 가져오는 메서드
+
+    // (company회원이 로그인했을 때) pickzone 회원 card data 가져오는 메서드
+    @Override
+    public List<PickCardDTO> getCompanyPickCards(Long loggedInCompanyId) {
+        // isCompanyvisible이 true인 최신 resume 정보를 포함하는 PersonalUser리스트를 가져옴
+        List<Resume> latestResumes = resumeRepository.findAllByPersonalUserIsCompanyVisibleTrueOrderByResumeUpdateDesc();
+
+        return latestResumes.stream().map(resume -> {
+            PersonalUser user = resume.getPersonalUser();
+
+            List<String> techNames = techStackRepository.findByPersonalUserPersonalId(user.getPersonalId()).stream()
+                    .map(techStack -> techStack.getTech().getTechName())
+                    .collect(Collectors.toList());
+
+            List<String> techUrls = techStackRepository.findByPersonalUserPersonalId(user.getPersonalId()).stream()
+                    .map(techStack -> techStack.getTech().getTechUrl())
+                    .collect(Collectors.toList());
+
+            List<String> jobNames = jobPositionRepository.findByPersonalUserPersonalId(user.getPersonalId()).stream()
+                    .map(jobPosition -> jobPosition.getJob().getJobName())
+                    .collect(Collectors.toList());
+
+            List<PickAndScrap> pickAndScraps = pickAndScrapRepository.findByPersonalUser(user);
+            List<Boolean> scrapList = pickAndScraps.stream().map(PickAndScrap::isScrap).collect(Collectors.toList());
+            List<Boolean> pickList = pickAndScraps.stream().map(PickAndScrap::isPick).collect(Collectors.toList());
+            List<Long> companyIdList = pickAndScraps.stream()
+                    .map(pickAndScrap -> pickAndScrap.getCompanyUser().getCompanyId())
+                    .collect(Collectors.toList());
+
+            return PickCardDTO.builder()
+                    .userId(user.getUser().getUserId())
+                    .personalId(user.getPersonalId())
+                    .userName(user.getUser().getUserName())
+                    .userIntro(user.getUser().getUserIntro())
+                    .gender(user.getGender())
+                    .personalCareer(user.getPersonalCareer())
+                    .techName(String.join(",", techNames))
+                    .techUrl(String.join(",", techUrls))
+                    .jobName(String.join(",", jobNames))
+                    .scrap(scrapList)
+                    .pick(pickList)
+                    .companyId(companyIdList)
+                    .resumeUpdate(resume.getResumeUpdate())
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    //  pickzone Job 데이터 가져오는 메서드
     @Override
     public List<PickJobDTO> getAllJobs() {
         List<Job> jobs = jobRepository.findAll();
@@ -112,7 +209,7 @@ public class PickServiceImpl implements PickService {
                 .collect(Collectors.toList());
 
     }
-//  (CompanyId로 로그인했을 경우) pickDetailzone 회원정보 가져오는 메서드
+//  (CompanyId로 로그인했을 경우) pickDetailzone 왼쪽 회원정보 가져오는 메서드
     @Override
     public PickDetailDTO getPickCardsById(Long companyId, Long personalId) {
         PersonalUser personalUser = personalUserRepository.findByPersonalId(personalId);
@@ -134,6 +231,7 @@ public class PickServiceImpl implements PickService {
         List<String> jobNames = jobPositionRepository.findByPersonalUserPersonalId(personalId).stream()
                 .map(jobPosition -> jobPosition.getJob().getJobName())
                 .collect(Collectors.toList());
+        // personalUser가 pickAndScrap에서 유니크할 필요가 없어. personalUser와 pickAndScrap은 1대다 관계야. 문제를 해결해줘.
         Optional<PickAndScrap> pickAndScrapOptional = pickAndScrapRepository.findByCompanyUserAndPersonalUser(companyUser, personalUser);
         // 가져온 pickAndScrapList에서 scrap과 pick을 뽑아서 build
 
@@ -163,7 +261,7 @@ public class PickServiceImpl implements PickService {
         return pickDetailDTO;
     }
 
-    // (PersonalId로 로그인했을 경우) pickDetailzone 회원정보 가져오는 메서드
+    // (PersonalId로 로그인했을 경우) pickDetailzone 왼쪽 회원정보 가져오는 메서드
     @Override
     public PickPersonalDetailDTO getPickCardsByPersonalId(Long loggedInPersonalId, Long personalId) {
         PersonalUser loggedInUser = personalUserRepository.findByPersonalId(loggedInPersonalId);

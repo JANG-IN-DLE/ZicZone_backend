@@ -8,7 +8,9 @@ import java.util.List;
 
 public interface PickService {
 
-    List<PickCardDTO> getPickCards(Long loggedInPersonalId);
+    List<PickCardDTO> getPickCards();
+    List<PickCardDTO> getPersonalPickCards(Long loggedInPersonalId);
+    List<PickCardDTO> getCompanyPickCards(Long loggedInCompanyId);
     List<PickJobDTO> getAllJobs();
     PickDetailDTO getPickCardsById(Long companyId, Long personalId);
     PickPersonalDetailDTO getPickCardsByPersonalId(Long loggedInPersonalId, Long personalId);
