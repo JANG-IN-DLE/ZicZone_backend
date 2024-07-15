@@ -19,7 +19,7 @@ public class StorageServiceImpl implements StorageService {
     @Override
     public String uploadFile(MultipartFile file, String folderName, String objectName, String bucketName) {
         if (file == null) {
-            return "File is null";
+            return null;
         }
         if (folderName == null || folderName.isEmpty()) {
             return "Folder name is null or empty";
