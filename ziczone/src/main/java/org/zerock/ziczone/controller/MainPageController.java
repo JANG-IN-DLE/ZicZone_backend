@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import org.zerock.ziczone.dto.BennerDTO;
 import org.zerock.ziczone.dto.join.CompanyUserJoinDTO;
 import org.zerock.ziczone.dto.join.PersonalUserJoinDTO;
+import org.zerock.ziczone.dto.main.MainCompanyUserDTO;
+import org.zerock.ziczone.dto.main.MainPersonalUserDTO;
 import org.zerock.ziczone.dto.mypage.CompanyUserDTO;
 import org.zerock.ziczone.service.mainPage.BennerService;
 import org.zerock.ziczone.service.mainPage.MainPageService;
@@ -32,15 +34,15 @@ public class MainPageController {
 
     //기업 프로필
     @GetMapping("/companyUser/{id}")
-    public ResponseEntity<CompanyUserJoinDTO> getCompanyUserProfile(@PathVariable Long id) {
-        CompanyUserJoinDTO companyUser = mainPageService.getCompanyUser(id);
+    public ResponseEntity<MainCompanyUserDTO> getCompanyUserProfile(@PathVariable Long userId) {
+        MainCompanyUserDTO companyUser = mainPageService.getCompanyUser(userId);
         return new ResponseEntity<>(companyUser, HttpStatus.OK);
     }
 
     //개인 프로필
     @GetMapping("/personalUser/{id}")
-    public ResponseEntity<PersonalUserJoinDTO> getPersonalUserProfile(@PathVariable Long id) {
-        PersonalUserJoinDTO personalUser = mainPageService.getPersonalUser(id);
+    public ResponseEntity<MainPersonalUserDTO> getPersonalUserProfile(@PathVariable Long userId) {
+        MainPersonalUserDTO personalUser = mainPageService.getPersonalUser(userId);
         return new ResponseEntity<>(personalUser, HttpStatus.OK);
     }
 
