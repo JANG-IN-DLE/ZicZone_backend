@@ -12,7 +12,7 @@ import org.zerock.ziczone.domain.member.Gender;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CommentDTO {
-    private Long commId; // 뎃글 ID
+    private Long commId; // 댓글 ID
 
     private String commContent; // 댓글 내용
 
@@ -29,4 +29,6 @@ public class CommentDTO {
     private Gender gender; // 성별
 
     private Long corrId; // 게시물 ID
+
+    private Integer corrPoint; // 게시물에서 선택한 베리
 }
