@@ -73,6 +73,7 @@ public class BoardController {
             // 응답 메시지에 게시물 ID 추가
             Map<String, String> response = new HashMap<>();
             response.put("corrId", corrId.toString());
+            response.put("fileName", corrPdf.getOriginalFilename());
             // 응답 메시지 반환
             return ResponseEntity.ok(response);
         } catch (IOException e) {
