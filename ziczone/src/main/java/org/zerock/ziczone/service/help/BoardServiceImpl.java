@@ -42,39 +42,88 @@ public class BoardServiceImpl implements BoardService {
     private final PaymentRepository paymentRepository;
     private final CommentRepository commentRepository;
 
-    @Override
+    /**
+     * 게시물 등록
+     *
+     * @param corrPoint  게시물 포인트
+     * @param corrTitle  게시물 제목
+     * @param corrContent 게시물 내용
+     * @param corrPdf    첨부 파일 URL (String 형태)
+     * @param userId     사용자 ID
+     * @return Long      생성된 게시물 ID
+     * @throws IllegalArgumentException 회원 ID가 없거나, 기업 회원이 게시물을 등록하려고 할 때 발생
+     */
     @Transactional
-    public Long boardRegister(BoardDTO boardDTO) {
-        User user = userRepository.findById(boardDTO.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("회원 ID가 없습니다."));
-
+    public Long boardRegister(int corrPoint, String corrTitle, String corrContent, String corrPdf, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 userId"));
         if (user.getUserType() != UserType.PERSONAL) {
-            throw new IllegalArgumentException("기업 회원은 게시물을 등록할 수 없습니다.");
+            throw new IllegalArgumentException("개인 회원만 게시물을 등록할 수 있습니다.");
         }
 
         Board board = Board.builder()
-                .corrPoint(boardDTO.getCorrPoint())
-                .corrTitle(boardDTO.getCorrTitle())
-                .corrContent(boardDTO.getCorrContent())
-                .corrPdf(boardDTO.getCorrPdf())
+                .corrPoint(corrPoint)
+                .corrTitle(corrTitle)
+                .corrContent(corrContent)
+                .corrPdf(corrPdf)
                 .corrView(0)
-                .corrModify(boardDTO.getCorrModify())
                 .user(user)
                 .build();
 
         boardRepository.save(board);
 
-        log.info("Board Saved: {}", board);
-
         return board.getCorrId();
     }
 
+    /**
+     * [등록, 수정] 게시물 작성자 프로필 카드 조회
+     * (게시물 작성 시 사용자 프로필 정보를 조회하여 DTO로 반환)
+     *
+     * @param userId 사용자 ID
+     * @return BoardProfileCardDTO 조회된 사용자 프로필 정보
+     * @throws IllegalArgumentException 회원 ID가 없거나, 개인 사용자 프로필이 없을 때 발생
+     */
+    @Transactional
+    public BoardProfileCardDTO registerUserProfile(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 userId"));
+        PersonalUser personalUser = user.getPersonalUser();
+        if (personalUser == null) {
+            throw new IllegalArgumentException("개인 사용자 프로필이 없습니다.");
+        }
+        List<String> jobNames = jobPositionRepository.findByPersonalUser(personalUser).stream()
+                .map(jobPosition -> jobPosition.getJob().getJobName())
+                .collect(Collectors.toList());
+        Payment payment = paymentRepository.findByPersonalUser(personalUser);
+        List<String> techUrls = techStackRepository.findByPersonalUser(personalUser).stream()
+                .map(techStack -> techStack.getTech().getTechUrl())
+                .collect(Collectors.toList());
+
+        BoardProfileCardDTO boardProfileCardDTO = BoardProfileCardDTO.builder()
+                .userId(user.getUserId())
+                .personalId(personalUser.getPersonalId())
+                .jobName(String.join(",", jobNames))
+                .gender(personalUser.getGender())
+                .userName(user.getUserName())
+                .personalCareer(personalUser.getPersonalCareer())
+                .berryPoint(payment.getBerryPoint())
+                .userIntro(user.getUserIntro())
+                .techUrl(String.join(",", techUrls))
+                .build();
+
+        return boardProfileCardDTO;
+    }
+
+    /**
+     * 게시물 조회
+     *
+     * @param corrId 게시물 ID
+     * @return BoardDTO 조회된 게시물 정보
+     */
     @Override
     public BoardDTO boardReadOne(Long corrId) {
         Optional<Board> result = boardRepository.findById(corrId);
-
-        Board board = result.orElseThrow(() -> new IllegalArgumentException("게시물 ID가 없습니다."));
-
+        Board board = result.orElseThrow(() -> new IllegalArgumentException("유효하지 않은 corrId"));
         User user = board.getUser();
         PersonalUser personalUser = user.getPersonalUser();
         boolean isCommentSelected = commentRepository.existsByBoardCorrIdAndCommSelection(board.getCorrId(), true);
@@ -84,14 +133,210 @@ public class BoardServiceImpl implements BoardService {
                 .corrPoint(board.getCorrPoint())
                 .corrTitle(board.getCorrTitle())
                 .corrContent(board.getCorrContent())
-                .commSelection(isCommentSelected)
                 .corrPdf(board.getCorrPdf())
                 .corrView(board.getCorrView())
                 .corrModify(board.getCorrModify())
                 .userId(user.getUserId())
                 .userName(user.getUserName())
                 .personalCareer(personalUser.getPersonalCareer())
+                .commSelection(isCommentSelected)
                 .build();
+    }
+
+    /**
+     * [조회] 게시물 작성자 프로필 카드 조회
+     * (게시물 조회 시 사용자 프로필 정보를 조회하여 DTO로 반환)
+     *
+     * @param corrId 게시물 ID
+     * @return BoardProfileCardDTO 게시물 작성자의 프로필 카드 정보
+     * @throws IllegalArgumentException 게시물을 찾을 수 없을 때 발생
+     */
+    @Override
+    public BoardProfileCardDTO boardUserProfile(Long corrId) {
+        Board board = boardRepository.findById(corrId)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 corrId"));
+        User user = board.getUser();
+        PersonalUser personalUser = user.getPersonalUser();
+        List<String> jobNames = jobPositionRepository.findByPersonalUser(personalUser).stream()
+                .map(jobPosition -> jobPosition.getJob().getJobName())
+                .collect(Collectors.toList());
+        List<String> techUrls = techStackRepository.findByPersonalUser(personalUser).stream()
+                .map(techStack -> techStack.getTech().getTechUrl())
+                .collect(Collectors.toList());
+
+        BoardProfileCardDTO boardProfileCardDTO = BoardProfileCardDTO.builder()
+                .userId(user.getUserId())
+                .personalId(personalUser.getPersonalId())
+                .corrPoint(Long.valueOf(board.getCorrPoint()))
+                .jobName(String.join(",", jobNames))
+                .gender(personalUser.getGender())
+                .userName(user.getUserName())
+                .personalCareer(personalUser.getPersonalCareer())
+                .userIntro(user.getUserIntro())
+                .techUrl(String.join(",", techUrls))
+                .build();
+
+        return boardProfileCardDTO;
+    }
+
+    /**
+     * HELP존 리스트 정렬(최신순, 조회순, 베리순)
+     *
+     * @param filterType 정렬 기준 (latest: 최신순, views: 조회순, berry: 베리순)
+     * @param pageRequestDTO 페이지 요청 정보 (페이지 번호 및 크기)
+     * @param showSelect 채택된 게시물 제외 여부
+     * @return PageResponseDTO<BoardDTO> 페이지 응답 DTO
+     */
+    @Override
+    public PageResponseDTO<BoardDTO> boardFilter(String filterType, PageRequestDTO pageRequestDTO, boolean showSelect) {
+        Pageable pageable = PageRequest.of(pageRequestDTO.getPage() -1, pageRequestDTO.getSize());
+        Page<Board> result;
+
+        if (showSelect) {
+            switch (filterType) {
+                case "latest":
+                    result = boardRepository.findAllByOrderByCorrCreateDescAndCommSelectionFalse(pageable);
+                    break;
+                case "views":
+                    result = boardRepository.findAllByOrderByCorrViewDescAndCommSelectionFalse(pageable);
+                    break;
+                case "berry":
+                    result = boardRepository.findAllByOrderByCorrPointDescAndCommSelectionFalse(pageable);
+                    break;
+                default:
+                    throw new IllegalArgumentException("유효하지 않은 filter type: " + filterType);
+            }
+        } else {
+            switch (filterType) {
+                case "latest":
+                    result = boardRepository.findAllByOrderByCorrCreateDesc(pageable);
+                    break;
+                case "views":
+                    result = boardRepository.findAllByOrderByCorrViewDesc(pageable);
+                    break;
+                case "berry":
+                    result = boardRepository.findAllByOrderByCorrPointDesc(pageable);
+                    break;
+                default:
+                    throw new IllegalArgumentException("유효하지 않은 filter type: " + filterType);
+            }
+        }
+
+        List<BoardDTO> dtoList = result.stream()
+                .map(board -> {
+                    User user = board.getUser();
+                    PersonalUser personalUser = user.getPersonalUser();
+                    boolean isCommentSelected = commentRepository.existsByBoardCorrIdAndCommSelection(board.getCorrId(), true);
+
+                    return BoardDTO.builder()
+                            .corrId(board.getCorrId())
+                            .corrPoint(board.getCorrPoint())
+                            .corrTitle(board.getCorrTitle())
+                            .corrContent(board.getCorrContent())
+                            .corrPdf(board.getCorrPdf())
+                            .corrView(board.getCorrView())
+                            .corrModify(board.getCorrModify())
+                            .userId(user.getUserId())
+                            .userName(user.getUserName())
+                            .personalCareer(personalUser.getPersonalCareer())
+                            .commSelection(isCommentSelected)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return PageResponseDTO.<BoardDTO>withAll()
+                .pageRequestDTO(pageRequestDTO)
+                .dtoList(dtoList)
+                .total((int) result.getTotalElements())
+                .build();
+    }
+
+    /**
+     * 게시물 수정
+     *
+     * @param boardDTO 수정할 게시물 정보
+     * @return BoardDTO 수정된 게시물 정보
+     * @throws IllegalArgumentException 유효하지 않은 corrId이거나 작성자가 아닐 경우 발생
+     */
+    @Override
+    @Transactional
+    public BoardDTO boardModify(BoardDTO boardDTO) {
+        Optional<Board> result = boardRepository.findById(boardDTO.getCorrId());
+        Board board = result.orElseThrow(() -> new IllegalArgumentException("유효하지 않은 corrId"));
+
+        if(!board.getUser().getUserId().equals(boardDTO.getUserId())) {
+            throw new IllegalArgumentException("작성자만 수정할 수 있습니다.");
+        }
+
+        board.change(boardDTO.getCorrTitle(), boardDTO.getCorrContent(), boardDTO.getCorrPdf());
+
+        boardRepository.save(board);
+
+        return boardUserRead(board);
+    }
+
+    /**
+     * 게시물 삭제
+     *
+     * @param userId 사용자 ID
+     * @param corrId 게시물 ID
+     * @throws IllegalArgumentException 유효하지 않은 corrId이거나 작성자가 아닐 경우 발생
+     */
+    @Override
+    @Transactional
+    public void boardDelete(Long userId, Long corrId) {
+        Optional<Board> result = boardRepository.findById(corrId);
+        Board board = result.orElseThrow(() -> new IllegalArgumentException("유효하지 않은 corrId"));
+
+        if (board.getUser() == null || !board.getUser().getUserId().equals(userId)) {
+            throw new IllegalArgumentException("작성자만 삭제할 수 있습니다.");
+        }
+
+        boardRepository.deleteById(corrId);
+    }
+
+    /**
+     * 정보 추가
+     *
+     * @param board 게시물 객체
+     * @return BoardDTO 게시물 정보
+     */
+    @Override
+    public BoardDTO boardUserRead(Board board) {
+        User user = userRepository.findById(board.getUser().getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("회원 ID가 없습니다."));
+        PersonalUser personalUser = personalUserRepository.findById(board.getUser().getPersonalUser().getPersonalId())
+                .orElseThrow(() -> new IllegalArgumentException("개인 회원 ID가 없습니다."));
+
+        return BoardDTO.builder()
+                .corrId(board.getCorrId())
+                .corrPoint(board.getCorrPoint())
+                .corrTitle(board.getCorrTitle())
+                .corrContent(board.getCorrContent())
+                .corrPdf(board.getCorrPdf())
+                .corrView(board.getCorrView())
+                .userId(user.getUserId())
+                .userName(user.getUserName())
+                .personalCareer(personalUser.getPersonalCareer())
+                .build();
+    }
+
+    /**
+     * 게시물 조회수 증가
+     *
+     * @param userId  사용자 ID
+     * @param corrId  게시물 ID
+     * @throws IllegalArgumentException 게시물 ID가 없을 때 발생
+     */
+    @Override
+    @Transactional
+    public void boardViewCount(Long userId, Long corrId) {
+        Board board = boardRepository.findById(corrId)
+                .orElseThrow(() -> new IllegalArgumentException("게시물 ID가 없습니다."));
+
+        if (board.getUser() == null || !board.getUser().getUserId().equals(userId)) {
+            boardRepository.boardViewCount(corrId);
+        }
     }
 
     @Override
@@ -124,201 +369,5 @@ public class BoardServiceImpl implements BoardService {
                             .build();
                 })
                 .collect(Collectors.toList());
-    }
-
-    @Override
-    public PageResponseDTO<BoardDTO> boardFilter(String filterType, PageRequestDTO pageRequestDTO, boolean showSelect) {
-        Pageable pageable = PageRequest.of(pageRequestDTO.getPage() -1, pageRequestDTO.getSize());
-        Page<Board> result;
-
-        if (showSelect) {
-            switch (filterType) {
-                case "latest":   // 최신순
-                    result = boardRepository.findAllByOrderByCorrCreateDescAndCommSelectionFalse(pageable);
-                    break;
-                case "views":    // 조회순
-                    result = boardRepository.findAllByOrderByCorrViewDescAndCommSelectionFalse(pageable);
-                    break;
-                case "berry":    // 포인트(베리)순
-                    result = boardRepository.findAllByOrderByCorrPointDescAndCommSelectionFalse(pageable);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid filter type: " + filterType);
-            }
-        } else {
-            switch (filterType) {
-                case "latest":   // 최신순
-                    result = boardRepository.findAllByOrderByCorrCreateDesc(pageable);
-                    break;
-                case "views":    // 조회순
-                    result = boardRepository.findAllByOrderByCorrViewDesc(pageable);
-                    break;
-                case "berry":    // 포인트(베리)순
-                    result = boardRepository.findAllByOrderByCorrPointDesc(pageable);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Invalid filter type: " + filterType);
-            }
-        }
-
-        List<BoardDTO> dtoList = result.stream()
-                .map(board -> {
-                    User user = board.getUser();
-                    PersonalUser personalUser = user.getPersonalUser();
-                    boolean isCommentSelected = commentRepository.existsByBoardCorrIdAndCommSelection(board.getCorrId(), true);
-
-                    return BoardDTO.builder()
-                            .corrId(board.getCorrId())
-                            .corrPoint(board.getCorrPoint())
-                            .corrTitle(board.getCorrTitle())
-                            .corrContent(board.getCorrContent())
-                            .corrPdf(board.getCorrPdf())
-                            .corrView(board.getCorrView())
-                            .corrModify(board.getCorrModify())
-                            .userId(user.getUserId())
-                            .userName(user.getUserName())
-                            .commSelection(isCommentSelected)
-                            .personalCareer(personalUser.getPersonalCareer())
-                            .build();
-                })
-                .collect(Collectors.toList());
-
-        return PageResponseDTO.<BoardDTO>withAll()
-                .pageRequestDTO(pageRequestDTO)
-                .dtoList(dtoList)
-                .total((int) result.getTotalElements())
-                .build();
-    }
-
-    @Override
-    @Transactional
-    public void boardModify(BoardDTO boardDTO) {
-        Optional<Board> result = boardRepository.findById(boardDTO.getCorrId());
-
-        Board board = result.orElseThrow(() -> new IllegalArgumentException("게시물 ID가 없습니다."));
-
-        if(!board.getUser().getUserId().equals(boardDTO.getUserId())) {
-            throw new IllegalArgumentException("작성자만 수정할 수 있습니다.");
-        }
-
-        board.change(boardDTO.getCorrTitle(), boardDTO.getCorrContent(), boardDTO.getCorrPdf());
-
-        boardRepository.save(board);
-
-        BoardDTO updatedDTO = boardUserRead(board);
-    }
-
-    @Override
-    @Transactional
-    public void boardDelete(Long userId, Long corrId) {
-        Optional<Board> result = boardRepository.findById(corrId);
-
-        Board board = result.orElseThrow(() -> new IllegalArgumentException("게시물 ID가 없습니다."));
-
-        if (board.getUser() == null || !board.getUser().getUserId().equals(userId)) {
-            throw new IllegalArgumentException("작성자만 삭제할 수 있습니다.");
-        }
-
-        boardRepository.deleteById(corrId);
-    }
-
-    @Override
-    public BoardDTO boardUserRead(Board board) {
-        User user = userRepository.findById(board.getUser().getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("회원 ID가 없습니다."));
-        PersonalUser personalUser = personalUserRepository.findById(board.getUser().getPersonalUser().getPersonalId())
-                .orElseThrow(() -> new IllegalArgumentException("개인 회원 ID가 없습니다."));
-
-        return BoardDTO.builder()
-                .corrId(board.getCorrId())
-                .corrPoint(board.getCorrPoint())
-                .corrTitle(board.getCorrTitle())
-                .corrContent(board.getCorrContent())
-                .corrPdf(board.getCorrPdf())
-                .corrView(board.getCorrView())
-                .userId(user.getUserId())
-                .userName(user.getUserName())
-                .personalCareer(personalUser.getPersonalCareer())
-                .build();
-    }
-
-    @Override
-    public BoardProfileCardDTO boardUserProfile(Long corrId) {
-        // 게시물 먼저 조회
-        Board board = boardRepository.findById(corrId)
-                .orElseThrow(() -> new IllegalArgumentException("게시물을 찾을 수 없습니다."));
-
-        // 게시물 작성자 조회
-        User user = board.getUser();
-        PersonalUser personalUser = user.getPersonalUser();
-
-        // 직무 이름 조회
-        List<String> jobNames = jobPositionRepository.findByPersonalUser(personalUser).stream()
-                .map(jobPosition -> jobPosition.getJob().getJobName())
-                .collect(Collectors.toList());
-
-        // 기술 스택 조회
-        List<String> techUrls = techStackRepository.findByPersonalUser(personalUser).stream()
-                .map(techStack -> techStack.getTech().getTechUrl())
-                .collect(Collectors.toList());
-
-        BoardProfileCardDTO boardProfileCardDTO = BoardProfileCardDTO.builder()
-                .userId(user.getUserId())
-                .personalId(personalUser.getPersonalId())
-                .corrPoint(Long.valueOf(board.getCorrPoint()))
-                .jobName(String.join(",", jobNames))
-                .gender(personalUser.getGender())
-                .userName(user.getUserName())
-                .personalCareer(personalUser.getPersonalCareer())
-                .userIntro(user.getUserIntro())
-                .techUrl(String.join(",", techUrls))
-                .build();
-
-        return boardProfileCardDTO;
-    }
-
-    @Override
-    public BoardProfileCardDTO UserProfile(Long userId) {
-        // 게시물 작성자 조회
-        User user = userRepository.findByUserId(userId);
-        PersonalUser personalUser = user.getPersonalUser();
-
-        // 직무 이름 조회
-        List<String> jobNames = jobPositionRepository.findByPersonalUser(personalUser).stream()
-                .map(jobPosition -> jobPosition.getJob().getJobName())
-                .collect(Collectors.toList());
-
-        // 포인트 조회
-        Payment payment = paymentRepository.findByPersonalUser(personalUser);
-
-        // 기술 스택 조회
-        List<String> techUrls = techStackRepository.findByPersonalUser(personalUser).stream()
-                .map(techStack -> techStack.getTech().getTechUrl())
-                .collect(Collectors.toList());
-
-        BoardProfileCardDTO boardProfileCardDTO = BoardProfileCardDTO.builder()
-                .userId(user.getUserId())
-                .personalId(personalUser.getPersonalId())
-                .jobName(String.join(",", jobNames))
-                .gender(personalUser.getGender())
-                .userName(user.getUserName())
-                .personalCareer(personalUser.getPersonalCareer())
-                .berryPoint(payment.getBerryPoint())
-                .userIntro(user.getUserIntro())
-                .techUrl(String.join(",", techUrls))
-                .build();
-
-        return boardProfileCardDTO;
-    }
-
-    @Override
-    @Transactional
-    public void boardViewCount(Long userId, Long corrId) {
-        Board board = boardRepository.findById(corrId)
-                .orElseThrow(() -> new IllegalArgumentException("게시물 ID가 없습니다."));
-
-        if (board.getUser() == null || !board.getUser().getUserId().equals(userId)) {
-            boardRepository.boardViewCount(corrId);
-        }
     }
 }

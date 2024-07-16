@@ -19,5 +19,5 @@ public interface CommentService {
     // 정보 추가(userName, personalCareer)된 CommentDTO
     CommentDTO commentUserRead(Comment comment);
     // 댓글 채택
-    void selectComment(Long commentId, Long userId);
+    void selectComment(Long commId, Long userId);
 }

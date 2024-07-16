@@ -157,8 +157,8 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Transactional
-    public void selectComment(Long commentId, Long userId) {
-        Comment comment = commentRepository.findById(commentId)
+    public void selectComment(Long commId, Long userId) {
+        Comment comment = commentRepository.findById(commId)
                 .orElseThrow(() -> new IllegalArgumentException("댓글 ID가 없습니다."));
 
         Board board = comment.getBoard();
