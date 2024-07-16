@@ -1,5 +1,6 @@
 package org.zerock.ziczone.service.myPage;
 
+import com.amazonaws.util.CollectionUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -100,13 +101,15 @@ public class ResumeServiceImpl2 implements ResumeService2 {
         Resume existingResume = resumeRepository.findById(resumeDTO.getResumeId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid resume ID: " + resumeDTO.getResumeId()));
 
-        log.info("resumePhoto :: {}", resumePhoto.getOriginalFilename());
-        log.info("personalState :: {}", personalState.getOriginalFilename());
-        log.info("portfolios :: {}", portfolios.stream().map(MultipartFile::getOriginalFilename).collect(Collectors.toList()));
+        log.info("resumePhoto.getOriginalFilename :: {}", resumePhoto.getOriginalFilename());
+        log.info("personalState.getOriginalFilename :: {}", personalState.getOriginalFilename());
+        log.info("size ::: {}", portfolios.size());
+
 
         log.info("resumePhoto.isEmpty() :: {}", resumePhoto.isEmpty());
         log.info("personalState.isEmpty() :: {}", personalState.isEmpty());
         log.info("portfolios.isEmpty() :: {}", portfolios.isEmpty());
+        log.info("CollectionUtils.isNullOrEmpty(portfolios) :: {}", CollectionUtils.isNullOrEmpty(portfolios));
 
 
 
