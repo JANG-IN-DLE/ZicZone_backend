@@ -288,9 +288,9 @@ public class MyPageResumeConroller {
 //
 //        resumeService.updateResume(resumeDTO.getResumeId(), resumeDTO, resumePhoto, personalState, portfolios);
 //        return ResponseEntity.ok("Resume create successfully.");
-        log.info("Received resumeDTO JSON: {}", resumeDTOString);
+        log.info("[Controller] Received resumeDTO JSON: {}", resumeDTOString);
         ResumeDTO resumeDTO = convertJsonToResumeDTO(resumeDTOString);
-        log.info("Parsed ResumeDTO: {}", resumeDTO);
+        log.info("[Controller] Parsed ResumeDTO: {}", resumeDTO);
 
         User user = userRepository.findByUserId(userId);
         if (user == null) {
@@ -299,7 +299,7 @@ public class MyPageResumeConroller {
         }
 
         Long personalId = user.getPersonalUser().getPersonalId();
-        log.info("Found personalId: {}", personalId);
+        log.info("[Controller] Found personalId: {}", personalId);
 
         resumeDTO = resumeDTO.toBuilder().personalId(personalId).build();
 
