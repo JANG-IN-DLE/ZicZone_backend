@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.zerock.ziczone.domain.member.Gender;
 
-// 하나의 게시물에 여러 개의 댓글이 달릴 수 있기 때문에, CommentDTO를 별도로 관리
 @Data
 @Builder
 @AllArgsConstructor
