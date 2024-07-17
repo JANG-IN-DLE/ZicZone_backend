@@ -1,13 +1,13 @@
 package org.zerock.ziczone.controller;
 
-import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import com.amazonaws.services.s3.AmazonS3;
+import lombok.RequiredArgsConstructor;
 import org.zerock.ziczone.dto.help.BoardDTO;
 import org.zerock.ziczone.dto.help.BoardProfileCardDTO;
 import org.zerock.ziczone.dto.page.PageRequestDTO;
@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/persnoal/board")
 @RequiredArgsConstructor
 @Log4j2
 public class BoardController {
@@ -48,6 +47,7 @@ public class BoardController {
         String bucketName = "ziczone-bucket-jangindle";
         String folderName = "CorrPdf/";
         String objectName = folderName + corrPdf.getOriginalFilename();
+
         try {
             // S3에 업로드할 파일의 메타데이터 설정하는 객체
             ObjectMetadata metadata = new ObjectMetadata();
@@ -57,13 +57,7 @@ public class BoardController {
             metadata.setContentType("application/pdf");
             // S3에 파일을 업로드
             amazonS3.putObject(new PutObjectRequest(bucketName, objectName, corrPdf.getInputStream(), metadata));
-
-            // 업로드된 파일의 접근 제어 리스트 가져오기
-            AccessControlList accessControlList = amazonS3.getObjectAcl(bucketName, objectName);
-            //  모든 사용자에게 읽기 권한 부여
-            accessControlList.grantPermission(GroupGrantee.AllUsers, Permission.Read);
-            amazonS3.setObjectAcl(bucketName, objectName, accessControlList);
-
+            // 업로드된 파일의 URL 가져오기
             String fileUrl = amazonS3.getUrl(bucketName, objectName).toString();
 
             // 업로드된 파일의 접근 제어 리스트 가져오기
@@ -92,7 +86,7 @@ public class BoardController {
     /**
      * 게시물 등록할 때 작성자 프로필 카드 조회
      *
-     * @param () 유저 ID (로그인 구현되면)
+     * @param userId 사용자 ID
      * @return ResponseEntity<BoardProfileCardDTO> 조회된 프로필 카드 정보
      */
     @GetMapping("/api/personal/board/myProfile/{userId}")

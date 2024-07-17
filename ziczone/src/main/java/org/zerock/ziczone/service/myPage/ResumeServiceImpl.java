@@ -6,529 +6,472 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.zerock.ziczone.domain.application.*;
-import org.zerock.ziczone.domain.job.Job;
 import org.zerock.ziczone.domain.job.JobPosition;
 import org.zerock.ziczone.domain.member.PersonalUser;
-import org.zerock.ziczone.domain.member.User;
-import org.zerock.ziczone.domain.tech.Tech;
 import org.zerock.ziczone.domain.tech.TechStack;
 import org.zerock.ziczone.dto.mypage.*;
-import org.zerock.ziczone.exception.mypage.PersonalNotFoundException;
-import org.zerock.ziczone.exception.mypage.UserNotFoundException;
+import org.zerock.ziczone.exception.mypage.ResumeAlreadyExistsException;
 import org.zerock.ziczone.repository.application.*;
 import org.zerock.ziczone.repository.job.JobPositionRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
-import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
 import org.zerock.ziczone.service.storage.StorageService;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ResumeServiceImpl implements ResumeService {
 
     private final ResumeRepository resumeRepository;
-    private final ArchiveRepository archiveRepository;
-    private final EtcRepository etcRepository;
-    private final CurriculumRepository curriculumRepository;
-    private final CareerRepository careerRepository;
-    private final EducationRepository educationRepository;
     private final CertificateRepository certificateRepository;
-    private final UserRepository userRepository;
-    private final PersonalUserRepository personalUserRepository;
+    private final EducationRepository educationRepository;
+    private final CareerRepository careerRepository;
+    private final CurriculumRepository curriculumRepository;
+    private final EtcRepository etcRepository;
+    private final PortfolioRepository portfolioRepository;
     private final JobPositionRepository jobPositionRepository;
     private final TechStackRepository techStackRepository;
     private final StorageService storageService;
+    private final ArchiveRepository archiveRepository;
+    private final PersonalUserRepository personalUserRepository;
 
-
-    /**
-     * 지원서 생성
-     * 지원서와 관련된 자격증, 학력, 아카이브, 경력사항, 교육사항, 기타사항들을 같이 생성한다.
-     * 만약 테이블에 조회된 값이 없을 경우엔 새로 생성을 해준다.
-     * @param resumeDTO
-     * @param userId
-     * @return ResumeDTO
-     */
-    @Override
-    @Transactional
-    public ResumeDTO createResume(ResumeDTO resumeDTO, Long userId) {
-        User user = userRepository.findByUserId(userId);
-        if (user == null) {
-            throw new UserNotFoundException("User not found");
-        }
-        PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
-        if (personalUser == null) {
-            throw new PersonalNotFoundException("Personal user not found");
-        }
-        Resume resume = resumeDTO.toEntity();
-        resume = resume.toBuilder().personalUser(personalUser).build();
-        Resume savedResume = resumeRepository.save(resume);
-
-        saveOrUpdateArchive(resumeDTO.getArchive(), savedResume);
-        saveOrUpdateEtcs(resumeDTO.getEtcs(), savedResume);
-        saveOrUpdateCurriculums(resumeDTO.getCurriculums(), savedResume);
-        saveOrUpdateCareers(resumeDTO.getCareers(), savedResume);
-        saveOrUpdateEducations(resumeDTO.getEducations(), savedResume);
-        saveOrUpdateCertificates(resumeDTO.getCertificates(), savedResume);
-
-        return ResumeDTO.fromEntity(savedResume);
-    }
-
-    /**
-     * 지원서 조회
-     * 지원서 조회시 없을 경우 지원서 생성 메서드를 가져와서 저장한다.그리고 조회해서 값을 불러온다.
-     * @param userId
-     * @return resumeDTO
-     */
-    @Override
-    @Transactional
-    public ResumeDTO getResume(Long userId) {
-        PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
-        if (personalUser == null) {
-            throw new PersonalNotFoundException("Personal user not found");
-        }
-        Optional<List<Resume>> resumesOptional = resumeRepository.findByPersonalUser(personalUser);
-
-        Resume resume;
-        if (resumesOptional.isPresent() && !resumesOptional.get().isEmpty()) {
-            resume = resumesOptional.get().get(0);
-        } else {
-            resume = createEmptyResume(personalUser);
-            resume = resumeRepository.save(resume);
-        }
-
-        ResumeDTO resumeDTO = ResumeDTO.fromEntity(resume);
-        ArchiveDTO archiveDTO = getOrCreateArchive(resume);
-        List<EtcDTO> etcs = getOrCreateEtcs(resume);
-        List<CurriculumDTO> curriculums = getOrCreateCurriculums(resume);
-        List<CareerDTO> careers = getOrCreateCareers(resume);
-        List<EducationDTO> educations = getOrCreateEducations(resume);
-        List<CertificateDTO> certificates = getOrCreateCertificates(resume);
-
-        List<JobPositionDTO> jobPositions = getJobPositionsByPersonalId(personalUser.getPersonalId());
-        log.info("jobPositions : {}",jobPositions);
-        List<TechStackDTO> techStacks = getTechStacksByPersonalId(personalUser.getPersonalId());
-        log.info("techStacks : {}",techStacks);
-
-
-
-        resumeDTO = resumeDTO.toBuilder()
-                .archive(archiveDTO)
-                .etcs(etcs)
-                .curriculums(curriculums)
-                .careers(careers)
-                .educations(educations)
-                .certificates(certificates)
-                .jobPositions(jobPositions)
-                .techStacks(techStacks)
-                .build();
-
-        log.info("resumeDTO : {}", resumeDTO);
-        return resumeDTO;
-    }
-
-    /**
-     *  지원서 수정
-     *  지원서 수정시 필요한 부분만 요청을 보내면 수정이 가능하다. 해당 테이블들의 id값은 필수로 필요하다. (조회시 값을 전달 함)
-     * @param userId
-     * @param resumeDTO
-     * @return
-     */
-    @Override
-    @Transactional
-    public ResumeDTO updateResume(Long userId, ResumeDTO resumeDTO, MultipartFile resumePhotoFile) {
-        PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
-        if (personalUser == null) {
-            throw new PersonalNotFoundException("Personal user not found");
-        }
-        Optional<List<Resume>> resumesOptional = resumeRepository.findByPersonalUser(personalUser);
-
-        if (resumesOptional.isPresent() && !resumesOptional.get().isEmpty()) {
-            Resume resume = resumesOptional.get().get(0);
-
-            // 사진 업로드 처리
-            String resumePhotoUrl = resume.getResumePhoto();
-            if (resumePhotoFile != null && !resumesOptional.get().isEmpty()) {
-                // 클라우드 오브젝트 스토리지 버켓 관련 설정
-                String bucketName = "ziczone-bucket";
-                String folderName = "CorrPdf/";
-                String objectName = folderName + resumePhotoFile.getOriginalFilename();
-                resumePhotoUrl = storageService.uploadFile(resumePhotoFile, folderName, objectName, bucketName);
-
-            }
-
-            Resume.ResumeBuilder resumeBuilder = resume.toBuilder();
-            resumeBuilder.resumeName(getValueOrEmpty(resumeDTO.getResumeName(), resume.getResumeName()));
-            resumeBuilder.resumeDate(getValueOrEmpty(resumeDTO.getResumeDate(), resume.getResumeDate()));
-            resumeBuilder.phoneNum(getValueOrEmpty(resumeDTO.getPhoneNum(), resume.getPhoneNum()));
-            resumeBuilder.resumePhoto(resumePhotoUrl);
-            resumeBuilder.resumeCreate(getValueOrEmpty(resumeDTO.getResumeCreate(), resume.getResumeCreate()));
-            resumeBuilder.resumeUpdate(LocalDateTime.now()); // Update timestamp
-            resumeBuilder.personalState(getValueOrEmpty(resumeDTO.getPersonalState(), resume.getPersonalState()));
-            resumeBuilder.resumeEmail(getValueOrEmpty(resumeDTO.getResumeEmail(), resume.getResumeEmail()));
-
-            Resume updatedResume = resumeRepository.save(resumeBuilder.personalUser(personalUser).build());
-
-            saveOrUpdateArchive(resumeDTO.getArchive(), updatedResume);
-            saveOrUpdateEtcs(resumeDTO.getEtcs(), updatedResume);
-            saveOrUpdateCurriculums(resumeDTO.getCurriculums(), updatedResume);
-            saveOrUpdateCareers(resumeDTO.getCareers(), updatedResume);
-            saveOrUpdateEducations(resumeDTO.getEducations(), updatedResume);
-            saveOrUpdateCertificates(resumeDTO.getCertificates(), updatedResume);
-            saveOrUpdateJobPositions(resumeDTO.getJobPositions(), personalUser);
-            saveOrUpdateTechStacks(resumeDTO.getTechStacks(), personalUser);
-
-            return getResumeDTOWithDefaults(updatedResume);
-        } else {
-            throw new IllegalArgumentException("Resume not found for the given user.");
-        }
-    }
-
-
-    /**
-     * 지원서 삭제
-     * 지원서 삭제시 관련된 테이블들의 모든 데이터를 전부 삭제한다.
-     * @param userId
-     */
     @Transactional
     @Override
-    public void deleteResume(Long userId) {
-        User user = userRepository.findByUserId(userId);
-        if (user == null) {
-            throw new UserNotFoundException("User not found");
+    public ResumeDTO saveResume(ResumeDTO resumeDTO, MultipartFile resumePhoto, MultipartFile personalState, List<MultipartFile> portfolios) {
+        Long personalId = resumeDTO.getPersonalId();
+        Resume existingResume = resumeRepository.findByPersonalUser_PersonalId(personalId);
+
+        // personalId가 존재하는지 확인
+        if (!personalUserRepository.existsById(personalId)) {
+            throw new IllegalArgumentException("Invalid personal ID: " + personalId);
+        }
+        // 지원서가 존재하는지 확인
+        if (existingResume != null) {
+            // 지원서가 이미 존재하는 경우 커스텀 예외 발생
+            throw new ResumeAlreadyExistsException("Resume already exists for personal ID: " + personalId);
         }
 
-        PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
-        if (personalUser == null) {
-            throw new PersonalNotFoundException("Personal user not found");
-        }
+        String bucketName = "ziczone-bucket-jangindle-optimizer";
+        String resumePhotoUrl = uploadFileAndDeleteOld(resumePhoto, "resumePhoto/", generateFileName("resumePhoto/", resumePhoto), bucketName, null);
+        String personalStateUrl = uploadFileAndDeleteOld(personalState, "personalState/", generateFileName("personalState/", personalState), bucketName, null);
+        List<String> portfolioUrls = uploadPortfolios(portfolios, bucketName);
 
-        List<Resume> resumes = resumeRepository.findByPersonalUser(personalUser)
-                .orElseThrow(() -> new IllegalArgumentException("No Resume entity for the given user."));
+        PersonalUser personalUser = personalUserRepository.findByPersonalId(personalId);
 
-        Resume resume = resumes.get(0); // assuming we take the first resume if multiple exist
-
-        try {
-            archiveRepository.deleteByResume_ResumeId(resume.getResumeId());
-            etcRepository.deleteByResume_ResumeId(resume.getResumeId());
-            curriculumRepository.deleteByResume_ResumeId(resume.getResumeId());
-            careerRepository.deleteByResume_ResumeId(resume.getResumeId());
-            educationRepository.deleteByResume_ResumeId(resume.getResumeId());
-            certificateRepository.deleteByResume_ResumeId(resume.getResumeId());
-            resumeRepository.deleteById(resume.getResumeId());
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to delete resume and related entities", e);
-        }
-    }
-
-
-    /**
-     *   아래부터는 Helper Method
-     *
-     */
-
-
-    private ResumeDTO getResumeDTOWithDefaults(Resume resume) {
-        ResumeDTO resumeDTO = ResumeDTO.fromEntity(resume);
-        resumeDTO = resumeDTO.toBuilder()
-                .archive(getOrCreateArchive(resume))
-                .etcs(getOrCreateEtcs(resume))
-                .curriculums(getOrCreateCurriculums(resume))
-                .careers(getOrCreateCareers(resume))
-                .educations(getOrCreateEducations(resume))
-                .certificates(getOrCreateCertificates(resume))
-                .jobPositions(getOrCreateJobPositionsDTO(resume.getPersonalUser().getPersonalId()))
-                .techStacks(getOrCreateTechStacksDTO(resume.getPersonalUser().getPersonalId()))
-                .build();
-        return resumeDTO;
-    }
-
-    private void saveOrUpdateArchive(ArchiveDTO archiveDTO, Resume resume) {
-        if (archiveDTO == null) {
-            archiveDTO = ArchiveDTO.builder().archGit("").archNotion("").archBlog("").build();
-        }
-        Archive archive = archiveRepository.findByResume_ResumeId(resume.getResumeId())
-                .stream().findFirst().orElse(new Archive());
-        archiveRepository.save(archive.toBuilder()
-                .archGit(getValueOrEmpty(archiveDTO.getArchGit(), archive.getArchGit()))
-                .archNotion(getValueOrEmpty(archiveDTO.getArchNotion(), archive.getArchNotion()))
-                .archBlog(getValueOrEmpty(archiveDTO.getArchBlog(), archive.getArchBlog()))
-                .resume(resume)
-                .build());
-    }
-
-    private void saveOrUpdateEtcs(List<EtcDTO> etcs, Resume resume) {
-        etcRepository.deleteByResume_ResumeId(resume.getResumeId());
-        if (etcs == null) {
-            etcs = List.of(EtcDTO.builder().etc_content("").etc_date("").build());
-        }
-        for (EtcDTO etc : etcs) {
-            etcRepository.save(Etc.builder()
-                    .etcId(etc.getEtc_id())
-                    .etcContent(getValueOrEmpty(etc.getEtc_content(), ""))
-                    .etcDate(getValueOrEmpty(etc.getEtc_date(), ""))
-                    .resume(resume)
-                    .build());
-        }
-    }
-
-    private void saveOrUpdateCurriculums(List<CurriculumDTO> curriculums, Resume resume) {
-        curriculumRepository.deleteByResume_ResumeId(resume.getResumeId());
-        if (curriculums == null) {
-            curriculums = List.of(CurriculumDTO.builder().curri_content("").curri_company("").curri_date("").build());
-        }
-        for (CurriculumDTO curriculum : curriculums) {
-            curriculumRepository.save(Curriculum.builder()
-                    .curriId(curriculum.getCurri_id())
-                    .curriContent(getValueOrEmpty(curriculum.getCurri_content(), ""))
-                    .curriCompany(getValueOrEmpty(curriculum.getCurri_company(), ""))
-                    .curriDate(getValueOrEmpty(curriculum.getCurri_date(), ""))
-                    .resume(resume)
-                    .build());
-        }
-    }
-
-    private void saveOrUpdateCareers(List<CareerDTO> careers, Resume resume) {
-        careerRepository.deleteByResume_ResumeId(resume.getResumeId());
-        if (careers == null) {
-            careers = List.of(CareerDTO.builder().career_name("").career_job("").career_position("").career_date("").build());
-        }
-        for (CareerDTO career : careers) {
-            careerRepository.save(Career.builder()
-                    .careerId(career.getCareer_id())
-                    .careerName(getValueOrEmpty(career.getCareer_name(), ""))
-                    .careerJob(getValueOrEmpty(career.getCareer_job(), ""))
-                    .careerPosition(getValueOrEmpty(career.getCareer_position(), ""))
-                    .careerDate(getValueOrEmpty(career.getCareer_date(), ""))
-                    .resume(resume)
-                    .build());
-        }
-    }
-
-    private void saveOrUpdateEducations(List<EducationDTO> educations, Resume resume) {
-        educationRepository.deleteByResume_ResumeId(resume.getResumeId());
-        if (educations == null) {
-            educations = List.of(EducationDTO.builder().edu("").credit("").edu_date("").build());
-        }
-        for (EducationDTO education : educations) {
-            educationRepository.save(Education.builder()
-                    .eduId(education.getEdu_id())
-                    .edu(getValueOrEmpty(education.getEdu(), ""))
-                    .credit(getValueOrEmpty(education.getCredit(), ""))
-                    .eduDate(getValueOrEmpty(education.getEdu_date(), ""))
-                    .resume(resume)
-                    .build());
-        }
-    }
-
-    private void saveOrUpdateCertificates(List<CertificateDTO> certificates, Resume resume) {
-        certificateRepository.deleteByResume_ResumeId(resume.getResumeId());
-        if (certificates == null) {
-            certificates = List.of(CertificateDTO.builder().cert("").cert_date("").build());
-        }
-        for (CertificateDTO certificate : certificates) {
-            certificateRepository.save(Certificate.builder()
-                    .certId(certificate.getCert_id())
-                    .cert(getValueOrEmpty(certificate.getCert(), ""))
-                    .certDate(getValueOrEmpty(certificate.getCert_date(), ""))
-                    .resume(resume)
-                    .build());
-        }
-    }
-    private void saveOrUpdateJobPositions(List<JobPositionDTO> jobPositions, PersonalUser personalUser) {
-        jobPositionRepository.deleteByPersonalUser(personalUser);
-        if (jobPositions != null) {
-            List<JobPosition> jobPositionEntities = jobPositions.stream()
-                    .map(jobPositionDTO -> JobPosition.builder()
-                            .personalUser(personalUser)
-                            .job(Job.builder()
-                                    .jobId(jobPositionDTO.getJob().getJobId())
-                                    .jobName(jobPositionDTO.getJob().getJobName())
-                                    .build())
-                            .build())
-                    .collect(Collectors.toList());
-            jobPositionRepository.saveAll(jobPositionEntities);
-        }
-    }
-
-    private void saveOrUpdateTechStacks(List<TechStackDTO> techStacks, PersonalUser personalUser) {
-        techStackRepository.deleteByPersonalUser(personalUser);
-        if (techStacks != null) {
-            List<TechStack> techStackEntities = techStacks.stream()
-                    .map(techStackDTO -> TechStack.builder()
-                            .personalUser(personalUser)
-                            .tech(Tech.builder()
-                                    .techId(techStackDTO.getTech().getTechId())
-                                    .techName(techStackDTO.getTech().getTechName())
-                                    .techUrl(techStackDTO.getTech().getTechUrl())
-                                    .build())
-                            .build())
-                    .collect(Collectors.toList());
-            techStackRepository.saveAll(techStackEntities);
-        }
-    }
-
-    private <T> T getValueOrEmpty(T value, T defaultValue) {
-        return value != null ? value : defaultValue;
-    }
-
-    private Resume createEmptyResume(PersonalUser personalUser) {
-        return Resume.builder()
-                .resumeName("")
-                .resumeDate("")
-                .phoneNum("")
-                .resumePhoto("")
-                .resumeCreate(LocalDateTime.now())
-                .resumeUpdate(LocalDateTime.now())
-                .resumeEmail("")
-                .personalState("")
+        Resume resume = resumeDTO.toEntity().toBuilder()
+                .resumePhoto(resumePhotoUrl)
+                .personalState(personalStateUrl)
                 .personalUser(personalUser)
                 .build();
+
+        resume = resumeRepository.save(resume);
+        saveRelatedEntities(resume, resumeDTO, portfolioUrls);
+
+
+
+        return ResumeDTO.fromEntity(resume).toBuilder()
+                .archive(resumeDTO.getArchive() != null ? resumeDTO.getArchive() : new ArchiveDTO())
+                .certificates(resumeDTO.getCertificates() != null ? resumeDTO.getCertificates() : Collections.emptyList())
+                .educations(resumeDTO.getEducations() != null ? resumeDTO.getEducations() : Collections.emptyList())
+                .careers(resumeDTO.getCareers() != null ? resumeDTO.getCareers() : Collections.emptyList())
+                .curriculums(resumeDTO.getCurriculums() != null ? resumeDTO.getCurriculums() : Collections.emptyList())
+                .etcs(resumeDTO.getEtcs() != null ? resumeDTO.getEtcs() : Collections.emptyList())
+                .jobPositions(resumeDTO.getJobPositions() != null ? resumeDTO.getJobPositions() : Collections.emptyList())
+                .techStacks(resumeDTO.getTechStacks() != null ? resumeDTO.getTechStacks() : Collections.emptyList())
+                .portfolios(portfolioUrls.stream()
+                        .map(url -> PortfolioDTO.builder().portFile(url).build())
+                        .collect(Collectors.toList()))
+                .build();
     }
 
-    private ArchiveDTO getOrCreateArchive(Resume resume) {
-        List<Archive> archives = archiveRepository.findByResume_ResumeId(resume.getResumeId());
-        if (!archives.isEmpty()) {
-            return ArchiveDTO.fromEntity(archives.get(0));
-        } else {
+    @Transactional
+    @Override
+    public void updateResume(Long userId, ResumeDTO resumeDTO, MultipartFile resumePhoto, MultipartFile personalState, List<MultipartFile> portfolios) {
+        if (resumeDTO.getResumeId() == null) {
+            throw new IllegalArgumentException("Resume ID cannot be null");
+        }
+
+        Resume existingResume = resumeRepository.findById(resumeDTO.getResumeId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid resume ID: " + resumeDTO.getResumeId()));
+        log.info("기존 이력서: {}", existingResume);
+        log.info("1.. resumePhoto.getOriginalFilename ::> {}", resumePhoto.getOriginalFilename());
+        log.info("1.. personalState.getOriginalFilename ::> {}", personalState.getOriginalFilename());
+        log.info("portfolios.stream.toList ::> {}",portfolios.stream().map(MultipartFile::getOriginalFilename).collect(Collectors.toList()));
+        log.info("1.. size ::> {}", portfolios.size());
+        log.info("portfolios.stream().allMatch(MultipartFile::isEmpty) ::> {} ", portfolios.stream().allMatch(MultipartFile::isEmpty));
+        log.info("1-2.. existingResume ::> {}", existingResume);
+
+
+
+        log.info("2.. resumePhoto.isEmpty() ::> {}", resumePhoto.isEmpty());
+        log.info("2.. personalState.isEmpty() ::> {}", personalState.isEmpty());
+        log.info("2.. portfolios.isEmpty() ::> {}", portfolios.isEmpty());
+        log.info("2.. portfolios.stream().allMatch(MultipartFile::isEmpty) ::> {}", portfolios.stream().allMatch(MultipartFile::isEmpty));
+
+        log.info("-----------------------------------------------------------------------------------------------");
+
+
+        String bucketName = "ziczone-bucket-jangindle-optimizer";
+
+        String resumePhotoUrl = existingResume.getResumePhoto();
+        if (!resumePhoto.isEmpty()) {
+            storageService.deleteFile(existingResume.getResumePhoto());
+            resumePhotoUrl = uploadFileAndDeleteOld(resumePhoto, "resumePhoto/", generateFileName("resumePhoto/", resumePhoto), bucketName, existingResume.getResumePhoto());
+        } else if (resumePhoto.isEmpty() && resumeDTO.getResumePhoto() == null) {
+            storageService.deleteFile(existingResume.getResumePhoto());
+            resumePhotoUrl = null;
+        }
+
+        String personalStateUrl = existingResume.getPersonalState();
+        if (!personalState.isEmpty()) {
+            storageService.deleteFile(existingResume.getPersonalState());
+            personalStateUrl = uploadFileAndDeleteOld(personalState, "personalState/", generateFileName("personalState/", personalState), bucketName, existingResume.getPersonalState());
+        } else if (personalState.isEmpty() && resumeDTO.getPersonalState() == null) {
+            storageService.deleteFile(existingResume.getPersonalState());
+            personalStateUrl = null;
+        }
+
+        List<String> portfolioUrls = !portfolios.stream().allMatch(MultipartFile::isEmpty) ? uploadPortfolios(portfolios, bucketName) : Collections.emptyList();
+
+
+        log.info("1. resumePhotoUrl ::: {}", resumePhotoUrl);
+        log.info("1. personalStateUrl ::: {}", personalStateUrl);
+        log.info("1. portfolioUrls ::: {}", portfolioUrls);
+
+        log.info("2. resumePhotoUrl.isEmpty() ::: {}", resumePhotoUrl == null || resumePhotoUrl.isEmpty());
+        log.info("2. personalStateUrl.isEmpty() ::: {}", personalStateUrl == null || personalStateUrl.isEmpty());
+        log.info("2. portfolios.stream().allMatch(MultipartFile::isEmpty) ::: {}", portfolios.stream().allMatch(MultipartFile::isEmpty));
+
+        log.info("3. resumeDTO ::: {}", resumeDTO);
+
+        existingResume = existingResume.toBuilder()
+                .resumeName(resumeDTO.getResumeName() != null ? resumeDTO.getResumeName() : existingResume.getResumeName())
+                .resumeDate(resumeDTO.getResumeDate() != null ? resumeDTO.getResumeDate() : existingResume.getResumeDate())
+                .phoneNum(resumeDTO.getPhoneNum() != null ? resumeDTO.getPhoneNum() : existingResume.getPhoneNum())
+                .resumeEmail(resumeDTO.getResumeEmail() != null ? resumeDTO.getResumeEmail() : existingResume.getResumeEmail())
+                .resumePhoto(resumePhotoUrl != null ? resumePhotoUrl : "")
+                .personalState(personalStateUrl != null ? personalStateUrl : "")
+                .resumeUpdate(LocalDateTime.now())
+                .build();
+
+        log.info("existingResume :: {}", existingResume);
+
+        saveRelatedEntities(existingResume, resumeDTO, portfolioUrls);
+
+        resumeRepository.save(existingResume);
+
+        log.info("4. resumeDTO :::> {}", resumeDTO);
+        log.info("4. existingResume :: {}", existingResume);
+
+
+        // DateTimeFormatter 생성
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+
+        ResumeDTO.fromEntity(existingResume).toBuilder()
+                .resumeName(existingResume.getResumeName() != null ? existingResume.getResumeName() : Collections.emptyList().toString())
+                .resumeDate(existingResume.getResumeDate() != null ? existingResume.getResumeDate() : Collections.emptyList().toString())
+                .phoneNum(existingResume.getPhoneNum() != null ? existingResume.getPhoneNum() : Collections.emptyList().toString())
+                .resumePhoto(existingResume.getResumePhoto() != null ? existingResume.getResumePhoto() : Collections.emptyList().toString())
+                .resumeEmail(existingResume.getResumeEmail() != null ? existingResume.getResumeEmail() : Collections.emptyList().toString())
+                .resumeUpdate(existingResume.getResumeUpdate() != null ? existingResume.getResumeUpdate() : LocalDateTime.parse(LocalDateTime.now().format(formatter)))
+                .personalState(existingResume.getPersonalState() != null ? existingResume.getPersonalState() : Collections.emptyList().toString())
+                .archive(resumeDTO.getArchive() != null ? resumeDTO.getArchive() : new ArchiveDTO())
+                .certificates(resumeDTO.getCertificates() != null ? resumeDTO.getCertificates() : Collections.emptyList())
+                .educations(resumeDTO.getEducations() != null ? resumeDTO.getEducations() : Collections.emptyList())
+                .careers(resumeDTO.getCareers() != null ? resumeDTO.getCareers() : Collections.emptyList())
+                .curriculums(resumeDTO.getCurriculums() != null ? resumeDTO.getCurriculums() : Collections.emptyList())
+                .etcs(resumeDTO.getEtcs() != null ? resumeDTO.getEtcs() : Collections.emptyList())
+                .jobPositions(resumeDTO.getJobPositions() != null ? resumeDTO.getJobPositions() : Collections.emptyList())
+                .techStacks(resumeDTO.getTechStacks() != null ? resumeDTO.getTechStacks() : Collections.emptyList())
+                .portfolios(!portfolioUrls.isEmpty() ? portfolioUrls.stream()
+                        .map(url -> PortfolioDTO.builder().portFile(url).build())
+                        .collect(Collectors.toList()) : Collections.emptyList())
+                .build();
+    }
+
+    private List<String> uploadPortfolios(List<MultipartFile> portfolios, String bucketName) {
+        return portfolios.stream()
+                .map(file -> {
+                    try {
+                        String fileName = generateFileName("portfolio/", file);
+                        return storageService.uploadFile(file, "portfolio/", fileName, bucketName);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    private void saveRelatedEntities(Resume existingResume, ResumeDTO resumeDTO, List<String> portfolioUrls) {
+        saveCertificates(existingResume, resumeDTO.getCertificates());
+        saveEducations(existingResume, resumeDTO.getEducations());
+        saveCareers(existingResume, resumeDTO.getCareers());
+        saveCurriculums(existingResume, resumeDTO.getCurriculums());
+        saveEtcs(existingResume, resumeDTO.getEtcs());
+        savePortfolios(existingResume, portfolioUrls);
+        saveJobPositions(existingResume.getPersonalUser(), resumeDTO.getJobPositions());
+        saveTechStacks(existingResume.getPersonalUser(), resumeDTO.getTechStacks());
+        saveArchive(existingResume, resumeDTO.getArchive());
+    }
+
+    private void saveCertificates(Resume existingResume, List<CertificateDTO> certificates) {
+        if (certificates != null) {
+            certificateRepository.deleteByResumeResumeId(existingResume.getResumeId());
+            certificates.forEach(certDTO -> {
+                Certificate certificate = Certificate.builder()
+                        .cert(certDTO.getCert() != null ? certDTO.getCert() : "")
+                        .certDate(certDTO.getCert_date() != null ? certDTO.getCert_date() : "")
+                        .resume(existingResume)
+                        .build();
+                certificateRepository.save(certificate);
+            });
+        }
+    }
+
+    private void saveEducations(Resume resume, List<EducationDTO> educations) {
+        if (educations != null) {
+            educationRepository.deleteByResumeResumeId(resume.getResumeId());
+            educations.forEach(eduDTO -> {
+                Education education = Education.builder()
+                        .edu(eduDTO.getEdu() != null ? eduDTO.getEdu() : "")
+                        .credit(eduDTO.getCredit() != null ? eduDTO.getCredit() : "")
+                        .eduDate(eduDTO.getEdu_date() != null ? eduDTO.getEdu_date() : "")
+                        .resume(resume)
+                        .build();
+                educationRepository.save(education);
+            });
+        }
+    }
+
+    private void saveCareers(Resume resume, List<CareerDTO> careers) {
+        if (careers != null) {
+            careerRepository.deleteByResumeResumeId(resume.getResumeId());
+            careers.forEach(careerDTO -> {
+                Career career = Career.builder()
+                        .careerName(careerDTO.getCareer_name() != null ? careerDTO.getCareer_name() : "")
+                        .careerJob(careerDTO.getCareer_job() != null ? careerDTO.getCareer_job() : "")
+                        .careerPosition(careerDTO.getCareer_position() != null ? careerDTO.getCareer_position() : "")
+                        .careerDate(careerDTO.getCareer_date() != null ? careerDTO.getCareer_date() : "")
+                        .resume(resume)
+                        .build();
+                careerRepository.save(career);
+            });
+        }
+    }
+
+    private void saveCurriculums(Resume resume, List<CurriculumDTO> curriculums) {
+        if (curriculums != null) {
+            curriculumRepository.deleteByResumeResumeId(resume.getResumeId());
+            curriculums.forEach(curriDTO -> {
+                Curriculum curriculum = Curriculum.builder()
+                        .curriCompany(curriDTO.getCurri_company() != null ? curriDTO.getCurri_company() : "")
+                        .curriContent(curriDTO.getCurri_content() != null ? curriDTO.getCurri_content() : "")
+                        .curriDate(curriDTO.getCurri_date() != null ? curriDTO.getCurri_date() : "")
+                        .resume(resume)
+                        .build();
+                curriculumRepository.save(curriculum);
+            });
+        }
+    }
+
+    private void saveEtcs(Resume resume, List<EtcDTO> etcs) {
+        if (etcs != null) {
+            etcRepository.deleteByResumeResumeId(resume.getResumeId());
+            etcs.forEach(etcDTO -> {
+                Etc etc = Etc.builder()
+                        .etcContent(etcDTO.getEtc_content() != null ? etcDTO.getEtc_content() : "")
+                        .etcDate(etcDTO.getEtc_date() != null ? etcDTO.getEtc_date() : "")
+                        .resume(resume)
+                        .build();
+                etcRepository.save(etc);
+            });
+        }
+    }
+
+    private void savePortfolios(Resume resume, List<String> portfolioUrls) {
+        if (portfolioUrls != null && !portfolioUrls.isEmpty()
+                || portfolioUrls.stream().allMatch(url -> url != null && !url.isEmpty())) {
+            portfolioRepository.deleteByResumeResumeId(resume.getResumeId());
+            portfolioUrls.forEach(url -> {
+                Portfolio portfolio = Portfolio.builder()
+                        .portFile(url)
+                        .resume(resume)
+                        .build();
+                portfolioRepository.save(portfolio);
+            });
+        }
+    }
+
+    private void saveJobPositions(PersonalUser personalUser, List<JobPositionDTO> jobPositions) {
+        if (jobPositions != null) {
+            jobPositionRepository.deleteByPersonalUserPersonalId(personalUser.getPersonalId());
+            jobPositions.forEach(jobPosDTO -> {
+                JobPosition jobPosition = JobPosition.builder()
+                        .job(jobPosDTO.getJob().toEntity())
+                        .personalUser(personalUser)
+                        .build();
+                jobPositionRepository.save(jobPosition);
+            });
+        }
+    }
+
+    private void saveTechStacks(PersonalUser personalUser, List<TechStackDTO> techStacks) {
+        if (techStacks != null) {
+            techStackRepository.deleteByPersonalUserPersonalId(personalUser.getPersonalId());
+            techStacks.forEach(techStackDTO -> {
+                TechStack techStack = TechStack.builder()
+                        .tech(techStackDTO.getTech().toEntity())
+                        .personalUser(personalUser)
+                        .build();
+                techStackRepository.save(techStack);
+            });
+        }
+    }
+
+    private void saveArchive(Resume resume, ArchiveDTO archiveDTO) {
+        if (archiveDTO != null) {
+            archiveRepository.deleteByResumeResumeId(resume.getResumeId());
             Archive archive = Archive.builder()
-                    .archGit("")
-                    .archNotion("")
-                    .archBlog("")
+                    .archGit(archiveDTO.getArchGit() != null ? archiveDTO.getArchGit() : "")
+                    .archNotion(archiveDTO.getArchNotion() != null ? archiveDTO.getArchNotion() : "")
+                    .archBlog(archiveDTO.getArchBlog() != null ? archiveDTO.getArchBlog() : "")
                     .resume(resume)
                     .build();
-            return ArchiveDTO.fromEntity(archiveRepository.save(archive));
+            archiveRepository.save(archive);
         }
     }
 
-    private List<EtcDTO> getOrCreateEtcs(Resume resume) {
-        List<EtcDTO> etcs = etcRepository.findByResume_ResumeId(resume.getResumeId()).stream()
-                .map(EtcDTO::fromEntity)
+    @Transactional
+    @Override
+    public void deleteResume(Long resumeId) {
+        Resume resume = resumeRepository.findById(resumeId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid resume ID: " + resumeId));
+
+        List<Portfolio> portfolios = portfolioRepository.findByResume_ResumeId(resumeId);
+        if (portfolios != null && !portfolios.isEmpty()) {
+            portfolios.forEach(portfolio -> {
+                storageService.deleteFile(portfolio.getPortFile());
+            });
+        }
+
+        storageService.deleteFile(resume.getResumePhoto());
+        storageService.deleteFile(resume.getPersonalState());
+        deleteRelatedEntities(resumeId, resume.getPersonalUser().getPersonalId());
+        resumeRepository.deleteById(resumeId);
+    }
+
+    @Override
+    public ResumeDTO getResume(Long resumeId) {
+        Resume resume = resumeRepository.findById(resumeId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid resume ID: " + resumeId));
+        return convertToDto(resume);
+    }
+
+    @Override
+    public ResumeDTO getResumeByUserId(Long userId) {
+        Optional<Resume> optionalResume = Optional.ofNullable(resumeRepository.findByPersonalUser_PersonalId(userId));
+        return optionalResume.map(this::convertToDto).orElse(null);
+    }
+
+    @Override
+    public List<ResumeDTO> getAllResumes() {
+        return resumeRepository.findAll().stream()
+                .map(this::convertToDto)
                 .collect(Collectors.toList());
-        if (etcs.isEmpty()) {
-            Etc emptyEtc = Etc.builder()
-                    .etcContent("")
-                    .etcDate("")
-                    .resume(resume)
-                    .build();
-            etcs = List.of(EtcDTO.fromEntity(etcRepository.save(emptyEtc)));
-        }
-        return etcs;
     }
 
-    private List<CurriculumDTO> getOrCreateCurriculums(Resume resume) {
-        List<CurriculumDTO> curriculums = curriculumRepository.findByResume_ResumeId(resume.getResumeId()).stream()
-                .map(CurriculumDTO::fromEntity)
-                .collect(Collectors.toList());
-        if (curriculums.isEmpty()) {
-            Curriculum emptyCurriculum = Curriculum.builder()
-                    .curriContent("")
-                    .curriCompany("")
-                    .curriDate("")
-                    .resume(resume)
-                    .build();
-            curriculums = List.of(CurriculumDTO.fromEntity(curriculumRepository.save(emptyCurriculum)));
-        }
-        return curriculums;
-    }
-
-    private List<CareerDTO> getOrCreateCareers(Resume resume) {
-        List<CareerDTO> careers = careerRepository.findByResume_ResumeId(resume.getResumeId()).stream()
-                .map(CareerDTO::fromEntity)
-                .collect(Collectors.toList());
-        if (careers.isEmpty()) {
-            Career emptyCareer = Career.builder()
-                    .careerName("")
-                    .careerJob("")
-                    .careerPosition("")
-                    .careerDate("")
-                    .resume(resume)
-                    .build();
-            careers = List.of(CareerDTO.fromEntity(careerRepository.save(emptyCareer)));
-        }
-        return careers;
-    }
-
-    private List<EducationDTO> getOrCreateEducations(Resume resume) {
-        List<EducationDTO> educations = educationRepository.findByResume_ResumeId(resume.getResumeId()).stream()
-                .map(EducationDTO::fromEntity)
-                .collect(Collectors.toList());
-        if (educations.isEmpty()) {
-            Education emptyEducation = Education.builder()
-                    .edu("")
-                    .credit("")
-                    .eduDate("")
-                    .resume(resume)
-                    .build();
-            educations = List.of(EducationDTO.fromEntity(educationRepository.save(emptyEducation)));
-        }
-        return educations;
-    }
-
-    private List<CertificateDTO> getOrCreateCertificates(Resume resume) {
-        List<CertificateDTO> certificates = certificateRepository.findByResume_ResumeId(resume.getResumeId()).stream()
+    private ResumeDTO convertToDto(Resume resume) {
+        List<CertificateDTO> certificates = certificateRepository.findByResume(resume).stream()
                 .map(CertificateDTO::fromEntity)
                 .collect(Collectors.toList());
-        if (certificates.isEmpty()) {
-            Certificate emptyCertificate = Certificate.builder()
-                    .cert("")
-                    .certDate("")
-                    .resume(resume)
-                    .build();
-            certificates = List.of(CertificateDTO.fromEntity(certificateRepository.save(emptyCertificate)));
+
+        List<EducationDTO> educations = educationRepository.findByResume(resume).stream()
+                .map(EducationDTO::fromEntity)
+                .collect(Collectors.toList());
+
+        List<CareerDTO> careers = careerRepository.findByResume(resume).stream()
+                .map(CareerDTO::fromEntity)
+                .collect(Collectors.toList());
+
+        List<CurriculumDTO> curriculums = curriculumRepository.findByResume(resume).stream()
+                .map(CurriculumDTO::fromEntity)
+                .collect(Collectors.toList());
+
+        List<EtcDTO> etcs = etcRepository.findByResume(resume).stream()
+                .map(EtcDTO::fromEntity)
+                .collect(Collectors.toList());
+
+        List<PortfolioDTO> portfolios = portfolioRepository.findByResume(resume).stream()
+                .map(PortfolioDTO::fromEntity)
+                .collect(Collectors.toList());
+
+        List<JobPositionDTO> jobPositions = jobPositionRepository.findByPersonalUser(resume.getPersonalUser()).stream()
+                .map(JobPositionDTO::fromEntity)
+                .collect(Collectors.toList());
+
+        List<TechStackDTO> techStacks = techStackRepository.findByPersonalUser(resume.getPersonalUser()).stream()
+                .map(TechStackDTO::fromEntity)
+                .collect(Collectors.toList());
+        ArchiveDTO archive = archiveRepository.findByResume(resume)
+                .map(ArchiveDTO::fromEntity)
+                .orElse(null);
+
+        return ResumeDTO.builder()
+                .resumeId(resume.getResumeId())
+                .resumeName(resume.getResumeName())
+                .resumeDate(resume.getResumeDate())
+                .phoneNum(resume.getPhoneNum())
+                .resumePhoto(resume.getResumePhoto())
+                .resumeEmail(resume.getResumeEmail())
+                .resumeCreate(resume.getResumeCreate())
+                .resumeUpdate(resume.getResumeUpdate())
+                .personalState(resume.getPersonalState())
+                .personalId(resume.getPersonalUser().getPersonalId())
+                .certificates(certificates)
+                .educations(educations)
+                .careers(careers)
+                .curriculums(curriculums)
+                .etcs(etcs)
+                .portfolios(portfolios)
+                .jobPositions(jobPositions)
+                .techStacks(techStacks)
+                .archive(archive)
+                .build();
+    }
+
+    private void deleteRelatedEntities(Long resumeId, Long personalUserId) {
+        jobPositionRepository.deleteByPersonalUserPersonalId(personalUserId);
+        techStackRepository.deleteByPersonalUserPersonalId(personalUserId);
+
+        certificateRepository.deleteByResumeResumeId(resumeId);
+        educationRepository.deleteByResumeResumeId(resumeId);
+        careerRepository.deleteByResumeResumeId(resumeId);
+        curriculumRepository.deleteByResumeResumeId(resumeId);
+        etcRepository.deleteByResumeResumeId(resumeId);
+        portfolioRepository.deleteByResumeResumeId(resumeId);
+        archiveRepository.deleteByResumeResumeId(resumeId);
+    }
+
+    private String generateFileName(String folderName, MultipartFile file) {
+        return folderName + file.getOriginalFilename();
+    }
+
+    private String uploadFileAndDeleteOld(MultipartFile newFile, String folderName, String fileName, String bucketName, String oldFileUrl) {
+        String newFileUrl = storageService.uploadFile(newFile, folderName, fileName, bucketName);
+        if (newFileUrl != null && oldFileUrl != null && !oldFileUrl.isEmpty()) {
+            storageService.deleteFile(oldFileUrl);
         }
-        return certificates;
-    }
-
-    private List<JobPositionDTO> getOrCreateJobPositionsDTO(Long personalId) {
-        return getJobPositionsByPersonalId(personalId);
-    }
-
-    private List<TechStackDTO> getOrCreateTechStacksDTO(Long personalId) {
-        return getTechStacksByPersonalId(personalId);
-    }
-
-    private List<JobPositionDTO> getJobPositionsByPersonalId(Long personalId) {
-        List<JobPosition> jobPositions = jobPositionRepository.findByPersonalUser_PersonalId(personalId);
-
-        return jobPositions.stream()
-                .map(this::convertToJobPositionDTO)
-                .collect(Collectors.toList());
-    }
-
-    private List<TechStackDTO> getTechStacksByPersonalId(Long personalId) {
-        List<TechStack> techStacks = techStackRepository.findByPersonalUser_PersonalId(personalId);
-
-        return techStacks.stream()
-                .map(this::convertToTechStackDTO)
-                .collect(Collectors.toList());
-    }
-
-    private JobPositionDTO convertToJobPositionDTO(JobPosition jobPosition) {
-        return JobPositionDTO.builder()
-                .userJobId(jobPosition.getUserJobId())
-                .job(JobDTO.builder()
-                        .jobId(jobPosition.getJob().getJobId())
-                        .jobName(jobPosition.getJob().getJobName())
-                        .build())
-                .build();
-    }
-
-    private TechStackDTO convertToTechStackDTO(TechStack techStack) {
-        return TechStackDTO.builder()
-                .userTechId(techStack.getUserTechId())
-                .tech(TechDTO.builder()
-                        .techId(techStack.getTech().getTechId())
-                        .techName(techStack.getTech().getTechName())
-                        .techUrl(techStack.getTech().getTechUrl())
-                        .build())
-                .build();
+        return newFileUrl;
     }
 
 }

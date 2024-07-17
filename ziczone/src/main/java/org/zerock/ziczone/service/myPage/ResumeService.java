@@ -3,16 +3,20 @@ package org.zerock.ziczone.service.myPage;
 import org.springframework.web.multipart.MultipartFile;
 import org.zerock.ziczone.dto.mypage.ResumeDTO;
 
-import java.util.Optional;
+import java.util.List;
 
 public interface ResumeService {
-    // 지원서 생성
-    ResumeDTO createResume(ResumeDTO resumeDTO, Long userId);
-    // 지원서 조회
-    ResumeDTO getResume(Long userId);
+    
+    // 지원서 저장
+    ResumeDTO saveResume(ResumeDTO resumeDTO, MultipartFile resumePhoto, MultipartFile personalState, List<MultipartFile> portfolios);
     // 지원서 수정
-    ResumeDTO updateResume(Long userId, ResumeDTO resumeDTO, MultipartFile resumePhotoFile);
+    void updateResume(Long resumeId, ResumeDTO resumeDTO, MultipartFile resumePhoto, MultipartFile personalState, List<MultipartFile> portfolios);
     // 지원서 삭제
-    void deleteResume(Long userId);
-
+    void deleteResume(Long resumeId);
+    // 지원서 조회( 이력서Id )
+    ResumeDTO getResume(Long resumeId);
+    // 지원서 조회 (userId)
+    ResumeDTO getResumeByUserId(Long userId);
+    // 모든 지원서 조회
+    List<ResumeDTO> getAllResumes();
 }

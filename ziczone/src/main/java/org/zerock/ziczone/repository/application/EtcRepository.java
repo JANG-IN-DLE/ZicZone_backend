@@ -10,9 +10,6 @@ import java.util.List;
 public interface EtcRepository extends JpaRepository<Etc, Long> {
     List<Etc> findByResume_ResumeId(Long resumeId);
 
-    void deleteByResume_ResumeId(Long resumeId);
-
-    void deleteByResumePersonalUserPersonalId(Long personalUserId);
 
     List<Etc> findByResume(Resume resume);
 

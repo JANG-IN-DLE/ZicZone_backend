@@ -11,8 +11,6 @@ import java.util.Optional;
 public interface ArchiveRepository extends JpaRepository<Archive, Long> {
     List<Archive> findByResume_ResumeId(Long resumeId);
 
-    void deleteByResume_ResumeId(Long resumeId);
-
     Optional<Archive> findByResume(Resume resume);
 
     void deleteByResumeResumeId(Long resumeId);

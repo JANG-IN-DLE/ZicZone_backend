@@ -10,9 +10,6 @@ import java.util.List;
 public interface CertificateRepository extends JpaRepository<Certificate, Long> {
     List<Certificate> findByResume_ResumeId(Long ResumeId);
 
-    void deleteByResume_ResumeId(Long resumeId);
-
-    void deleteByResumePersonalUserPersonalId(Long personalUserId);
 
     List<Certificate> findByResume(Resume resume);
 

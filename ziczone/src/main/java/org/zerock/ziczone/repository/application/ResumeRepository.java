@@ -20,10 +20,4 @@ public interface ResumeRepository extends JpaRepository<Resume, Long> {
     // isPersonalvisible이 true인 최신 resume 정보를 포함하는 PersonalUser리스트를 가져옴
     List<Resume> findAllByPersonalUserIsPersonalVisibleTrueOrderByResumeUpdateDesc();
 
-    Optional<List<Resume>> findByPersonalUser(PersonalUser personalUser);
-
-
-    List<Resume> findByPersonalUserPersonalIdIn(List<Long> sellerIds);
-
-    List<Resume> findByPersonalUserPersonalId(Long personalId);
 }

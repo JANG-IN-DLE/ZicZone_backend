@@ -10,9 +10,6 @@ import java.util.List;
 public interface CurriculumRepository extends JpaRepository<Curriculum, Long> {
     List<Curriculum> findByResume_ResumeId(Long resumeId);
 
-    void deleteByResume_ResumeId(Long resumeId);
-
-    void deleteByResumePersonalUserPersonalId(Long personalUserId);
 
     List<Curriculum> findByResume(Resume resume);
 
