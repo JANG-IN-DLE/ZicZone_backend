@@ -3,7 +3,6 @@ package org.zerock.ziczone.service.myPage;
 import com.amazonaws.util.CollectionUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.joda.time.DateTime;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,7 +11,6 @@ import org.zerock.ziczone.domain.job.JobPosition;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.tech.TechStack;
 import org.zerock.ziczone.dto.mypage.*;
-import org.zerock.ziczone.exception.mypage.ResumeAlreadyExistsException;
 import org.zerock.ziczone.repository.application.*;
 import org.zerock.ziczone.repository.job.JobPositionRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
@@ -23,7 +21,6 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -200,7 +197,6 @@ public class ResumeServiceImpl2 implements ResumeService2 {
                         .map(url -> PortfolioDTO.builder().portFile(url).build())
                         .collect(Collectors.toList()) : Collections.emptyList())
                 .build();
-
     }
 
     private List<String> uploadPortfolios(List<MultipartFile> portfolios, String bucketName) {

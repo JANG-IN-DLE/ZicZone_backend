@@ -36,7 +36,7 @@ public class ResumeDTO {
     private List<CertificateDTO> certificates;
     private List<JobPositionDTO> jobPositions;
     private List<TechStackDTO> techStacks;
-    private List<PortfolioDTO> portfolios; // PDF 파일 경로 또는 데이터
+    private List<PortfolioDTO> portfolios;
 
     // DTO to Entity
     public Resume toEntity() {
