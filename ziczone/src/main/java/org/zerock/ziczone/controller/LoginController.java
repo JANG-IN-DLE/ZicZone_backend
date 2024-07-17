@@ -92,7 +92,7 @@ public class LoginController {
     }
 
     //비밀번호 변경
-    @PostMapping("/emailAuth/change-password")
+    @PostMapping("/login/emailAuth/change-password")
     public ResponseEntity<String> changeEmail(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         String password = request.get("password");
