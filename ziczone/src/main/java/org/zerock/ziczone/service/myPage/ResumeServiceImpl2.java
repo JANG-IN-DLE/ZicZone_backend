@@ -3,6 +3,7 @@ package org.zerock.ziczone.service.myPage;
 import com.amazonaws.util.CollectionUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.joda.time.DateTime;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -11,6 +12,7 @@ import org.zerock.ziczone.domain.job.JobPosition;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.tech.TechStack;
 import org.zerock.ziczone.dto.mypage.*;
+import org.zerock.ziczone.exception.mypage.ResumeAlreadyExistsException;
 import org.zerock.ziczone.repository.application.*;
 import org.zerock.ziczone.repository.job.JobPositionRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
@@ -21,6 +23,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -57,7 +60,8 @@ public class ResumeServiceImpl2 implements ResumeService2 {
         }
         // 지원서가 존재하는지 확인
         if (existingResume != null) {
-            throw new IllegalArgumentException("resume found :::: " + existingResume);
+            // 지원서가 이미 존재하는 경우 커스텀 예외 발생
+            throw new ResumeAlreadyExistsException("Resume already exists for personal ID: " + personalId);
         }
 
         String bucketName = "ziczone-bucket-jangindle-optimizer";
@@ -75,6 +79,8 @@ public class ResumeServiceImpl2 implements ResumeService2 {
 
         resume = resumeRepository.save(resume);
         saveRelatedEntities(resume, resumeDTO, portfolioUrls);
+
+
 
         return ResumeDTO.fromEntity(resume).toBuilder()
                 .archive(resumeDTO.getArchive() != null ? resumeDTO.getArchive() : new ArchiveDTO())
@@ -113,7 +119,7 @@ public class ResumeServiceImpl2 implements ResumeService2 {
         log.info("2.. resumePhoto.isEmpty() ::> {}", resumePhoto.isEmpty());
         log.info("2.. personalState.isEmpty() ::> {}", personalState.isEmpty());
         log.info("2.. portfolios.isEmpty() ::> {}", portfolios.isEmpty());
-        log.info("2.. CollectionUtils.isNullOrEmpty(portfolios) ::> {}", CollectionUtils.isNullOrEmpty(portfolios));
+        log.info("2.. portfolios.stream().allMatch(MultipartFile::isEmpty) ::> {}", portfolios.stream().allMatch(MultipartFile::isEmpty));
 
         log.info("-----------------------------------------------------------------------------------------------");
 
@@ -122,6 +128,7 @@ public class ResumeServiceImpl2 implements ResumeService2 {
 
         String resumePhotoUrl = existingResume.getResumePhoto();
         if (!resumePhoto.isEmpty()) {
+            storageService.deleteFile(existingResume.getResumePhoto());
             resumePhotoUrl = uploadFileAndDeleteOld(resumePhoto, "resumePhoto/", generateFileName("resumePhoto/", resumePhoto), bucketName, existingResume.getResumePhoto());
         } else if (resumePhoto.isEmpty() && resumeDTO.getResumePhoto() == null) {
             storageService.deleteFile(existingResume.getResumePhoto());
@@ -130,6 +137,7 @@ public class ResumeServiceImpl2 implements ResumeService2 {
 
         String personalStateUrl = existingResume.getPersonalState();
         if (!personalState.isEmpty()) {
+            storageService.deleteFile(existingResume.getPersonalState());
             personalStateUrl = uploadFileAndDeleteOld(personalState, "personalState/", generateFileName("personalState/", personalState), bucketName, existingResume.getPersonalState());
         } else if (personalState.isEmpty() && resumeDTO.getPersonalState() == null) {
             storageService.deleteFile(existingResume.getPersonalState());
@@ -145,7 +153,7 @@ public class ResumeServiceImpl2 implements ResumeService2 {
 
         log.info("2. resumePhotoUrl.isEmpty() ::: {}", resumePhotoUrl == null || resumePhotoUrl.isEmpty());
         log.info("2. personalStateUrl.isEmpty() ::: {}", personalStateUrl == null || personalStateUrl.isEmpty());
-        log.info("2. portfolioUrls.isEmpty() ::: {}", portfolioUrls.isEmpty());
+        log.info("2. portfolios.stream().allMatch(MultipartFile::isEmpty) ::: {}", portfolios.stream().allMatch(MultipartFile::isEmpty));
 
         log.info("3. resumeDTO ::: {}", resumeDTO);
 
@@ -154,17 +162,32 @@ public class ResumeServiceImpl2 implements ResumeService2 {
                 .resumeDate(resumeDTO.getResumeDate() != null ? resumeDTO.getResumeDate() : existingResume.getResumeDate())
                 .phoneNum(resumeDTO.getPhoneNum() != null ? resumeDTO.getPhoneNum() : existingResume.getPhoneNum())
                 .resumeEmail(resumeDTO.getResumeEmail() != null ? resumeDTO.getResumeEmail() : existingResume.getResumeEmail())
-                .resumePhoto(resumePhotoUrl != null ? resumePhotoUrl : null)
-                .personalState(personalStateUrl != null ? personalStateUrl : null)
+                .resumePhoto(resumePhotoUrl != null ? resumePhotoUrl : "")
+                .personalState(personalStateUrl != null ? personalStateUrl : "")
                 .resumeUpdate(LocalDateTime.now())
                 .build();
 
         log.info("existingResume :: {}", existingResume);
+
         saveRelatedEntities(existingResume, resumeDTO, portfolioUrls);
 
+        resumeRepository.save(existingResume);
 
+        log.info("4. resumeDTO :::> {}", resumeDTO);
+        log.info("4. existingResume :: {}", existingResume);
+
+
+        // DateTimeFormatter 생성
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
         return ResumeDTO.fromEntity(existingResume).toBuilder()
+                .resumeName(existingResume.getResumeName() != null ? existingResume.getResumeName() : Collections.emptyList().toString())
+                .resumeDate(existingResume.getResumeDate() != null ? existingResume.getResumeDate() : Collections.emptyList().toString())
+                .phoneNum(existingResume.getPhoneNum() != null ? existingResume.getPhoneNum() : Collections.emptyList().toString())
+                .resumePhoto(existingResume.getResumePhoto() != null ? existingResume.getResumePhoto() :  Collections.emptyList().toString())
+                .resumeEmail(existingResume.getResumeEmail() != null ? existingResume.getResumeEmail() : Collections.emptyList().toString())
+                .resumeUpdate(existingResume.getResumeUpdate() != null ? existingResume.getResumeUpdate() : LocalDateTime.parse(LocalDateTime.now().format(formatter)))
+                .personalState(existingResume.getPersonalState() != null ? existingResume.getPersonalState() : Collections.emptyList().toString())
                 .archive(resumeDTO.getArchive() != null ? resumeDTO.getArchive() : new ArchiveDTO())
                 .certificates(resumeDTO.getCertificates() != null ? resumeDTO.getCertificates() : Collections.emptyList())
                 .educations(resumeDTO.getEducations() != null ? resumeDTO.getEducations() : Collections.emptyList())
@@ -177,6 +200,7 @@ public class ResumeServiceImpl2 implements ResumeService2 {
                         .map(url -> PortfolioDTO.builder().portFile(url).build())
                         .collect(Collectors.toList()) : Collections.emptyList())
                 .build();
+
     }
 
     private List<String> uploadPortfolios(List<MultipartFile> portfolios, String bucketName) {
@@ -194,26 +218,26 @@ public class ResumeServiceImpl2 implements ResumeService2 {
                 .collect(Collectors.toList());
     }
 
-    private void saveRelatedEntities(Resume resume, ResumeDTO resumeDTO, List<String> portfolioUrls) {
-        saveCertificates(resume, resumeDTO.getCertificates());
-        saveEducations(resume, resumeDTO.getEducations());
-        saveCareers(resume, resumeDTO.getCareers());
-        saveCurriculums(resume, resumeDTO.getCurriculums());
-        saveEtcs(resume, resumeDTO.getEtcs());
-        savePortfolios(resume, portfolioUrls);
-        saveJobPositions(resume.getPersonalUser(), resumeDTO.getJobPositions());
-        saveTechStacks(resume.getPersonalUser(), resumeDTO.getTechStacks());
-        saveArchive(resume, resumeDTO.getArchive());
+    private void saveRelatedEntities(Resume existingResume, ResumeDTO resumeDTO, List<String> portfolioUrls) {
+        saveCertificates(existingResume, resumeDTO.getCertificates());
+        saveEducations(existingResume, resumeDTO.getEducations());
+        saveCareers(existingResume, resumeDTO.getCareers());
+        saveCurriculums(existingResume, resumeDTO.getCurriculums());
+        saveEtcs(existingResume, resumeDTO.getEtcs());
+        savePortfolios(existingResume, portfolioUrls);
+        saveJobPositions(existingResume.getPersonalUser(), resumeDTO.getJobPositions());
+        saveTechStacks(existingResume.getPersonalUser(), resumeDTO.getTechStacks());
+        saveArchive(existingResume, resumeDTO.getArchive());
     }
 
-    private void saveCertificates(Resume resume, List<CertificateDTO> certificates) {
+    private void saveCertificates(Resume existingResume, List<CertificateDTO> certificates) {
         if (certificates != null) {
-            certificateRepository.deleteByResumeResumeId(resume.getResumeId());
+            certificateRepository.deleteByResumeResumeId(existingResume.getResumeId());
             certificates.forEach(certDTO -> {
                 Certificate certificate = Certificate.builder()
                         .cert(certDTO.getCert() != null ? certDTO.getCert() : "")
                         .certDate(certDTO.getCert_date() != null ? certDTO.getCert_date() : "")
-                        .resume(resume)
+                        .resume(existingResume)
                         .build();
                 certificateRepository.save(certificate);
             });
