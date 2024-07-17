@@ -8,6 +8,7 @@ import org.zerock.ziczone.domain.member.Gender;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Data
 @Builder
@@ -37,5 +38,7 @@ public class PickCardDTO {
     private List<Long> payHistoryId;
 
     private LocalDateTime resumeUpdate;
+
+    private Integer berryPoint;
 
 }
