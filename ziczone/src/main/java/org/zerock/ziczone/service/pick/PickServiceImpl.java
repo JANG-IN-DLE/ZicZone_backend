@@ -104,6 +104,9 @@ public class PickServiceImpl implements PickService {
     public List<PickCardDTO> getPersonalPickCards(Long loggedInPersonalId) {
 // 최신 resume 정보를 포함하는 PersonalUser 리스트를 가져오기
         List<Resume> latestResumes = resumeRepository.findAllByPersonalUserIsPersonalVisibleTrueOrderByResumeUpdateDesc();
+        // 개인회원의 berryPoint를 가져온다.
+        Payment payment = paymentRepository.findByPersonalUser_PersonalId(loggedInPersonalId);
+        Integer userBerryPoint = (payment != null && payment.getBerryPoint() != null) ? payment.getBerryPoint() : 0;
 
         return latestResumes.stream().map(resume -> {
             PersonalUser user = resume.getPersonalUser();
@@ -146,6 +149,7 @@ public class PickServiceImpl implements PickService {
                     .companyId(companyIdList)
                     .resumeUpdate(resume.getResumeUpdate())
                     .payHistoryId(payHistoryId)
+                    .berryPoint(userBerryPoint)
                     .build();
         }).collect(Collectors.toList());
 
