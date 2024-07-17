@@ -33,14 +33,14 @@ public class MainPageController {
     }
 
     //기업 프로필
-    @GetMapping("/companyUser/{id}")
+    @GetMapping("/companyUser/{userId}")
     public ResponseEntity<MainCompanyUserDTO> getCompanyUserProfile(@PathVariable Long userId) {
         MainCompanyUserDTO companyUser = mainPageService.getCompanyUser(userId);
         return new ResponseEntity<>(companyUser, HttpStatus.OK);
     }
 
     //개인 프로필
-    @GetMapping("/personalUser/{id}")
+    @GetMapping("/personalUser/{userId}")
     public ResponseEntity<MainPersonalUserDTO> getPersonalUserProfile(@PathVariable Long userId) {
         MainPersonalUserDTO personalUser = mainPageService.getPersonalUser(userId);
         return new ResponseEntity<>(personalUser, HttpStatus.OK);
