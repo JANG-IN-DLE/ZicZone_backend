@@ -7,11 +7,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.zerock.ziczone.domain.alarm.Alarm;
-import org.zerock.ziczone.dto.Alarm.AlarmDTO;
+import org.zerock.ziczone.dto.Alarm.RequestAlarmDTO;
+import org.zerock.ziczone.dto.Alarm.ResponseAlarmDTO;
 import org.zerock.ziczone.service.alarm.AlarmService;
 import org.zerock.ziczone.service.login.JwtService;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,7 +29,6 @@ public class AlarmSseController {
     private final AlarmService alarmService;
 
     // 클라이언트 구독
-    @CrossOrigin(origins = "http://localhost:3000")
     @GetMapping("/subscribe/{userId}")
     public SseEmitter subscribe(@PathVariable Long userId, @RequestParam("token") String token) {
         // 토큰 검증
@@ -46,7 +47,7 @@ public class AlarmSseController {
     }
 
     //알람보냄
-    public void sendAlarm(Long userId, AlarmDTO alarm) {
+    public void sendAlarm(Long userId, ResponseAlarmDTO responseAlarmDTO) {
         SseEmitter emitter = sseEmitters.get(userId);
         // 사용자가 존재하면
         if (emitter != null) {
@@ -55,7 +56,7 @@ public class AlarmSseController {
                 // 'alarm'이벤트를 alarm데이터를 담아서 클라이언트로 전송
                 emitter.send(SseEmitter.event()
                         .name("alarm")
-                        .data(alarm));
+                        .data(responseAlarmDTO)); //타입, sender, receiver, berry
             } catch (IOException e) {
                 log.error("Error sending alarm to user: {}", userId, e);
                 sseEmitters.remove(userId);
@@ -65,19 +66,28 @@ public class AlarmSseController {
         }
     }
 
-    //알림요청
+    // 알림요청
+    // SELECTION : 게시글 작성자(게시물ID) / 댓글 작성자(회원ID)
+    // COMMENT   : 댓글 작성자(게시물ID) / 게시글 작성자(회원ID)
+    // PICK      : 기업 회원(회원ID) / 개인 회원(회원ID)
+    // SCRAP     : 기업 회원(회원ID) / 개인 회원(회원ID)
+    // BUYRESUME : 이력서 구매자(회원ID) / 이력서 소유자(회원ID)
     @PostMapping("/send")
-    public ResponseEntity<String> Notification(@RequestBody AlarmDTO alarm) {
-        try {
+    public ResponseEntity<ResponseAlarmDTO> Notification(@RequestBody RequestAlarmDTO alarm) {
 
-            alarmService.saveAlarm(alarm); //알림내용 저장
-            sendAlarm(alarm.getReceiverId(), alarm); //
+        ResponseAlarmDTO responseAlarmDTO = alarmService.sendAlarm(alarm);
 
-            return ResponseEntity.ok("Notification sent to user: " + alarm.getReceiverId() + " SUCCESS");
+        sendAlarm(alarm.getReceiverId(), responseAlarmDTO); //프론트로 알림보냄
 
-        }catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body("Error sending notification: " + e.getMessage());
-        }
+        return ResponseEntity.ok(responseAlarmDTO);
+    }
+
+    // 로그인시에 알람 불러오기
+    @GetMapping("/initAlarm/{userId}")
+    public ResponseEntity<List<ResponseAlarmDTO>> initAlarm(@PathVariable Long userId) {
+        List<ResponseAlarmDTO> responseAlarmDTO = alarmService.AlarmList(userId);
+        log.info("Initial alarm list : {}", responseAlarmDTO);
+
+        return ResponseEntity.ok(responseAlarmDTO);
     }
 }
