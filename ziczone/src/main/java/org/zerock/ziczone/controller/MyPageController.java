@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.dto.help.BoardDTO;
 import org.zerock.ziczone.dto.help.CommentDTO;
@@ -47,8 +48,8 @@ public class MyPageController {
      * @return ResponseEntity.ok
      */
     @PutMapping("/company-user/{userId}")
-    public ResponseEntity<String> companyUserUpdate(@RequestBody CompanyUserUpdateDTO companyUserUpdateDTO, @PathVariable Long userId) {
-        return ResponseEntity.ok(mypageService.updateCompanyUser(userId, companyUserUpdateDTO));
+    public ResponseEntity<String> companyUserUpdate(@RequestBody CompanyUserUpdateDTO companyUserUpdateDTO, @PathVariable Long userId, MultipartFile file) {
+        return ResponseEntity.ok(mypageService.updateCompanyUser(userId, companyUserUpdateDTO, file));
     }
     /**
      * 개인 유저 정보 조회

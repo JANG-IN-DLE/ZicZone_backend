@@ -13,5 +13,5 @@ public interface JobPositionRepository extends JpaRepository<JobPosition, Long> 
 
     List<JobPosition> findByPersonalUser(PersonalUser personalUser);
 
-    List<JobPosition> findByPersonalUserPersonalIdIn(List<Long> sellerIds);
+    void deleteByPersonalUserPersonalId(Long personalUserId);
 }

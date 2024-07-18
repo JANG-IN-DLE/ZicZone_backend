@@ -14,6 +14,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PersonalUserDTO {
 
+    private Long companyId;
     private Long personalId;
     private String personalCareer;
     private boolean isPersonalVisible;

@@ -1,5 +1,6 @@
 package org.zerock.ziczone.dto.mypage;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,8 +12,11 @@ import org.zerock.ziczone.domain.application.Certificate;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CertificateDTO {
+    @JsonProperty("certId")
     private Long cert_id;
+    @JsonProperty("cert")
     private String cert;
+    @JsonProperty("certDate")
     private String cert_date;
 
     // DTO to Entity

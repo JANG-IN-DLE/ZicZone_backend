@@ -5,8 +5,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.zerock.ziczone.domain.member.*;
 import org.zerock.ziczone.dto.mypage.*;
 import org.zerock.ziczone.repository.PayHistoryRepository;
@@ -21,6 +23,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.filter;
 
 @Slf4j
 @SpringBootTest
@@ -121,6 +124,10 @@ public class MyPageServiceTests {
     // 기업 회원 정보 수정
     @Test
     void testUpdateCompanyUser() {
+        // MockMultipartFile 생성
+        byte[] content = "Test file content".getBytes();
+        MultipartFile file = new MockMultipartFile("file", "test.pdf", "application/pdf", content);
+
         CompanyUserUpdateDTO updateDTO = CompanyUserUpdateDTO.builder()
                 .currentPassword("password")
                 .changePassword("NewPassword123!")
@@ -130,7 +137,7 @@ public class MyPageServiceTests {
                 .userIntro("Updated Introduction")
                 .build();
 
-        String result = myPageService.updateCompanyUser(testUser.getUserId(), updateDTO);
+        String result = myPageService.updateCompanyUser(testUser.getUserId(), updateDTO, file);
         assertThat(result).isEqualTo("User Information Updated Successfully");
 
         CompanyUserDTO updatedCompanyUserDTO = myPageService.getCompanyUserDTO(testUser.getUserId());
@@ -163,7 +170,6 @@ public class MyPageServiceTests {
         assertThat(picks).isNotNull();
         log.info("Picks by Company Users: " + picks);
     }
-
 
     @Test
     void testGetPicksByPersonalUsers() {

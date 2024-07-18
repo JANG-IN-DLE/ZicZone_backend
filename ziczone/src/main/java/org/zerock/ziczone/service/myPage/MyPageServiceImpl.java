@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.domain.PickAndScrap;
 import org.zerock.ziczone.domain.board.Board;
@@ -33,6 +34,7 @@ import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.repository.payment.PaymentRepository;
 import org.zerock.ziczone.repository.tech.TechRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
+import org.zerock.ziczone.service.storage.StorageService;
 
 import java.util.List;
 import java.util.regex.Pattern;
@@ -56,6 +58,7 @@ public class MyPageServiceImpl implements  MyPageService{
     private final TechStackRepository techStackRepository;
     private final PayHistoryRepository payHistoryRepository;
     private final PasswordEncoder passwordEncoder;
+    private final StorageService storageService;
 
     private String hashPassword(String password){
         return passwordEncoder.encode(password);
@@ -80,7 +83,7 @@ public class MyPageServiceImpl implements  MyPageService{
      * @return
      */
     @Override
-    public String updateCompanyUser(Long userId, CompanyUserUpdateDTO companyUserUpdateDTO) {
+    public String updateCompanyUser(Long userId, CompanyUserUpdateDTO companyUserUpdateDTO, MultipartFile companyLogoFile) {
         User user = getUserById(userId);
         CompanyUser companyUser = getCompanyUserById(userId);
 
@@ -93,10 +96,18 @@ public class MyPageServiceImpl implements  MyPageService{
             throw new InvalidPasswordException("Current password is null");
         }
         // 새로운 비밀번호 검증
-        if (companyUserUpdateDTO.getCurrentPassword() != null && !companyUserUpdateDTO.getCurrentPassword().isEmpty()) {
+        if (companyUserUpdateDTO.getChangePassword() != null && !companyUserUpdateDTO.getChangePassword().isEmpty()) {
             hashPassword(companyUserUpdateDTO.getChangePassword());
         }
 
+        String companyLogoURL = companyUserUpdateDTO.getCompanyLogo();
+        if(companyLogoURL != null && !companyLogoURL.isEmpty()){
+            //클라우드 오브젝트 스토리지 버켓 관련 설정
+            String folderName = "ziczone-bucket";
+            String bucketName = "resumePhoto";
+            String objectName = folderName+ companyLogoFile.getOriginalFilename();
+            companyLogoURL = storageService.uploadFile(companyLogoFile, folderName, objectName, bucketName);
+        }
         CompanyUser updatedCompanyUser = companyUser.toBuilder()
                 .companyAddr(companyUserUpdateDTO.getCompanyAddr())
                 .companyLogo(companyUserUpdateDTO.getCompanyLogo())
@@ -253,6 +264,11 @@ public class MyPageServiceImpl implements  MyPageService{
         return picks.stream()
                 .map(pickAndScrap -> {
                     PersonalUser pUser = pickAndScrap.getPersonalUser();
+
+                    CompanyUserDTO companyUserDTO = CompanyUserDTO.builder()
+                            .companyId(companyUser.getCompanyId())
+                            .build();
+
                     UserDTO userDTOs = UserDTO.builder()
                             .userId(pUser.getUser().getUserId())
                             .email(pUser.getUser().getEmail())
@@ -278,6 +294,7 @@ public class MyPageServiceImpl implements  MyPageService{
                             .isCompanyVisible(pUser.isCompanyVisible())
                             .gender(pUser.getGender().name())
                             .user(userDTOs)
+                            .companyId(companyUser.getCompanyId())
                             .resumes(null)
                             .jobPositions(jobPositionDTOS)
                             .techStacks(techStackDTOS)
@@ -334,18 +351,7 @@ public class MyPageServiceImpl implements  MyPageService{
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public ResumeDTO getResume(Long userId) {
-        User user = getUserById(userId);
-        PersonalUser personalUser = getPersonalUserById(user.getUserId());
 
-        return null;
-    }
-
-    @Override
-    public ResumeDTO setResume(Long userId, ResumeDTO resumeDTO) {
-        return null;
-    }
 
     @Override
     public List<CompanyUserDTO> getCompanyUserList() {
@@ -384,7 +390,7 @@ public class MyPageServiceImpl implements  MyPageService{
      * @param password
      */
     private void validatePassword(String password) {
-        String passwordPattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
+        String passwordPattern = "/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,16}$/";
         if (!Pattern.matches(passwordPattern, password)) {
             throw new InvalidPasswordException("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
         }

@@ -6,7 +6,7 @@ import javax.persistence.*;
 
 @Entity
 @Getter
-@Builder
+@Builder(toBuilder = true)
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
@@ -18,6 +18,9 @@ public class Portfolio {
 
     @Column(length = 2048)
     private String portFile;    // PDF 파일명
+
+    //@Column(length = 2048)
+    //private String protFileUrl; // PDF 파일 URL
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resume_id")
