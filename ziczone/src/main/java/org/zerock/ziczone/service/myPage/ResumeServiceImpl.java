@@ -460,7 +460,7 @@ public class ResumeServiceImpl implements ResumeService {
                 .resumeCreate(resume.getResumeCreate())
                 .resumeUpdate(resume.getResumeUpdate())
                 .personalStateUrl(resume.getPersonalStateUrl())
-                .personalStateUUID(resume.getPersonalStateUuid())
+                .personalStateUuid(resume.getPersonalStateUuid())
                 .personalStateFileName(resume.getPersonalStateFileName())
                 .personalId(resume.getPersonalUser().getPersonalId())
                 .certificates(certificates)

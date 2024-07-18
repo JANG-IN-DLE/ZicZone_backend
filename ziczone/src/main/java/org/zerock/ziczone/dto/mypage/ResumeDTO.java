@@ -21,7 +21,7 @@ public class ResumeDTO {
     private String resumeDate;
     private String phoneNum;
     private String resumePhotoUrl; // 이미지 파일 경로 또는 데이터
-    private String resumePhotoUUID;
+    private String resumePhotoUuid;
     private String resumePhotoFileName;
     private String resumeEmail;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -29,7 +29,7 @@ public class ResumeDTO {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime resumeUpdate;
     private String personalStateUrl; // 자소서 PDF Url
-    private String personalStateUUID; // 자소서 PDF UUID
+    private String personalStateUuid; // 자소서 PDF UUID
     private String personalStateFileName; // 자소서 PDF FileName
     private Long personalId;
     private ArchiveDTO archive;
@@ -51,12 +51,12 @@ public class ResumeDTO {
                 .phoneNum(this.phoneNum)
                 .resumeEmail(this.resumeEmail)
                 .resumePhotoUrl(this.resumePhotoUrl)
-                .resumePhotoUuid(this.resumePhotoUUID)
+                .resumePhotoUuid(this.resumePhotoUuid)
                 .resumePhotoFileName(this.resumePhotoFileName)
                 .resumeCreate(this.resumeCreate)
                 .resumeUpdate(this.resumeUpdate)
                 .personalStateUrl(this.personalStateUrl)
-                .personalStateUuid(this.personalStateUUID)
+                .personalStateUuid(this.personalStateUuid)
                 .personalStateFileName(this.personalStateFileName)
                 .personalUser(PersonalUser.builder().personalId(this.personalId).build()) // Assumed constructor
                 .build();
@@ -71,12 +71,12 @@ public class ResumeDTO {
                 .phoneNum(entity.getPhoneNum())
                 .resumeEmail(entity.getResumeEmail())
                 .resumePhotoUrl(entity.getResumePhotoUrl())
-                .resumePhotoUUID(entity.getResumePhotoUuid())
+                .resumePhotoUuid(entity.getResumePhotoUuid())
                 .resumePhotoFileName(entity.getResumePhotoFileName())
                 .resumeCreate(entity.getResumeCreate())
                 .resumeUpdate(entity.getResumeUpdate())
                 .personalStateUrl(entity.getPersonalStateUrl())
-                .personalStateUUID(entity.getPersonalStateUuid())
+                .personalStateUuid(entity.getPersonalStateUuid())
                 .personalStateFileName(entity.getPersonalStateFileName())
                 .personalId(entity.getPersonalUser().getPersonalId()) // Assumed getter
                 .build();
