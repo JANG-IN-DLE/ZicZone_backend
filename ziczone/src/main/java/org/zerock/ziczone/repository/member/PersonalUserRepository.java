@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface PersonalUserRepository extends JpaRepository<PersonalUser, Long> {
     PersonalUser findByPersonalId(Long personalId);
-    PersonalUser findByUser_UserId(Long personalId);
+    PersonalUser findByUser_UserId(Long userId);
 
     // JPQL 쿼리를 사용하여 isPersonalVisible 속성이 true인 PersonalUser의 personalId 목록을 반환
     @Query("SELECT p.personalId FROM PersonalUser p WHERE p.isPersonalVisible = true")

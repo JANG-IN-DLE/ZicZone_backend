@@ -147,7 +147,7 @@ public class CommentServiceImpl implements CommentService {
     public CommentDTO commentUserRead(Comment comment) {
         User user = userRepository.findById(comment.getUser().getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("회원 ID가 없습니다."));
-        PersonalUser personalUser = personalUserRepository.findByPersonalId(user.getUserId());
+        PersonalUser personalUser = personalUserRepository.findByUser_UserId(user.getUserId());
         Board board = comment.getBoard();
 
         return CommentDTO.builder()
