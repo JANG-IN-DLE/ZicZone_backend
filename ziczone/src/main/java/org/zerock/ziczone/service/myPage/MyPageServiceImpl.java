@@ -37,6 +37,7 @@ import org.zerock.ziczone.repository.tech.TechStackRepository;
 import org.zerock.ziczone.service.storage.StorageService;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -100,17 +101,20 @@ public class MyPageServiceImpl implements  MyPageService{
             hashPassword(companyUserUpdateDTO.getChangePassword());
         }
 
-        String companyLogoURL = companyUserUpdateDTO.getCompanyLogo();
+        String companyLogoURL = companyUserUpdateDTO.getCompanyLogoUrl();
+        String uuid = UUID.randomUUID().toString();
         if(companyLogoURL != null && !companyLogoURL.isEmpty()){
             //클라우드 오브젝트 스토리지 버켓 관련 설정
-            String folderName = "ziczone-bucket";
+            String folderName = "ziczone-bucket-jangindle-optimizer";
             String bucketName = "resumePhoto";
-            String objectName = folderName+ companyLogoFile.getOriginalFilename();
-            companyLogoURL = storageService.uploadFile(companyLogoFile, folderName, objectName, bucketName);
+            companyLogoURL = storageService.uploadFile(companyLogoFile, folderName, uuid, bucketName);
         }
+
         CompanyUser updatedCompanyUser = companyUser.toBuilder()
                 .companyAddr(companyUserUpdateDTO.getCompanyAddr())
-                .companyLogo(companyUserUpdateDTO.getCompanyLogo())
+                .companyLogoUrl(companyUserUpdateDTO.getCompanyLogoUrl())
+                .companyLogoUUID(uuid)
+                .companyLogoFileName(companyLogoFile.getOriginalFilename())
                 .user(user)
                 .build();
 
@@ -374,7 +378,9 @@ public class MyPageServiceImpl implements  MyPageService{
                             .companyId(companyUser.getCompanyId())
                             .companyNum(companyUser.getCompanyNum())
                             .companyAddr(companyUser.getCompanyAddr())
-                            .companyLogo(companyUser.getCompanyLogo())
+                            .companyLogoUrl(companyUser.getCompanyLogoUrl())
+                            .companyLogoFileName(companyUser.getCompanyLogoFileName())
+                            .companyLogoUUID(companyUser.getCompanyLogoUUID())
                             .companyCeo(companyUser.getCompanyCeo())
                             .companyYear(companyUser.getCompanyYear())
                             .build();
@@ -424,7 +430,9 @@ public class MyPageServiceImpl implements  MyPageService{
                 .companyId(companyUser.getCompanyId())
                 .companyNum(companyUser.getCompanyNum())
                 .companyAddr(companyUser.getCompanyAddr())
-                .companyLogo(companyUser.getCompanyLogo())
+                .companyLogoUrl(companyUser.getCompanyLogoUrl())
+                .companyLogoUUID(companyUser.getCompanyLogoUUID())
+                .companyLogoFileName(companyUser.getCompanyLogoFileName())
                 .companyCeo(companyUser.getCompanyCeo())
                 .companyYear(companyUser.getCompanyYear())
                 .user(userDTO)

@@ -7,5 +7,5 @@ public interface StorageService {
 
     String uploadFile(MultipartFile file, String folderName, String objectName, String bucketName);
 
-    void deleteFile(String fileUrl);
+    void deleteFile(String bucket,String fileUrl);
 }

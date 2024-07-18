@@ -32,11 +32,13 @@ public class Resume {
     @Column(length = 100, nullable = false)
     private String phoneNum; // 전화번호
 
-    @Column(length = 2048)
-    private String resumePhoto; // 지원서 증명사진
+    @Column(length = 2048, nullable = false)
+    private String resumePhotoUrl; // 지원서 증명사진 URL
+    @Column(length = 2048, nullable = false)
+    private String resumePhotoUUID; // 지원서 증명사진 UUID
+    @Column(length = 2048, nullable = false)
+    private String resumePhotoFileName; // 지원서 증명사진 FileName
 
-    //@Column(length = 2048)
-    //private String resumePhotoUrl; // 지원서 증명사진 URL
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -46,11 +48,14 @@ public class Resume {
     @Column(nullable = false)
     private LocalDateTime resumeUpdate; // 지원서 업데이트 날짜
 
-    @Column(length = 2048)
-    private String personalState; // 자소서 PDF
+    @Column(length = 2048, nullable = false)
+    private String personalStateUrl; // 자소서 PDF Url
 
-//    @Column(length = 2048)
-//    private String personalStateUrl; // 자소서 PDF URL
+    @Column(length = 2048, nullable = false)
+    private String personalStateUUID; // 자소서 PDF UUID
+
+    @Column(length = 2048, nullable = false)
+    private String personalStateFileName; // 자소서 PDF FileName
 
 
 

@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.persistence.Column;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,7 +23,9 @@ public class BoardDTO {
 
     private String corrContent; // 게시물 내용
 
-    private String corrPdf; // 게시물 pdf
+    private String corrPdfUrl;         // 게시물 파일 URL
+    private String corrPdfUUID;         // 게시물 파일 UUID
+    private String corrPdfFileName;         // 게시물 파일 FileName
 
     private LocalDateTime corrModify; // 게시물 수정시간
 

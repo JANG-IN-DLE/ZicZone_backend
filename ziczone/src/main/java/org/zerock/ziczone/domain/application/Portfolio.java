@@ -6,7 +6,7 @@ import javax.persistence.*;
 
 @Entity
 @Getter
-@Builder(toBuilder = true)
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
@@ -16,11 +16,14 @@ public class Portfolio {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long portId;        // id
 
-    @Column(length = 2048)
-    private String portFile;    // PDF 파일명
+    @Column(length = 2048, nullable = false)
+    private String portFileUrl;    // PDF 파일명 Url
 
-    //@Column(length = 2048)
-    //private String protFileUrl; // PDF 파일 URL
+    @Column(length = 2048, nullable = false)
+    private String portFileUUID;    // PDF 파일명 UUID
+
+    @Column(length = 2048, nullable = false)
+    private String portFileFileName;    // PDF 파일명 FileName
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resume_id")

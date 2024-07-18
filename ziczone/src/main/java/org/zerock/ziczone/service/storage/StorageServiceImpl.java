@@ -59,9 +59,9 @@ public class StorageServiceImpl implements StorageService {
     }
 
     @Override
-    public void deleteFile(String fileUrl) {
+    public void deleteFile(String bucket,String fileUrl) {
         if (fileUrl != null && !fileUrl.isEmpty()) {
-            amazonS3.deleteObject("ziczone-bucket-jangindle-optimizer", fileUrl);
+            amazonS3.deleteObject("ziczone-bucket-"+bucket, fileUrl);
         }
     }
 }

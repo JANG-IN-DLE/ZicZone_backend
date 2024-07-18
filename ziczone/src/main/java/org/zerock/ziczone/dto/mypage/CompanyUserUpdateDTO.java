@@ -2,6 +2,7 @@ package org.zerock.ziczone.dto.mypage;
 
 import lombok.*;
 
+import javax.persistence.Column;
 import java.time.LocalDate;
 
 @Builder
@@ -22,7 +23,9 @@ public class CompanyUserUpdateDTO {
 
     private String companyAddr;
 
-    private String companyLogo;
+    private String companyLogoUrl;     // 기업 로고 이미지 경로 URL (스토리지)
+    private String companyLogoUUID;     // 기업 로고 이미지 경로 UUID (스토리지)
+    private String companyLogoFileName;     // 기업 로고 이미지 경로 FileName (스토리지)
 
     private String changePassword;
 
