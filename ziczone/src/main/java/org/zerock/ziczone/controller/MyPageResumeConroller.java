@@ -40,11 +40,6 @@ public class MyPageResumeConroller {
             @RequestPart(value = "personalState", required = false) MultipartFile personalState,
             @RequestPart(value = "portfolios", required = false) List<MultipartFile> portfolios) {
 
-        log.info("resumeDTOString : {}", resumeDTOString);
-        log.info("resumePhoto : {}", resumePhoto);
-        log.info("personalState : {}", personalState);
-        log.info("portfolios : {}", portfolios);
-
         ResumeDTO resumeDTO = convertJsonToResumeDTO(resumeDTOString);
         resumeDTO.setPersonalId(userId);
         ResumeDTO savedResume = resumeService.saveResume(resumeDTO, resumePhoto, personalState, portfolios);
@@ -69,18 +64,15 @@ public class MyPageResumeConroller {
             @RequestPart(required = false) MultipartFile personalState,
             @RequestPart(required = false) List<MultipartFile> portfolios) {
 
-        log.info("[Controller] Received resumeDTO JSON: {}", resumeDTOString);
+
         ResumeDTO resumeDTO = convertJsonToResumeDTO(resumeDTOString);
-        log.info("[Controller] Parsed ResumeDTO: {}", resumeDTO);
 
         User user = userRepository.findByUserId(userId);
         if (user == null) {
-            log.error("User not found with userId: {}", userId);
             throw new IllegalArgumentException("User not found with userId: " + userId);
         }
 
         Long personalId = user.getPersonalUser().getPersonalId();
-        log.info("[Controller] Found personalId: {}", personalId);
 
         resumeDTO = resumeDTO.toBuilder().personalId(personalId).build();
 
