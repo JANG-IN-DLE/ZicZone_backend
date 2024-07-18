@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.zerock.ziczone.domain.member.Gender;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -30,4 +32,7 @@ public class CommentDTO {
     private Long corrId; // 게시물 ID
 
     private Integer corrPoint; // 게시물에서 선택한 베리
+
+    private LocalDateTime commModify; // 댓글 수정 시간
+
 }

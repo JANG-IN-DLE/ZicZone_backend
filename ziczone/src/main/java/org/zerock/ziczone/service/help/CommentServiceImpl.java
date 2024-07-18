@@ -50,6 +50,7 @@ public class CommentServiceImpl implements CommentService {
 
         Comment comment = Comment.builder()
                 .commContent(commentDTO.getCommContent())
+                .commModify(commentDTO.getCommModify())
                 .user(user)
                 .board(board)
                 .build();
@@ -87,6 +88,7 @@ public class CommentServiceImpl implements CommentService {
                             .personalId(personalUser.getPersonalId())
                             .corrPoint(board.getCorrPoint())
                             .corrId(board.getCorrId())
+                            .commModify(comment.getCommModify())
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -161,6 +163,7 @@ public class CommentServiceImpl implements CommentService {
                 .corrId(comment.getBoard().getCorrId())
                 .gender(personalUser.getGender())
                 .corrPoint(board.getCorrPoint())
+                .commModify(comment.getCommModify())
                 .build();
     }
 
@@ -219,6 +222,7 @@ public class CommentServiceImpl implements CommentService {
                             .personalId(personalUser.getPersonalId())
                             .corrPoint(board.getCorrPoint())
                             .gender(personalUser.getGender())
+                            .commModify(comment.getCommModify())
                             .build();
                 })
                 .collect(Collectors.toList());
