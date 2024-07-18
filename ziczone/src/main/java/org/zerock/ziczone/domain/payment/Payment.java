@@ -58,4 +58,13 @@ public class Payment {
         }
         this.berryPoint -= points;
     }
+
+    // 게시물 작성 시 베리 포인트 차감
+    public void deductionBoardBerryPoint (int corrPoint) {
+        if (this.berryPoint >= corrPoint) {
+            this.berryPoint -= corrPoint;
+        } else {
+            throw new IllegalArgumentException("보유한 베리 포인트가 부족합니다.");
+        }
+    }
 }

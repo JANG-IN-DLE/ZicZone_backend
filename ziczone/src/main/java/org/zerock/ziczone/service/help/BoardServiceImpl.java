@@ -57,8 +57,16 @@ public class BoardServiceImpl implements BoardService {
     public Long boardRegister(int corrPoint, String corrTitle, String corrContent, String corrPdf, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 userId"));
+        PersonalUser personalUser = personalUserRepository.findByUser_UserId(user.getUserId());
+        Payment payment = paymentRepository.findByPersonalUser(personalUser);
         if (user.getUserType() != UserType.PERSONAL) {
             throw new IllegalArgumentException("개인 회원만 게시물을 등록할 수 있습니다.");
+        }
+        if(payment.getBerryPoint() < corrPoint) {
+            throw new IllegalArgumentException("보유한 베리 포인트가 부족합니다.");
+        } else {
+            payment.deductionBoardBerryPoint(corrPoint);
+            paymentRepository.save(payment);
         }
 
         Board board = Board.builder()
@@ -157,6 +165,7 @@ public class BoardServiceImpl implements BoardService {
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 corrId"));
         User user = board.getUser();
         PersonalUser personalUser = user.getPersonalUser();
+        Payment payment = paymentRepository.findByPersonalUser(personalUser);
         List<String> jobNames = jobPositionRepository.findByPersonalUser(personalUser).stream()
                 .map(jobPosition -> jobPosition.getJob().getJobName())
                 .collect(Collectors.toList());
@@ -171,6 +180,7 @@ public class BoardServiceImpl implements BoardService {
                 .jobName(String.join(",", jobNames))
                 .gender(personalUser.getGender())
                 .userName(user.getUserName())
+                .berryPoint(payment.getBerryPoint())
                 .personalCareer(personalUser.getPersonalCareer())
                 .userIntro(user.getUserIntro())
                 .techUrl(String.join(",", techUrls))
