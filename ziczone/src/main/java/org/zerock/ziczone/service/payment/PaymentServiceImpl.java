@@ -6,6 +6,10 @@ import net.minidev.json.JSONObject;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.zerock.ziczone.config.PayConfig;
+import org.zerock.ziczone.domain.payment.PayState;
+import org.zerock.ziczone.domain.payment.Payment;
+import org.zerock.ziczone.dto.payment.PaymentDTO;
+import org.zerock.ziczone.repository.payment.PaymentRepository;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -23,6 +27,22 @@ public class PaymentServiceImpl implements PaymentService {
 
     private final PayConfig payConfig;
     private final ObjectMapper objectMapper;
+    private final PaymentRepository paymentRepository;
+
+
+
+    public Payment savePayment(PaymentDTO paymentDTO){
+        Payment payment = Payment.builder()
+                .orderId(paymentDTO.getOrderId())
+                .amount(paymentDTO.getAmount())
+                .berryPoint(0)
+                .payDate(paymentDTO.getPayDate())
+                .payState(PayState.PENDING)
+                .paymentKey(paymentDTO.getPaymentKey())
+                .personalUser(paymentDTO.getPersonalUser())
+                .build();
+        return paymentRepository.save(payment);
+    }
 
     @Override
     @Transactional

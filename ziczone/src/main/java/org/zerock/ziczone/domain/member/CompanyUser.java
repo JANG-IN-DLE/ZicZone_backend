@@ -27,8 +27,14 @@ public class CompanyUser {
     @Column(nullable = false)
     private LocalDate companyYear;  // 기업 설립연도
 
-    @Column(nullable = false,length = 500)
-    private String companyLogo;     // 기업 로고 이미지 경로 (스토리지)
+    @Column(nullable = false,length = 2048)
+    private String companyLogoUrl;     // 기업 로고 이미지 경로 URL (스토리지)
+    @Column(nullable = false,length = 2048)
+    private String companyLogoUUID;     // 기업 로고 이미지 경로 UUID (스토리지)
+    @Column(nullable = false,length = 2048)
+    private String companyLogoFileName;     // 기업 로고 이미지 경로 FileName (스토리지)
+
+
 
 //    @Column(nullable = false,length = 500)
 //    private String companyLogoUrl;     // 기업 로고 이미지 경로 URL
