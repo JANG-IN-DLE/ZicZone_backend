@@ -95,7 +95,6 @@ public class AlarmServiceImpl implements AlarmService {
     @Override
     public List<ResponseAlarmDTO> AlarmList(Long userId) {
         List<Alarm> alarmList = alarmRepository.findByUser_UserId(userId);
-        log.info(alarmList);
         return alarmList.stream()
                 .map(alarm -> createResponseAlarmDTO(alarm, userId))
                 .filter(Objects::nonNull)
