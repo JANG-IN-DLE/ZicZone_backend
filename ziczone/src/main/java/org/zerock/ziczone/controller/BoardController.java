@@ -42,14 +42,17 @@ public class BoardController {
      * @return ResponseEntity<Map<String, String>> 응답 메시지
      */
     @PostMapping("/api/personal/board/post")
-    public ResponseEntity<Long> createBoard(@RequestParam("berry") int corrPoint,
-                                                           @RequestParam("title") String corrTitle,
-                                                           @RequestParam("content") String corrContent,
-                                                           @RequestParam("file") MultipartFile corrPdf,
-                                                           @RequestParam("userId") Long userId) {
+    public ResponseEntity<Map<String, Long>> createBoard(@RequestParam("berry") int corrPoint,
+                                                         @RequestParam("title") String corrTitle,
+                                                         @RequestParam("content") String corrContent,
+                                                         @RequestParam("file") MultipartFile corrPdf,
+                                                         @RequestParam("userId") Long userId) {
         Long corrId = boardService.boardRegister(corrPoint, corrTitle, corrContent, corrPdf, userId);
 
-        return ResponseEntity.ok(corrId);
+        Map<String, Long> response = new HashMap<>();
+        response.put("corrId", corrId);
+
+        return ResponseEntity.ok(response);
     }
 
     /**

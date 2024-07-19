@@ -1,14 +1,12 @@
 package org.zerock.ziczone.domain.board;
 
 import lombok.*;
-import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.zerock.ziczone.domain.member.User;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Getter
@@ -34,7 +32,6 @@ public class Board {
     private String corrPdfUuid;         // 게시물 파일 UUID
     @Column(length = 2048, nullable = false)
     private String corrPdfFileName;         // 게시물 파일 FileName
-
 
 
     @Column(nullable = false)

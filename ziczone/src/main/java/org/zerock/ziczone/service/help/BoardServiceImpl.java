@@ -71,7 +71,7 @@ public class BoardServiceImpl implements BoardService {
         if (user.getUserType() != UserType.PERSONAL) {
             throw new IllegalArgumentException("개인 회원만 게시물을 등록할 수 있습니다.");
         }
-        if(payment.getBerryPoint() < corrPoint) {
+        if (payment.getBerryPoint() < corrPoint) {
             throw new IllegalArgumentException("보유한 베리 포인트가 부족합니다.");
         } else {
             payment.deductionBoardBerryPoint(corrPoint);
@@ -79,7 +79,6 @@ public class BoardServiceImpl implements BoardService {
         }
 
         String corrPdfUUID = UUID.randomUUID().toString();
-
         String corrPdfUrl = storageService.uploadFile(corrPdf, "CorrPdf/", corrPdfUUID, BUCKETNAME);
 
         Board board = Board.builder()
@@ -89,6 +88,8 @@ public class BoardServiceImpl implements BoardService {
                 .corrPdfUuid(corrPdfUUID)
                 .corrPdfFileName(corrPdf.getOriginalFilename())
                 .corrPdfUrl(corrPdfUrl)
+                .corrPdfFileName(corrPdf.getOriginalFilename())
+                .corrPdfUUID(corrPdfUUID)
                 .corrView(0)
                 .user(user)
                 .build();
