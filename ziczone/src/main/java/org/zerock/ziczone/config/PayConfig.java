@@ -9,9 +9,9 @@ import org.springframework.stereotype.Component;
 
 @Data
 @Component
-@ConfigurationProperties(prefix = "payments.toss")
+@ConfigurationProperties(prefix = "payments.toss") 
 public class PayConfig {
-    private String testClientApiKey;
+//    private String testClientApiKey;
     private String testSecretApiKey;
     private String successUrl;
     private String failUrl;

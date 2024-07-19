@@ -9,12 +9,11 @@ import java.net.MalformedURLException;
 import java.util.Map;
 
 public interface PaymentService {
+    Payment getPayment(Long payId);
 
     Payment savePayment(PaymentDTO paymentDTO);
 
-    Map<String, Object> approvePayment(String paymentKey, String orderId, int amount) throws IOException;
+    Payment approvePayment(Long payId, int berryPoint);
 
-    void processSuccessfulPayment(String paymentKey, String orderId, int amount);
-
-    void processFailedPayment(String paymentKey, String orderId, int amount, JSONObject errorResponse);
+    Payment failPayment(Long payId);
 }

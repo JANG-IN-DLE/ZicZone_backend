@@ -110,7 +110,7 @@ public class MyPageServiceImpl implements  MyPageService{
         }
         CompanyUser updatedCompanyUser = companyUser.toBuilder()
                 .companyAddr(companyUserUpdateDTO.getCompanyAddr())
-                .companyLogo(companyUserUpdateDTO.getCompanyLogo())
+//                .companyLogo(companyUserUpdateDTO.getCompanyLogo())
                 .user(user)
                 .build();
 
@@ -374,7 +374,7 @@ public class MyPageServiceImpl implements  MyPageService{
                             .companyId(companyUser.getCompanyId())
                             .companyNum(companyUser.getCompanyNum())
                             .companyAddr(companyUser.getCompanyAddr())
-                            .companyLogo(companyUser.getCompanyLogo())
+//                            .companyLogo(companyUser.getCompanyLogo())
                             .companyCeo(companyUser.getCompanyCeo())
                             .companyYear(companyUser.getCompanyYear())
                             .build();
@@ -424,7 +424,7 @@ public class MyPageServiceImpl implements  MyPageService{
                 .companyId(companyUser.getCompanyId())
                 .companyNum(companyUser.getCompanyNum())
                 .companyAddr(companyUser.getCompanyAddr())
-                .companyLogo(companyUser.getCompanyLogo())
+//                .companyLogo(companyUser.getCompanyLogo())
                 .companyCeo(companyUser.getCompanyCeo())
                 .companyYear(companyUser.getCompanyYear())
                 .user(userDTO)

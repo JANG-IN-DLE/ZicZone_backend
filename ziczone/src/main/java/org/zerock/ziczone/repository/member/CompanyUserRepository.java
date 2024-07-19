@@ -11,7 +11,7 @@ public interface CompanyUserRepository extends JpaRepository<CompanyUser, Long> 
 
     CompanyUser findByUser_UserId(Long userId);
 
-    @Query("SELECT c.companyLogo FROM CompanyUser c")
+    @Query("SELECT c.companyLogoUrl FROM CompanyUser c")
     List<String> findAllCompanyLogo();
 
 }

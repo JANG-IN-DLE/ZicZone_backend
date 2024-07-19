@@ -134,7 +134,7 @@ public class JoinServiceImpl implements JoinService {
                 .companyNum(companyUserJoinDTO.getCompanyNum())
                 .companyAddr(companyUserJoinDTO.getCompanyAddr())
                 .companyYear(LocalDate.parse(companyUserJoinDTO.getCompanyYear(), formatter))
-                .companyLogo(companyUserJoinDTO.getCompanyLogo())
+//                .companyLogo(companyUserJoinDTO.getCompanyLogo())
                 .companyCeo(companyUserJoinDTO.getCompanyCeo())
                 .build();
         companyUserRepository.save(companyUser);

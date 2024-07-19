@@ -46,10 +46,10 @@ public class ResumeDTO {
                 .resumeDate(this.resumeDate)
                 .phoneNum(this.phoneNum)
                 .resumeEmail(this.resumeEmail)
-                .resumePhoto(this.resumePhoto)
+//                .resumePhoto(this.resumePhoto)
                 .resumeCreate(this.resumeCreate)
                 .resumeUpdate(this.resumeUpdate)
-                .personalState(this.personalState)
+//                .personalState(this.personalState)
                 .personalUser(PersonalUser.builder().personalId(this.personalId).build()) // Assumed constructor
                 .build();
     }
@@ -62,10 +62,10 @@ public class ResumeDTO {
                 .resumeDate(entity.getResumeDate())
                 .phoneNum(entity.getPhoneNum())
                 .resumeEmail(entity.getResumeEmail())
-                .resumePhoto(entity.getResumePhoto())
+//                .resumePhoto(entity.getResumePhoto())
                 .resumeCreate(entity.getResumeCreate())
                 .resumeUpdate(entity.getResumeUpdate())
-                .personalState(entity.getPersonalState())
+//                .personalState(entity.getPersonalState())
                 .personalId(entity.getPersonalUser().getPersonalId()) // Assumed getter
                 .build();
     }
