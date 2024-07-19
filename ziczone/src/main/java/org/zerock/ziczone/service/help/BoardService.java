@@ -1,5 +1,6 @@
 package org.zerock.ziczone.service.help;
 
+import org.springframework.web.multipart.MultipartFile;
 import org.zerock.ziczone.domain.board.Board;
 import org.zerock.ziczone.dto.help.BoardDTO;
 import org.zerock.ziczone.dto.help.BoardProfileCardDTO;
@@ -10,7 +11,7 @@ import java.util.List;
 
 public interface BoardService {
     // 게시물 등록
-    Long boardRegister(int corrPoint, String corrTitle, String corrContent, String corrPdf, Long userId);
+    Long boardRegister(int corrPoint, String corrTitle, String corrContent, MultipartFile corrPdf, Long userId);
     // 게시물 작성자 프로필 카드 조회 (게시물 등록할 때)
     BoardProfileCardDTO registerUserProfile(Long userId);
     // 게시물 조회
