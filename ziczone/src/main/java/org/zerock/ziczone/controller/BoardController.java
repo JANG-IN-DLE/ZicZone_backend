@@ -13,6 +13,7 @@ import org.zerock.ziczone.dto.help.BoardProfileCardDTO;
 import org.zerock.ziczone.dto.page.PageRequestDTO;
 import org.zerock.ziczone.dto.page.PageResponseDTO;
 import org.zerock.ziczone.service.help.BoardService;
+import org.zerock.ziczone.service.help.CommentService;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -26,6 +27,8 @@ public class BoardController {
     private final AmazonS3 amazonS3;
 
     private final BoardService boardService;
+
+    private final CommentService commentService;
 
     /**
      * 첨삭 게시물 등록
@@ -172,6 +175,8 @@ public class BoardController {
      */
     @DeleteMapping("/api/personal/board/{corrId}/{userId}")
     public ResponseEntity<Void> deleteBoard(@PathVariable Long userId, @PathVariable Long corrId) {
+        commentService.deleteCommentsByCorrId(corrId);
+
         boardService.boardDelete(userId, corrId);
 
         return ResponseEntity.ok().build();

@@ -20,4 +20,6 @@ public interface CommentService {
     void selectComment(Long commId, Long userId);
     // 회원별 댓글 조회
     List<CommentDTO> userReadAllComment(Long userId);
+    // 게시물 삭제 시 전체 댓글 삭제
+    void deleteCommentsByCorrId(Long corrId);
 }
