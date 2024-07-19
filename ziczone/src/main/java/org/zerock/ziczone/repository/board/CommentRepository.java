@@ -12,4 +12,6 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     List<Comment> findByBoardCorrId(Long corrId);
     // 채택된 게시물 여부
     boolean existsByBoardCorrIdAndCommSelection(Long corrId, boolean commSelection);
+    // 게시물 삭제 시 전체 댓글 삭제
+    void deleteByBoardCorrId(Long corrId);
 }

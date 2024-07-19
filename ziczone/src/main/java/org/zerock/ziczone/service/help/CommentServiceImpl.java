@@ -228,4 +228,9 @@ public class CommentServiceImpl implements CommentService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional
+    public void deleteCommentsByCorrId(Long corrId) {
+        commentRepository.deleteByBoardCorrId(corrId);
+    }
 }
