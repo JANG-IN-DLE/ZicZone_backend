@@ -113,7 +113,7 @@ public class MyPageServiceImpl implements  MyPageService{
         CompanyUser updatedCompanyUser = companyUser.toBuilder()
                 .companyAddr(companyUserUpdateDTO.getCompanyAddr())
                 .companyLogoUrl(companyUserUpdateDTO.getCompanyLogoUrl())
-                .companyLogoUUID(uuid)
+                .companyLogoUuid(uuid)
                 .companyLogoFileName(companyLogoFile.getOriginalFilename())
                 .user(user)
                 .build();
@@ -380,7 +380,7 @@ public class MyPageServiceImpl implements  MyPageService{
                             .companyAddr(companyUser.getCompanyAddr())
                             .companyLogoUrl(companyUser.getCompanyLogoUrl())
                             .companyLogoFileName(companyUser.getCompanyLogoFileName())
-                            .companyLogoUUID(companyUser.getCompanyLogoUUID())
+                            .companyLogoUUID(companyUser.getCompanyLogoUuid())
                             .companyCeo(companyUser.getCompanyCeo())
                             .companyYear(companyUser.getCompanyYear())
                             .build();
@@ -431,7 +431,7 @@ public class MyPageServiceImpl implements  MyPageService{
                 .companyNum(companyUser.getCompanyNum())
                 .companyAddr(companyUser.getCompanyAddr())
                 .companyLogoUrl(companyUser.getCompanyLogoUrl())
-                .companyLogoUUID(companyUser.getCompanyLogoUUID())
+                .companyLogoUUID(companyUser.getCompanyLogoUuid())
                 .companyLogoFileName(companyUser.getCompanyLogoFileName())
                 .companyCeo(companyUser.getCompanyCeo())
                 .companyYear(companyUser.getCompanyYear())

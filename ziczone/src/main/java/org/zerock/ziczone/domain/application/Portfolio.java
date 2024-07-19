@@ -20,7 +20,7 @@ public class Portfolio {
     private String portFileUrl;    // PDF 파일명 Url
 
     @Column(length = 2048, nullable = false)
-    private String portFileUUID;    // PDF 파일명 UUID
+    private String portFileUuid;    // PDF 파일명 UUID
 
     @Column(length = 2048, nullable = false)
     private String portFileFileName;    // PDF 파일명 FileName

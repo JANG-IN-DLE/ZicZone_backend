@@ -31,7 +31,7 @@ public class Board {
     @Column(length = 2048, nullable = false)
     private String corrPdfUrl;         // 게시물 파일 URL
     @Column(length = 2048, nullable = false)
-    private String corrPdfUUID;         // 게시물 파일 UUID
+    private String corrPdfUuid;         // 게시물 파일 UUID
     @Column(length = 2048, nullable = false)
     private String corrPdfFileName;         // 게시물 파일 FileName
 

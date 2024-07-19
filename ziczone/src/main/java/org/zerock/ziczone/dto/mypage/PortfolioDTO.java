@@ -25,7 +25,7 @@ public class PortfolioDTO {
         return Portfolio.builder()
                 .portId(this.portId)
                 .portFileUrl(this.portFileUrl)
-                .portFileUUID(this.portFileUUID)
+                .portFileUuid(this.portFileUUID)
                 .portFileFileName(this.portFileFileName)
                 .resume(Resume.builder().resumeId(this.resumeId).build())
                 .build();
@@ -36,7 +36,7 @@ public class PortfolioDTO {
         return PortfolioDTO.builder()
                 .portId(entity.getPortId())
                 .portFileUrl(entity.getPortFileUrl())
-                .portFileUUID(entity.getPortFileUUID())
+                .portFileUUID(entity.getPortFileUuid())
                 .portFileFileName(entity.getPortFileFileName())
                 .resumeId(entity.getResume() != null ? entity.getResume().getResumeId() : null)
                 .build();

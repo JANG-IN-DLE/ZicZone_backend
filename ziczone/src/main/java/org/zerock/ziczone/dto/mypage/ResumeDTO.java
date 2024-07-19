@@ -51,12 +51,12 @@ public class ResumeDTO {
                 .phoneNum(this.phoneNum)
                 .resumeEmail(this.resumeEmail)
                 .resumePhotoUrl(this.resumePhotoUrl)
-                .resumePhotoUUID(this.resumePhotoUUID)
+                .resumePhotoUuid(this.resumePhotoUUID)
                 .resumePhotoFileName(this.resumePhotoFileName)
                 .resumeCreate(this.resumeCreate)
                 .resumeUpdate(this.resumeUpdate)
                 .personalStateUrl(this.personalStateUrl)
-                .personalStateUUID(this.personalStateUUID)
+                .personalStateUuid(this.personalStateUUID)
                 .personalStateFileName(this.personalStateFileName)
                 .personalUser(PersonalUser.builder().personalId(this.personalId).build()) // Assumed constructor
                 .build();
@@ -71,12 +71,12 @@ public class ResumeDTO {
                 .phoneNum(entity.getPhoneNum())
                 .resumeEmail(entity.getResumeEmail())
                 .resumePhotoUrl(entity.getResumePhotoUrl())
-                .resumePhotoUUID(entity.getResumePhotoUUID())
+                .resumePhotoUUID(entity.getResumePhotoUuid())
                 .resumePhotoFileName(entity.getResumePhotoFileName())
                 .resumeCreate(entity.getResumeCreate())
                 .resumeUpdate(entity.getResumeUpdate())
                 .personalStateUrl(entity.getPersonalStateUrl())
-                .personalStateUUID(entity.getPersonalStateUUID())
+                .personalStateUUID(entity.getPersonalStateUuid())
                 .personalStateFileName(entity.getPersonalStateFileName())
                 .personalId(entity.getPersonalUser().getPersonalId()) // Assumed getter
                 .build();

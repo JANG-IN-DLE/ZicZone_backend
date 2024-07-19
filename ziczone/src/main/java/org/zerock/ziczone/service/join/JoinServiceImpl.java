@@ -163,7 +163,7 @@ public class JoinServiceImpl implements JoinService {
                 .companyAddr(companyUserJoinDTO.getCompanyAddr())
                 .companyYear(LocalDate.parse(companyUserJoinDTO.getCompanyYear(), formatter))
                 .companyLogoFileName(companyLogoFile.getOriginalFilename())
-                .companyLogoUUID(uuid)
+                .companyLogoUuid(uuid)
                 .companyLogoUrl(companyLogoURL)
                 .companyCeo(companyUserJoinDTO.getCompanyCeo())
                 .build();
