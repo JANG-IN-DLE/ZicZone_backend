@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AlarmDTO {
-    private String Type;
+public class RequestAlarmDTO {
+    private String type;
     private Long senderId;
     private Long receiverId;
 }
