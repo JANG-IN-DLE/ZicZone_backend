@@ -43,6 +43,10 @@ public class AlarmServiceImpl implements AlarmService {
     //게시글 제목 조회
     public String getPostName(Long id) {
         Optional<Board> board = boardRepository.findById(id);
+// return boardRepository.findById(id)
+                      // .map(Board::getCorrTitle)
+                      // .orElse("Unknown Post");
+        
         if (board.isPresent()) {
             return board.get().getCorrTitle();
         } else {
@@ -50,6 +54,7 @@ public class AlarmServiceImpl implements AlarmService {
             return "Unknown Post";
         }
     }
+
 
     public String maskUserName(String userName) {
         if(userName == null || userName.isEmpty()) {
