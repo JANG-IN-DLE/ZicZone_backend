@@ -18,6 +18,7 @@ public class PickCardDTO {
 
     private Long userId;
     private Long personalId;
+    private Long companyId;
 
     private String userName;
     private String userIntro;
@@ -32,7 +33,7 @@ public class PickCardDTO {
     private List<Boolean> scrap;
     private List<Boolean> pick;
     // 어떤 회사가 scrap과 pick했는지도 알아야하니까
-    private List<Long> companyId;
+//    private List<Long> companyId;
 
     // 결제 여부 알기위해서
     private List<Long> payHistoryId;

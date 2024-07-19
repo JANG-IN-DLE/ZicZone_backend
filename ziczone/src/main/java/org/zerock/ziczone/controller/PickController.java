@@ -27,13 +27,13 @@ public class PickController {
     
 //  (personal회원이 로그인한 경우) pickzone card 회원들 정보 가져오기
     @GetMapping("/api/personal/pickcards")
-    public List<PickCardDTO> getPersonalPickCards(@RequestParam Long loggedInPersonalId) {
-        return pickService.getPersonalPickCards(loggedInPersonalId);
+    public List<PickCardDTO> getPersonalPickCards(@RequestParam Long loggedInUserId) {
+        return pickService.getPersonalPickCards(loggedInUserId);
     }
 //    (company회원이 로그인한 경우) pickzone card 회원들 정보 가져오기
     @GetMapping("/api/company/pickcards")
-    public List<PickCardDTO> getCompanyPickCards(@RequestParam Long loggedInCompanyId){
-        return pickService.getCompanyPickCards(loggedInCompanyId);
+    public List<PickCardDTO> getCompanyPickCards(@RequestParam Long loggedInUserId){
+        return pickService.getCompanyPickCards(loggedInUserId);
     }
     // pickzone 해시태그에 들어가는 정보 가져오기
     @GetMapping("/api/jobs")
@@ -41,14 +41,14 @@ public class PickController {
         return pickService.getAllJobs();
     }
     // (CompanyId로 로그인되어을때) personalId가지고 해당하는 회원 정보 가져오기(pickDetail  왼쪽 회원 정보)
-    @GetMapping("/api/company/pickcards/{companyId}/{personalId}")
-    public PickDetailDTO getPickCardsByCompanyId(@PathVariable Long companyId, @PathVariable Long personalId) {
-        return pickService.getPickCardsById(companyId, personalId);
+    @GetMapping("/api/company/pickcards/{loggedInUserId}/{personalId}")
+    public PickDetailDTO getPickCardsByCompanyId(@PathVariable Long loggedInUserId, @PathVariable Long personalId) {
+        return pickService.getPickCardsById(loggedInUserId, personalId);
     }
     // (PersonalId로 로그인되었을때) personalId가지고 해당하는 회원 정보 가져오기(pickDetail 왼쪽 회원정보)
-    @GetMapping("/api/personal/pickcards/{loggedInPersonalId}/{personalId}")
-    public PickPersonalDetailDTO getPickCardsByPersonalId(@PathVariable Long loggedInPersonalId , @PathVariable Long personalId) {
-        return pickService.getPickCardsByPersonalId(loggedInPersonalId, personalId);
+    @GetMapping("/api/personal/pickcards/{loggedInUserId}/{personalId}")
+    public PickPersonalDetailDTO getPickCardsByPersonalId(@PathVariable Long loggedInUserId , @PathVariable Long personalId) {
+        return pickService.getPickCardsByPersonalId(loggedInUserId, personalId);
     }
     // (CompanyId로 로그인되었을때) personalId가지고 해당하는 회원 resume 정보 가져오기(pickDetail 오른쪽 정보)
     @GetMapping("/api/company/pickresume/{personalId}")

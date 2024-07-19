@@ -15,6 +15,6 @@ public class PickAndScrapDTO {
     private Boolean pick;
     // 0 false, 1 true
     private Boolean scrap;
-    private Long companyId;
     private Long personalId;
+    private Long userId;
 }
