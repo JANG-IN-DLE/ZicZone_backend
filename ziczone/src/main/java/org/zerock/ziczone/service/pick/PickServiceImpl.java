@@ -24,10 +24,7 @@ import org.zerock.ziczone.repository.payment.PaymentRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
 
 import javax.transaction.Transactional;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -93,7 +90,7 @@ public class PickServiceImpl implements PickService {
                     .jobName(String.join(",", jobNames))
                     .scrap(scrapList)
                     .pick(pickList)
-                    .companyId(companyIdList)
+//                    .companyId(companyIdList)
                     .resumeUpdate(resume.getResumeUpdate())
                     .build();
         }).collect(Collectors.toList());
@@ -101,11 +98,13 @@ public class PickServiceImpl implements PickService {
 
     // (personal회원이 로그인했을 때) pickzone 회원 card data 가져오는 메서드
     @Override
-    public List<PickCardDTO> getPersonalPickCards(Long loggedInPersonalId) {
+    public List<PickCardDTO> getPersonalPickCards(Long loggedInUserId) {
 // 최신 resume 정보를 포함하는 PersonalUser 리스트를 가져오기
         List<Resume> latestResumes = resumeRepository.findAllByPersonalUserIsPersonalVisibleTrueOrderByResumeUpdateDesc();
+        // 개인회원의 정보를 가져온다.
+        PersonalUser personalUser = personalUserRepository.findByUser_UserId(loggedInUserId);
         // 개인회원의 berryPoint를 가져온다.
-        Payment payment = paymentRepository.findByPersonalUser_PersonalId(loggedInPersonalId);
+        Payment payment = paymentRepository.findByPersonalUser_PersonalId(personalUser.getPersonalId());
         Integer userBerryPoint = (payment != null && payment.getBerryPoint() != null) ? payment.getBerryPoint() : 0;
 
         return latestResumes.stream().map(resume -> {
@@ -130,7 +129,7 @@ public class PickServiceImpl implements PickService {
                     .map(pickAndScrap -> pickAndScrap.getCompanyUser().getCompanyId())
                     .collect(Collectors.toList());
             // 결제 내역 추출
-            List<Long> payHistoryId = payHistoryRepository.findBySellerIdAndBuyerId(user.getPersonalId(), loggedInPersonalId).stream()
+            List<Long> payHistoryId = payHistoryRepository.findBySellerIdAndBuyerId(user.getPersonalId(), personalUser.getPersonalId()).stream()
                     .map(PayHistory::getPayHistoryId).collect(Collectors.toList());
 
 
@@ -146,7 +145,7 @@ public class PickServiceImpl implements PickService {
                     .jobName(String.join(",", jobNames))
                     .scrap(scrapList)
                     .pick(pickList)
-                    .companyId(companyIdList)
+//                    .companyId(companyIdList)
                     .resumeUpdate(resume.getResumeUpdate())
                     .payHistoryId(payHistoryId)
                     .berryPoint(userBerryPoint)
@@ -157,7 +156,12 @@ public class PickServiceImpl implements PickService {
 
     // (company회원이 로그인했을 때) pickzone 회원 card data 가져오는 메서드
     @Override
-    public List<PickCardDTO> getCompanyPickCards(Long loggedInCompanyId) {
+    public List<PickCardDTO> getCompanyPickCards(Long loggedInUserId) {
+        // loggedInUserId를 사용하여 CompanyUser를 찾음
+        CompanyUser loggedInCompanyUser = companyUserRepository.findByUser_UserId(loggedInUserId);
+        if(loggedInCompanyUser == null) {
+            throw new RuntimeException("company user not found");
+        }
         // isCompanyvisible이 true인 최신 resume 정보를 포함하는 PersonalUser리스트를 가져옴
         List<Resume> latestResumes = resumeRepository.findAllByPersonalUserIsCompanyVisibleTrueOrderByResumeUpdateDesc();
 
@@ -175,17 +179,28 @@ public class PickServiceImpl implements PickService {
             List<String> jobNames = jobPositionRepository.findByPersonalUserPersonalId(user.getPersonalId()).stream()
                     .map(jobPosition -> jobPosition.getJob().getJobName())
                     .collect(Collectors.toList());
+            // loggedInCompanyUser와 PersonalUser에 해당하는 PickAndScrap 엔티티를 찾음
+            Optional<PickAndScrap> pickAndScrap = pickAndScrapRepository.findByCompanyUserAndPersonalUser(loggedInCompanyUser, user);
+            Boolean scrap = false;
+            Boolean pick = false;
+            Long companyId = null;
+            if(pickAndScrap.isPresent()) {
+                scrap = pickAndScrap.get().isScrap();
+                pick = pickAndScrap.get().isPick();
+                companyId = pickAndScrap.get().getCompanyUser().getCompanyId();
+            }
 
-            List<PickAndScrap> pickAndScraps = pickAndScrapRepository.findByPersonalUser(user);
-            List<Boolean> scrapList = pickAndScraps.stream().map(PickAndScrap::isScrap).collect(Collectors.toList());
-            List<Boolean> pickList = pickAndScraps.stream().map(PickAndScrap::isPick).collect(Collectors.toList());
-            List<Long> companyIdList = pickAndScraps.stream()
-                    .map(pickAndScrap -> pickAndScrap.getCompanyUser().getCompanyId())
-                    .collect(Collectors.toList());
+//            List<PickAndScrap> pickAndScraps = pickAndScrapRepository.findByPersonalUser(user);
+//            List<Boolean> scrapList = pickAndScraps.stream().map(PickAndScrap::isScrap).collect(Collectors.toList());
+//            List<Boolean> pickList = pickAndScraps.stream().map(PickAndScrap::isPick).collect(Collectors.toList());
+//            List<Long> companyIdList = pickAndScraps.stream()
+//                    .map(pickAndScrap -> pickAndScrap.getCompanyUser().getCompanyId())
+//                    .collect(Collectors.toList());
 
             return PickCardDTO.builder()
                     .userId(user.getUser().getUserId())
                     .personalId(user.getPersonalId())
+                    .companyId(companyId)
                     .userName(user.getUser().getUserName())
                     .userIntro(user.getUser().getUserIntro())
                     .gender(user.getGender())
@@ -193,9 +208,11 @@ public class PickServiceImpl implements PickService {
                     .techName(String.join(",", techNames))
                     .techUrl(String.join(",", techUrls))
                     .jobName(String.join(",", jobNames))
-                    .scrap(scrapList)
-                    .pick(pickList)
-                    .companyId(companyIdList)
+                    .scrap(Collections.singletonList(scrap))
+                    .pick(Collections.singletonList(pick))
+//                    .scrap(scrapList)
+//                    .pick(pickList)
+//                    .companyId(companyIdList)
                     .resumeUpdate(resume.getResumeUpdate())
                     .build();
         }).collect(Collectors.toList());
@@ -215,12 +232,12 @@ public class PickServiceImpl implements PickService {
     }
 //  (CompanyId로 로그인했을 경우) pickDetailzone 왼쪽 회원정보 가져오는 메서드
     @Override
-    public PickDetailDTO getPickCardsById(Long companyId, Long personalId) {
+    public PickDetailDTO getPickCardsById(Long loggedInUserId, Long personalId) {
         PersonalUser personalUser = personalUserRepository.findByPersonalId(personalId);
         if(personalUser == null) {
             throw new RuntimeException("personal user not found");
         }
-        CompanyUser companyUser = companyUserRepository.findByCompanyId(companyId);
+        CompanyUser companyUser = companyUserRepository.findByUser_UserId(loggedInUserId);
         if(companyUser == null) {
             throw new RuntimeException("personal user not found");
         }
@@ -267,9 +284,9 @@ public class PickServiceImpl implements PickService {
 
     // (PersonalId로 로그인했을 경우) pickDetailzone 왼쪽 회원정보 가져오는 메서드
     @Override
-    public PickPersonalDetailDTO getPickCardsByPersonalId(Long loggedInPersonalId, Long personalId) {
-        PersonalUser loggedInUser = personalUserRepository.findByPersonalId(loggedInPersonalId);
-        if(loggedInUser == null) {
+    public PickPersonalDetailDTO getPickCardsByPersonalId(Long loggedInUserId, Long personalId) {
+        PersonalUser loggedInPersonalUser = personalUserRepository.findByUser_UserId(loggedInUserId);
+        if(loggedInPersonalUser == null) {
             throw new RuntimeException("personal user not found");
         }
         PersonalUser personalUser = personalUserRepository.findByPersonalId(personalId);
@@ -288,7 +305,8 @@ public class PickServiceImpl implements PickService {
                 .collect(Collectors.toList());
         // payHistoryId에 결제한 내역이 있으면 바로 Detail로 들어갈 수 있게 하기 위해
         // 아 여기서 보내면 안되고 pickzone에서 card호출할때 거기서 보내야지
-        Optional<PayHistory> payHistoryOptional = payHistoryRepository.findByBuyerIdAndSellerId(loggedInPersonalId, personalId);
+        // 지워도 될듯
+        Optional<PayHistory> payHistoryOptional = payHistoryRepository.findByBuyerIdAndSellerId(loggedInPersonalUser.getPersonalId(), personalId);
 
         PickPersonalDetailDTO pickPersonalDetailDTO = PickPersonalDetailDTO.builder()
                 .userId(personalUser.getUser().getUserId())
@@ -381,7 +399,7 @@ public class PickServiceImpl implements PickService {
     @Transactional
     public boolean handlePayment(OpenCardDTO openCardDTO) {
         // Buyer 정보 가져오기
-        PersonalUser buyer = personalUserRepository.findByPersonalId(openCardDTO.getBuyerId());
+        PersonalUser buyer = personalUserRepository.findByUser_UserId(openCardDTO.getBuyerId());
         if(buyer == null) {
             throw new RuntimeException("personal user not found");
         }
@@ -427,7 +445,7 @@ public class PickServiceImpl implements PickService {
     @Override
     public PickAndScrapDTO scrapUser(PickAndScrapDTO pickAndScrapDTO) {
 
-        CompanyUser companyUser = companyUserRepository.findByCompanyId(pickAndScrapDTO.getCompanyId());
+        CompanyUser companyUser = companyUserRepository.findByUser_UserId(pickAndScrapDTO.getUserId());
         if(companyUser == null) {
             throw new RuntimeException("companyUser user not found");
         }
@@ -456,7 +474,7 @@ public class PickServiceImpl implements PickService {
         pickAndScrapRepository.save(pickAndScrap);
 
         return PickAndScrapDTO.builder()
-                .companyId(companyUser.getCompanyId())
+                .userId(companyUser.getUser().getUserId())
                 .personalId(personalUser.getPersonalId())
                 .scrap(pickAndScrap.isScrap())
                 .build();
@@ -466,7 +484,7 @@ public class PickServiceImpl implements PickService {
     @Transactional
     @Override
     public PickAndScrapDTO pickUser(PickAndScrapDTO pickAndScrapDTO) {
-        CompanyUser companyUser = companyUserRepository.findByCompanyId(pickAndScrapDTO.getCompanyId());
+        CompanyUser companyUser = companyUserRepository.findByUser_UserId(pickAndScrapDTO.getUserId());
         PersonalUser personalUser = personalUserRepository.findByPersonalId(pickAndScrapDTO.getPersonalId());
         if(companyUser == null || personalUser == null){
             throw new RuntimeException("User not found");
@@ -486,7 +504,7 @@ public class PickServiceImpl implements PickService {
         pickAndScrapRepository.save(pickAndScrap);
 
         return PickAndScrapDTO.builder()
-                .companyId(companyUser.getCompanyId())
+                .userId(companyUser.getUser().getUserId())
                 .personalId(personalUser.getPersonalId())
                 .pick(pickAndScrap.isPick())
                 .build();
