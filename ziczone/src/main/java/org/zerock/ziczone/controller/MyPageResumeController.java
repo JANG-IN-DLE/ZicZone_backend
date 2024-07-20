@@ -7,8 +7,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.dto.mypage.ResumeDTO;
+import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.service.myPage.ResumeService;
 
@@ -23,7 +25,7 @@ public class MyPageResumeController {
     private final ResumeService resumeService;
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
-
+    private final PersonalUserRepository personalUserRepository;
 
     /**
      * 새로운 이력서를 저장합니다.
@@ -41,7 +43,9 @@ public class MyPageResumeController {
             @RequestPart(value = "portfolios", required = false) List<MultipartFile> portfolios) {
 
         ResumeDTO resumeDTO = convertJsonToResumeDTO(resumeDTOString);
-        resumeDTO.setPersonalId(userId);
+        User user = userRepository.findByUserId(userId);
+        PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
+        resumeDTO.setPersonalId(personalUser.getPersonalId());
         ResumeDTO savedResume = resumeService.saveResume(resumeDTO, resumePhoto, personalState, portfolios);
         return ResponseEntity.ok("Success Create Resume");
     }
@@ -104,12 +108,15 @@ public class MyPageResumeController {
 
     /**
      * 특정 사용자 ID의 이력서를 조회합니다.
-     * @param userId 조회할 사용자 ID
+     * @param userId 조회할 사용자 IDmy
      * @return 조회된 이력서 정보
      */
     @GetMapping("/user/{userId}")
     public ResponseEntity<ResumeDTO> getResumeByUserId(@PathVariable Long userId) {
-        ResumeDTO resumeDTO = resumeService.getResumeByUserId(userId);
+        User user = userRepository.findByUserId(userId);
+        PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
+
+        ResumeDTO resumeDTO = resumeService.getResumeByUserId(personalUser.getPersonalId());
         return ResponseEntity.ok(resumeDTO);
     }
 

@@ -10,7 +10,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PersonalUserPointDTO {
-    private Long userId;
-    private String userName;
-    private Long remainingPoints;
+    private Integer berryPoint;
 }
