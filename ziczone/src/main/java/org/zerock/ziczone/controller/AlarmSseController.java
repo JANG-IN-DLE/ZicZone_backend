@@ -38,7 +38,7 @@ public class AlarmSseController {
 
         SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
         sseEmitters.put(userId, emitter);
-        log.info("Subscribe to user id : " + userId);
+//        log.info("Subscribe to user id : " + userId);
 
         emitter.onCompletion(() -> sseEmitters.remove(userId));
         emitter.onTimeout(() -> sseEmitters.remove(userId));
@@ -89,5 +89,17 @@ public class AlarmSseController {
         log.info("Initial alarm list : {}", responseAlarmDTO);
 
         return ResponseEntity.ok(responseAlarmDTO);
+    }
+
+    // 로그아웃
+    @PostMapping("/logout/{userId}")
+    public ResponseEntity<String> logout(@PathVariable Long userId) {
+        //sse emitter 조회
+        SseEmitter emitter = sseEmitters.get(userId);
+        if (emitter != null) {
+            emitter.complete(); //연결종료
+            sseEmitters.remove(userId); //emitter맵에서 제거
+        }
+        return ResponseEntity.ok("logout successful");
     }
 }
