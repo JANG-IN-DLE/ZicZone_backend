@@ -1,5 +1,6 @@
 package org.zerock.ziczone.exception;
 
+import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -7,9 +8,19 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.zerock.ziczone.dto.error.ErrorResponse;
 import org.zerock.ziczone.exception.mypage.*;
 import org.zerock.ziczone.exception.payment.PaymentNotFoundException;
+import org.zerock.ziczone.service.mainPage.MainPageServiceImpl;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler  {
+
+    private final MainPageServiceImpl mainPageServiceImpl;
+
+    public GlobalExceptionHandler(MainPageServiceImpl mainPageServiceImpl) {
+        this.mainPageServiceImpl = mainPageServiceImpl;
+    }
 
     // 회사 정보를 찾지 못했을 때 예외 처리
     @ExceptionHandler(CompanyNotFoundException.class)
@@ -73,5 +84,15 @@ public class GlobalExceptionHandler  {
                 .code(HttpStatus.UNAUTHORIZED.value())
                 .build();
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+    }
+
+    // 리소스를 찾지 못했을 때 예외 처리
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .message(ex.getMessage())
+                .code(HttpStatus.NOT_FOUND.value())
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
 }
