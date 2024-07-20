@@ -7,6 +7,7 @@ import org.zerock.ziczone.domain.member.PersonalUser;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -20,50 +21,42 @@ public class Resume {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long resumeId; // id
 
-    @Column(length = 100, nullable = false)
+    @Column(length = 100, nullable = true)
     private String resumeName; // 지원서에 들어갈 이름
 
-    @Column(length = 100, nullable = false)
+    @Column(length = 100, nullable = true)
     private String resumeDate; // 생년월일
 
-    @Column(length = 100, nullable = false)
+    @Column(length = 100, nullable = true)
     private String resumeEmail; //이메일
 
-    @Column(length = 100, nullable = false)
+    @Column(length = 100, nullable = true)
     private String phoneNum; // 전화번호
 
-    @Column(length = 2048, nullable = false)
+    @Column(columnDefinition = "TEXT", nullable = true)
     private String resumePhotoUrl; // 지원서 증명사진 URL
-    @Column(length = 2048, nullable = false)
-    private String resumePhotoUUID; // 지원서 증명사진 UUID
-    @Column(length = 2048, nullable = false)
+    @Column(columnDefinition = "TEXT", nullable = true)
+    private String resumePhotoUuid; // 지원서 증명사진 UUID
+    @Column(columnDefinition = "TEXT", nullable = true)
     private String resumePhotoFileName; // 지원서 증명사진 FileName
 
 
-    //@Column(length = 2048)
-    //private String resumePhotoUrl; // 지원서 증명사진 URL
-
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false, updatable = true)
     private LocalDateTime resumeCreate; // 지원서 생성 날짜
 
     @UpdateTimestamp
     @Column(nullable = false)
     private LocalDateTime resumeUpdate; // 지원서 업데이트 날짜
 
-    @Column(length = 2048, nullable = false)
+    @Column(columnDefinition = "TEXT", nullable = true)
     private String personalStateUrl; // 자소서 PDF Url
 
-    @Column(length = 2048, nullable = false)
-    private String personalStateUUID; // 자소서 PDF UUID
+    @Column(columnDefinition = "TEXT", nullable = true)
+    private String personalStateUuid; // 자소서 PDF UUID
 
-    @Column(length = 2048, nullable = false)
+    @Column(columnDefinition = "TEXT", nullable = true)
     private String personalStateFileName; // 자소서 PDF FileName
-
-
-
-//    @Column(length = 2048)
-//    private String personalStateUrl; // 자소서 PDF URL
 
 
 

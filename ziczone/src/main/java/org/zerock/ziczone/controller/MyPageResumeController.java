@@ -18,7 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/personal/resumes")
 @RequiredArgsConstructor
-public class MyPageResumeConroller {
+public class MyPageResumeController {
 
     private final ResumeService resumeService;
     private final UserRepository userRepository;

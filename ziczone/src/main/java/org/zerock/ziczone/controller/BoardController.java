@@ -42,48 +42,17 @@ public class BoardController {
      * @return ResponseEntity<Map<String, String>> 응답 메시지
      */
     @PostMapping("/api/personal/board/post")
-    public ResponseEntity<Map<String, String>> createBoard(@RequestParam("berry") int corrPoint,
-                                                           @RequestParam("title") String corrTitle,
-                                                           @RequestParam("content") String corrContent,
-                                                           @RequestParam("file") MultipartFile corrPdf,
-                                                           @RequestParam("userId") Long userId) {
-        String bucketName = "ziczone-bucket-jangindle";
-        String folderName = "CorrPdf/";
-        String objectName = folderName + corrPdf.getOriginalFilename();
+    public ResponseEntity<Map<String, Long>> createBoard(@RequestParam("berry") int corrPoint,
+                                                         @RequestParam("title") String corrTitle,
+                                                         @RequestParam("content") String corrContent,
+                                                         @RequestParam("file") MultipartFile corrPdf,
+                                                         @RequestParam("userId") Long userId) {
+        Long corrId = boardService.boardRegister(corrPoint, corrTitle, corrContent, corrPdf, userId);
 
-        try {
-            // S3에 업로드할 파일의 메타데이터 설정하는 객체
-            ObjectMetadata metadata = new ObjectMetadata();
-            // 파일 크기를 메타데이터에 설정
-            metadata.setContentLength(corrPdf.getSize());
-            // 파일의 MIME 타입을 "application/pdf"로 설정
-            metadata.setContentType("application/pdf");
-            // S3에 파일을 업로드
-            amazonS3.putObject(new PutObjectRequest(bucketName, objectName, corrPdf.getInputStream(), metadata));
-            // 업로드된 파일의 URL 가져오기
-            String fileUrl = amazonS3.getUrl(bucketName, objectName).toString();
+        Map<String, Long> response = new HashMap<>();
+        response.put("corrId", corrId);
 
-            // 업로드된 파일의 접근 제어 리스트 가져오기
-            AccessControlList accessControlList = amazonS3.getObjectAcl(bucketName, objectName);
-            // 모든 사용자에게 읽기 권한 부여
-            accessControlList.grantPermission(GroupGrantee.AllUsers, Permission.Read);
-            // 설정한 접근 제어 리스트를 S3 객체에 적용
-            amazonS3.setObjectAcl(bucketName, objectName, accessControlList);
-
-            // 서비스 레이어를 호출하여 게시물 등록
-            Long corrId = boardService.boardRegister(corrPoint, corrTitle, corrContent, fileUrl, userId);
-
-            // 응답 메시지에 게시물 ID 추가
-            Map<String, String> response = new HashMap<>();
-            response.put("corrId", corrId.toString());
-            response.put("fileName", corrPdf.getOriginalFilename());
-            // 응답 메시지 반환
-            return ResponseEntity.ok(response);
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "파일 업로드 실패: " + e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "서버 오류: " + e.getMessage()));
-        }
+        return ResponseEntity.ok(response);
     }
 
     /**

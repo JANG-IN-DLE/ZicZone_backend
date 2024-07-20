@@ -5,6 +5,8 @@ import org.zerock.ziczone.dto.help.CommentDTO;
 import org.zerock.ziczone.dto.mypage.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 public interface MyPageService {
@@ -18,6 +20,8 @@ public interface MyPageService {
     // Scrap 탭 리스트 조회 (기업 회원)
     List<PersonalUserDTO> getScrapByCompanyUsers(Long userId);
 
+    // 유저 비밀번호 확인
+    Map<String, Object> PasswordCheck(Long userId, Map<String, Object> json);
 
     // 개인유저 정보 조회
     PersonalUserDTO getPersonalUserDTO(Long userId);

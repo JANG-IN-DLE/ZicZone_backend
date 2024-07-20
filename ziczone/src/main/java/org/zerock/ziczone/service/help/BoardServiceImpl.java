@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.zerock.ziczone.domain.board.Board;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
@@ -23,10 +24,13 @@ import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.repository.payment.PaymentRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
+import org.zerock.ziczone.service.storage.StorageService;
 
 import javax.transaction.Transactional;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -41,6 +45,9 @@ public class BoardServiceImpl implements BoardService {
     private final TechStackRepository techStackRepository;
     private final PaymentRepository paymentRepository;
     private final CommentRepository commentRepository;
+    private final StorageService storageService;
+
+    final String BUCKETNAME = "ziczone-bucket-jangindle";
 
     /**
      * 게시물 등록
@@ -53,27 +60,36 @@ public class BoardServiceImpl implements BoardService {
      * @return Long      생성된 게시물 ID
      * @throws IllegalArgumentException 회원 ID가 없거나, 기업 회원이 게시물을 등록하려고 할 때 발생
      */
+    @Override
     @Transactional
-    public Long boardRegister(int corrPoint, String corrTitle, String corrContent, String corrPdf, Long userId) {
+    public Long boardRegister(int corrPoint, String corrTitle, String corrContent, MultipartFile corrPdf, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 userId"));
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(user.getUserId());
         Payment payment = paymentRepository.findByPersonalUser(personalUser);
+
         if (user.getUserType() != UserType.PERSONAL) {
             throw new IllegalArgumentException("개인 회원만 게시물을 등록할 수 있습니다.");
         }
-        if(payment.getBerryPoint() < corrPoint) {
+        if (payment.getBerryPoint() < corrPoint) {
             throw new IllegalArgumentException("보유한 베리 포인트가 부족합니다.");
         } else {
             payment.deductionBoardBerryPoint(corrPoint);
             paymentRepository.save(payment);
         }
 
+        String corrPdfUUID = UUID.randomUUID().toString();
+        Map<String, String> corrPdfUrl = storageService.uploadFile(corrPdf, "CorrPdf/", BUCKETNAME);
+
         Board board = Board.builder()
                 .corrPoint(corrPoint)
                 .corrTitle(corrTitle)
                 .corrContent(corrContent)
-//                .corrPdf(corrPdf)
+                .corrPdfUuid(corrPdfUUID)
+                .corrPdfFileName(corrPdf.getOriginalFilename())
+                .corrPdfUrl(corrPdfUrl.get("fileUrl"))
+                .corrPdfFileName(corrPdf.getOriginalFilename())
+                .corrPdfUuid(corrPdfUUID)
                 .corrView(0)
                 .user(user)
                 .build();
@@ -91,6 +107,7 @@ public class BoardServiceImpl implements BoardService {
      * @return BoardProfileCardDTO 조회된 사용자 프로필 정보
      * @throws IllegalArgumentException 회원 ID가 없거나, 개인 사용자 프로필이 없을 때 발생
      */
+    @Override
     @Transactional
     public BoardProfileCardDTO registerUserProfile(Long userId) {
         User user = userRepository.findById(userId)
@@ -141,7 +158,9 @@ public class BoardServiceImpl implements BoardService {
                 .corrPoint(board.getCorrPoint())
                 .corrTitle(board.getCorrTitle())
                 .corrContent(board.getCorrContent())
-//                .corrPdf(board.getCorrPdf())
+                .corrPdfFileName(board.getCorrPdfFileName())
+                .corrPdfUrl(board.getCorrPdfUrl())
+                .corrPdfUuid(board.getCorrPdfUuid())
                 .corrView(board.getCorrView())
                 .corrModify(board.getCorrModify())
                 .userId(user.getUserId())
@@ -243,7 +262,9 @@ public class BoardServiceImpl implements BoardService {
                             .corrPoint(board.getCorrPoint())
                             .corrTitle(board.getCorrTitle())
                             .corrContent(board.getCorrContent())
-//                            .corrPdf(board.getCorrPdf())
+                            .corrPdfUuid(board.getCorrPdfUuid())
+                            .corrPdfFileName(board.getCorrPdfFileName())
+                            .corrPdfUrl(board.getCorrPdfUrl())
                             .corrView(board.getCorrView())
                             .corrModify(board.getCorrModify())
                             .userId(user.getUserId())
@@ -278,7 +299,7 @@ public class BoardServiceImpl implements BoardService {
             throw new IllegalArgumentException("작성자만 수정할 수 있습니다.");
         }
 
-        board.change(boardDTO.getCorrTitle(), boardDTO.getCorrContent(), boardDTO.getCorrPdf());
+        board.change(boardDTO.getCorrTitle(), boardDTO.getCorrContent(), boardDTO.getCorrPdfFileName());
 
         boardRepository.save(board);
 
@@ -323,7 +344,9 @@ public class BoardServiceImpl implements BoardService {
                 .corrPoint(board.getCorrPoint())
                 .corrTitle(board.getCorrTitle())
                 .corrContent(board.getCorrContent())
-//                .corrPdf(board.getCorrPdf())
+                .corrPdfFileName(board.getCorrPdfFileName())
+                .corrPdfUrl(board.getCorrPdfUrl())
+                .corrPdfUuid(board.getCorrPdfUuid())
                 .corrView(board.getCorrView())
                 .userId(user.getUserId())
                 .userName(user.getUserName())
@@ -368,7 +391,9 @@ public class BoardServiceImpl implements BoardService {
                             .corrPoint(board.getCorrPoint())
                             .corrTitle(board.getCorrTitle())
                             .corrContent(board.getCorrContent())
-//                            .corrPdf(board.getCorrPdf())
+                            .corrPdfUuid(board.getCorrPdfUuid())
+                            .corrPdfFileName(board.getCorrPdfFileName())
+                            .corrPdfUrl(board.getCorrPdfUrl())
                             .corrView(board.getCorrView())
                             .commSelection(isCommentSelected)
                             .corrModify(board.getCorrModify())
