@@ -175,8 +175,8 @@ public class MyPageServiceImpl implements  MyPageService{
         if (logoFile != null && !logoFile.isEmpty()) {
             storageService.deleteFile(bucketName, folderName, companyUser.getCompanyLogoUuid());
             Map<String, String> S3uploadData = storageService.uploadFile(logoFile, folderName, bucketName);
-            companyLogoUrl = S3uploadData.get("companyLogoUrl");
-            companyLogoUuid = S3uploadData.get("companyLogoUuid");
+            companyLogoUrl = S3uploadData.get("fileUrl");
+            companyLogoUuid = S3uploadData.get("fileUUID");
             companyLogoFileName = logoFile.getOriginalFilename();
         }
 
@@ -198,6 +198,7 @@ public class MyPageServiceImpl implements  MyPageService{
         companyUserRepository.save(updatedCompanyUser);
         return "User Information Updated Successfully";
     }
+
 
 
 
