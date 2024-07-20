@@ -18,6 +18,7 @@ import org.zerock.ziczone.service.myPage.MyPageService;
 import org.zerock.ziczone.service.myPage.MyPageServiceImpl;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -40,6 +41,22 @@ public class MyPageController {
         CompanyUserDTO companyUserDTO = mypageService.getCompanyUserDTO(userId);
         return ResponseEntity.ok(companyUserDTO);
     }
+
+    /**
+     * 비밀번호 확인 요청
+     * @param userId
+     * @param json
+     * @return ResponseEntity<PersonalUser OR CompanyUser>
+     */
+    @PostMapping("/user/pw/{userId}")
+    public ResponseEntity<Map<String, Object>> getPasswordCheck(@PathVariable Long userId,
+                                                    @RequestBody Map<String,Object> json) {
+        Map<String, Object> result = mypageService.PasswordCheck(userId, json);
+        return ResponseEntity.ok(result);
+    }
+
+
+
 
     /**
      * 기업 회원 정보 수정

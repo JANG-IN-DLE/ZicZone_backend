@@ -33,6 +33,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -143,7 +144,7 @@ public class JoinServiceImpl implements JoinService {
         String uuid = UUID.randomUUID().toString(); //uuid
         String bucketName = "ziczone-bucket-jangindle-optimizer";
         String folderName = "CompanyLogo";
-        String companyLogoURL = storageService.uploadFile(companyLogoFile, folderName, uuid, bucketName);
+        Map<String, String> companyLogoURL = storageService.uploadFile(companyLogoFile, folderName, bucketName);
 
         //회원
         User user = User.builder()
@@ -164,7 +165,7 @@ public class JoinServiceImpl implements JoinService {
                 .companyYear(LocalDate.parse(companyUserJoinDTO.getCompanyYear(), formatter))
                 .companyLogoFileName(companyLogoFile.getOriginalFilename())
                 .companyLogoUuid(uuid)
-                .companyLogoUrl(companyLogoURL)
+                .companyLogoUrl(companyLogoURL.get("fileUrl"))
                 .companyCeo(companyUserJoinDTO.getCompanyCeo())
                 .build();
         companyUserRepository.save(companyUser);

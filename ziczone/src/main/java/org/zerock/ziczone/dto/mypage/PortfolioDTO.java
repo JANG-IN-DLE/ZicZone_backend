@@ -16,8 +16,8 @@ import javax.persistence.Column;
 public class PortfolioDTO {
     private Long portId;
     private String portFileUrl;    // PDF 파일명 Url
-    private String portFileUUID;    // PDF 파일명 UUID
-    private String portFileFileName;    // PDF 파일명 FileName
+    private String portFileUuid;    // PDF 파일명 UUID
+    private String portFileName;    // PDF 파일명 FileName
     private Long resumeId; // Resume ID to link to Resume entity
 
     // DTO to Entity
@@ -25,8 +25,8 @@ public class PortfolioDTO {
         return Portfolio.builder()
                 .portId(this.portId)
                 .portFileUrl(this.portFileUrl)
-                .portFileUuid(this.portFileUUID)
-                .portFileFileName(this.portFileFileName)
+                .portFileUuid(this.portFileUuid)
+                .portFileName(this.portFileName)
                 .resume(Resume.builder().resumeId(this.resumeId).build())
                 .build();
     }
@@ -36,8 +36,8 @@ public class PortfolioDTO {
         return PortfolioDTO.builder()
                 .portId(entity.getPortId())
                 .portFileUrl(entity.getPortFileUrl())
-                .portFileUUID(entity.getPortFileUuid())
-                .portFileFileName(entity.getPortFileFileName())
+                .portFileUuid(entity.getPortFileUuid())
+                .portFileName(entity.getPortFileName())
                 .resumeId(entity.getResume() != null ? entity.getResume().getResumeId() : null)
                 .build();
     }

@@ -42,7 +42,7 @@ public class Resume {
 
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false, updatable = true)
     private LocalDateTime resumeCreate; // 지원서 생성 날짜
 
     @UpdateTimestamp

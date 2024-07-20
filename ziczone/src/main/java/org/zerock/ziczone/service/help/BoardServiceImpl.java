@@ -79,7 +79,7 @@ public class BoardServiceImpl implements BoardService {
         }
 
         String corrPdfUUID = UUID.randomUUID().toString();
-        String corrPdfUrl = storageService.uploadFile(corrPdf, "CorrPdf/", corrPdfUUID, BUCKETNAME);
+        Map<String, String> corrPdfUrl = storageService.uploadFile(corrPdf, "CorrPdf/", BUCKETNAME);
 
         Board board = Board.builder()
                 .corrPoint(corrPoint)
@@ -87,9 +87,9 @@ public class BoardServiceImpl implements BoardService {
                 .corrContent(corrContent)
                 .corrPdfUuid(corrPdfUUID)
                 .corrPdfFileName(corrPdf.getOriginalFilename())
-                .corrPdfUrl(corrPdfUrl)
+                .corrPdfUrl(corrPdfUrl.get("fileUrl"))
                 .corrPdfFileName(corrPdf.getOriginalFilename())
-                .corrPdfUUID(corrPdfUUID)
+                .corrPdfUuid(corrPdfUUID)
                 .corrView(0)
                 .user(user)
                 .build();
