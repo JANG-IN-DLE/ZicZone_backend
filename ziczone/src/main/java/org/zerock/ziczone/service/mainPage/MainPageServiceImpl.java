@@ -40,7 +40,7 @@ public class MainPageServiceImpl implements MainPageService {
         return MainCompanyUserDTO.builder()
                 .userName(user.getUserName())
                 .email(user.getEmail())
-                .companyLogo(companyUser.getCompanyLogo())
+                .companyLogo(companyUser.getCompanyLogoUrl())
                 .build();
     }
 
@@ -54,7 +54,7 @@ public class MainPageServiceImpl implements MainPageService {
                 .userName(user.getUserName())
                 .email(user.getEmail())
                 .gender(personalUser.getGender())
-                .berryPoint(payment.getBerryPoint())
+//                .berryPoint(payment.getBerryPoint())
                 .build();
     }
 }

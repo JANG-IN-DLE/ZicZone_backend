@@ -36,7 +36,10 @@ import org.zerock.ziczone.repository.tech.TechRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
 import org.zerock.ziczone.service.storage.StorageService;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -62,6 +65,55 @@ public class MyPageServiceImpl implements  MyPageService{
 
     private String hashPassword(String password){
         return passwordEncoder.encode(password);
+    }
+
+    @Override
+    public Map<String, Object> PasswordCheck(Long userId, Map<String, Object> json) {
+        String role = (String) json.get("role");
+        String password = (String) json.get("password");
+
+        // 유저가 가입되어있는지 확인하는 로직 없을 경우 예외 발생
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(String.format("User with ID %d not found", userId)));
+
+        // 유저 테이블의 암호화된 비밀번호와 유저가 입력한 비밀번호가 매치(값은 값)인지 비교 틀리면 예외 발생
+        if(!passwordEncoder.matches(password, user.getPassword())){
+            throw new InvalidPasswordException("Current password is incorrect");
+        }
+
+        Map<String, Object> resultJson = new HashMap<>();
+
+        // 기업회원의 경우
+        /**  "COMPANY".equals(role) 방식과
+         *   role.equals("COMPANY") 방식의 차이점은 NULL예외 발생의 차이가 있습니다.
+         *   객체를 기준으로 비교하면 null을 반환하여 예외가 발생할 수 있다.
+         *   문자열을 기준으로 비교하면 null을 발생시키지 않습니다.
+         *
+         */
+        if("COMPANY".equals(role)){
+            CompanyUser companyUser = companyUserRepository.findByUser_UserId(userId);
+            if (companyUser == null){
+                throw new CompanyNotFoundException("Company User Not Found");
+            }
+            CompanyUserDTO companyUserDTO = convertToCompanyUserDTO(user,companyUser);
+            resultJson.put("name", companyUserDTO.getUser().getUserName());
+            resultJson.put("companyLogoUrl", companyUserDTO.getCompanyLogoUrl());
+            resultJson.put("companyAddr", companyUserDTO.getCompanyAddr());
+//            개인회원의 경우
+        }else if("PERSONAL".equals(role)){
+            PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
+            if (personalUser == null){
+                throw new PersonalNotFoundException("Personal User Not Found");
+            }
+            PersonalUserDTO personalUserDTO = convertToPersonalUserDTO(user, personalUser);
+            resultJson.put("personalCareer", personalUserDTO.getPersonalCareer());
+            resultJson.put("isPersonalVisible", personalUserDTO.isPersonalVisible());
+            resultJson.put("isCompanyVisible", personalUserDTO.isCompanyVisible());
+        }
+        // 공통으로 사용하는 소개 추가
+        resultJson.put("userIntro",user.getUserIntro());
+
+        return resultJson;
     }
 
     /**
@@ -100,17 +152,33 @@ public class MyPageServiceImpl implements  MyPageService{
             hashPassword(companyUserUpdateDTO.getChangePassword());
         }
 
-        String companyLogoURL = companyUserUpdateDTO.getCompanyLogo();
+        String companyLogoURL = companyUserUpdateDTO.getCompanyLogoUrl();
+//        String uuid = UUID.randomUUID().toString();
+            String bucketName= "ziczone-bucket-jangindle-optimizer";
+            String folderName = "resumePhoto";
+        String companyLogoUrl = companyUser.getCompanyLogoUrl();
+        String companyLogoUuid = companyUser.getCompanyLogoUuid();
+        String companyLogoFileName = companyUser.getCompanyLogoFileName();
         if(companyLogoURL != null && !companyLogoURL.isEmpty()){
             //클라우드 오브젝트 스토리지 버켓 관련 설정
-            String folderName = "ziczone-bucket";
-            String bucketName = "resumePhoto";
-            String objectName = folderName+ companyLogoFile.getOriginalFilename();
-            companyLogoURL = storageService.uploadFile(companyLogoFile, folderName, objectName, bucketName);
+            Map<String, String> S3uploadData = storageService.uploadFile(companyLogoFile, folderName, bucketName);
+            companyLogoUrl = S3uploadData.get("companyLogoUrl");
+            companyLogoUuid = S3uploadData.get("companyLogoUuid");
+            companyLogoFileName = companyLogoFile.getOriginalFilename();
+        }else if(companyLogoURL == null && companyLogoURL.isEmpty()){
+            if(companyUser.getCompanyLogoUrl() != null && !companyUser.getCompanyLogoUrl().isEmpty()){
+                storageService.deleteFile(bucketName,folderName,companyUser.getCompanyLogoUuid());
+                companyLogoUrl = null;
+                companyLogoUuid = null;
+                companyLogoFileName = null;
+            }
         }
+
         CompanyUser updatedCompanyUser = companyUser.toBuilder()
                 .companyAddr(companyUserUpdateDTO.getCompanyAddr())
-                .companyLogo(companyUserUpdateDTO.getCompanyLogo())
+                .companyLogoUrl(companyLogoUrl)
+                .companyLogoUuid(companyLogoUuid)
+                .companyLogoFileName(companyLogoFileName)
                 .user(user)
                 .build();
 
@@ -303,6 +371,8 @@ public class MyPageServiceImpl implements  MyPageService{
                 .toList();
     }
 
+
+
 //    나의 게시물 리스트 조회는 BoardService 에 작성되어 있습니다.
 
     /**
@@ -374,7 +444,9 @@ public class MyPageServiceImpl implements  MyPageService{
                             .companyId(companyUser.getCompanyId())
                             .companyNum(companyUser.getCompanyNum())
                             .companyAddr(companyUser.getCompanyAddr())
-                            .companyLogo(companyUser.getCompanyLogo())
+                            .companyLogoUrl(companyUser.getCompanyLogoUrl())
+                            .companyLogoFileName(companyUser.getCompanyLogoFileName())
+                            .companyLogoUuid(companyUser.getCompanyLogoUuid())
                             .companyCeo(companyUser.getCompanyCeo())
                             .companyYear(companyUser.getCompanyYear())
                             .build();
@@ -424,7 +496,9 @@ public class MyPageServiceImpl implements  MyPageService{
                 .companyId(companyUser.getCompanyId())
                 .companyNum(companyUser.getCompanyNum())
                 .companyAddr(companyUser.getCompanyAddr())
-                .companyLogo(companyUser.getCompanyLogo())
+                .companyLogoUrl(companyUser.getCompanyLogoUrl())
+                .companyLogoUuid(companyUser.getCompanyLogoUuid())
+                .companyLogoFileName(companyUser.getCompanyLogoFileName())
                 .companyCeo(companyUser.getCompanyCeo())
                 .companyYear(companyUser.getCompanyYear())
                 .user(userDTO)

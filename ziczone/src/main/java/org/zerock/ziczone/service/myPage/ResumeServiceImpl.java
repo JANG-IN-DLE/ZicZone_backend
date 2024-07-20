@@ -2,6 +2,7 @@ package org.zerock.ziczone.service.myPage;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.juli.logging.Log;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,11 +19,7 @@ import org.zerock.ziczone.repository.tech.TechStackRepository;
 import org.zerock.ziczone.service.storage.StorageService;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,53 +40,35 @@ public class ResumeServiceImpl implements ResumeService {
     private final ArchiveRepository archiveRepository;
     private final PersonalUserRepository personalUserRepository;
 
+    final static String BUCKET_NAME = "ziczone-bucket-jangindle-optimizer";
+
     @Transactional
     @Override
     public ResumeDTO saveResume(ResumeDTO resumeDTO, MultipartFile resumePhoto, MultipartFile personalState, List<MultipartFile> portfolios) {
         Long personalId = resumeDTO.getPersonalId();
-        Resume existingResume = resumeRepository.findByPersonalUser_PersonalId(personalId);
+        validatePersonalId(personalId);
 
-        // personalId가 존재하는지 확인
-        if (!personalUserRepository.existsById(personalId)) {
-            throw new IllegalArgumentException("Invalid personal ID: " + personalId);
-        }
-        // 지원서가 존재하는지 확인
+        Resume existingResume = resumeRepository.findByPersonalUser_PersonalId(personalId);
         if (existingResume != null) {
-            // 지원서가 이미 존재하는 경우 커스텀 예외 발생
             throw new ResumeAlreadyExistsException("Resume already exists for personal ID: " + personalId);
         }
 
-        String bucketName = "ziczone-bucket-jangindle-optimizer";
-        String resumePhotoUrl = uploadFileAndDeleteOld(resumePhoto, "resumePhoto/", generateFileName("resumePhoto/", resumePhoto), bucketName, null);
-        String personalStateUrl = uploadFileAndDeleteOld(personalState, "personalState/", generateFileName("personalState/", personalState), bucketName, null);
-        List<String> portfolioUrls = uploadPortfolios(portfolios, bucketName);
+        // 파일 업로드
+        Map<String, String> resumePhotoData = uploadFile(resumePhoto, "resumePhoto");
+        Map<String, String> personalStateData = uploadFile(personalState, "personalState");
 
+        log.info("resumePhotoData {}",resumePhotoData);
+        log.info("personalStateData {}",personalStateData);
+        List<Map<String, String>> portfolioFiles = uploadPortfolios(portfolios);
+        log.info("portfolioFiles {}", portfolioFiles);
         PersonalUser personalUser = personalUserRepository.findByPersonalId(personalId);
 
-        Resume resume = resumeDTO.toEntity().toBuilder()
-                .resumePhoto(resumePhotoUrl)
-                .personalState(personalStateUrl)
-                .personalUser(personalUser)
-                .build();
+        // Resume 객체 생성
+        Resume resume = buildResume(resumeDTO, resumePhotoData, personalStateData, personalUser);
+        resumeRepository.save(resume);
+        saveRelatedEntities(resume, resumeDTO, portfolioFiles);
 
-        resume = resumeRepository.save(resume);
-        saveRelatedEntities(resume, resumeDTO, portfolioUrls);
-
-
-
-        return ResumeDTO.fromEntity(resume).toBuilder()
-                .archive(resumeDTO.getArchive() != null ? resumeDTO.getArchive() : new ArchiveDTO())
-                .certificates(resumeDTO.getCertificates() != null ? resumeDTO.getCertificates() : Collections.emptyList())
-                .educations(resumeDTO.getEducations() != null ? resumeDTO.getEducations() : Collections.emptyList())
-                .careers(resumeDTO.getCareers() != null ? resumeDTO.getCareers() : Collections.emptyList())
-                .curriculums(resumeDTO.getCurriculums() != null ? resumeDTO.getCurriculums() : Collections.emptyList())
-                .etcs(resumeDTO.getEtcs() != null ? resumeDTO.getEtcs() : Collections.emptyList())
-                .jobPositions(resumeDTO.getJobPositions() != null ? resumeDTO.getJobPositions() : Collections.emptyList())
-                .techStacks(resumeDTO.getTechStacks() != null ? resumeDTO.getTechStacks() : Collections.emptyList())
-                .portfolios(portfolioUrls.stream()
-                        .map(url -> PortfolioDTO.builder().portFile(url).build())
-                        .collect(Collectors.toList()))
-                .build();
+        return buildResumeDTO(resume, resumeDTO, portfolioFiles);
     }
 
     @Transactional
@@ -101,136 +80,227 @@ public class ResumeServiceImpl implements ResumeService {
 
         Resume existingResume = resumeRepository.findById(resumeDTO.getResumeId())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid resume ID: " + resumeDTO.getResumeId()));
-        log.info("기존 이력서: {}", existingResume);
-        log.info("1.. resumePhoto.getOriginalFilename ::> {}", resumePhoto.getOriginalFilename());
-        log.info("1.. personalState.getOriginalFilename ::> {}", personalState.getOriginalFilename());
-        log.info("portfolios.stream.toList ::> {}",portfolios.stream().map(MultipartFile::getOriginalFilename).collect(Collectors.toList()));
-        log.info("1.. size ::> {}", portfolios.size());
-        log.info("portfolios.stream().allMatch(MultipartFile::isEmpty) ::> {} ", portfolios.stream().allMatch(MultipartFile::isEmpty));
-        log.info("1-2.. existingResume ::> {}", existingResume);
 
+        // 로그 추가 - 시작
+        log.info("Updating resume for userId: {}, resumeId: {}", userId, resumeDTO.getResumeId());
+        log.info("Updating resume Start(Before): {}, DTO: {}", userId, resumeDTO);
 
+        // 파일 처리
+        Map<String, String> resumePhotoData = processFileUpdate(existingResume.getResumePhotoUrl(), existingResume.getResumePhotoUuid(), resumePhoto, "resumePhoto");
+        Map<String, String> personalStateData = processFileUpdate(existingResume.getPersonalStateUrl(), existingResume.getPersonalStateUuid(), personalState, "personalState");
+        List<Map<String, String>> portfolioFiles = processPortfoliosUpdate(resumeDTO.getResumeId(), portfolios);
 
-        log.info("2.. resumePhoto.isEmpty() ::> {}", resumePhoto.isEmpty());
-        log.info("2.. personalState.isEmpty() ::> {}", personalState.isEmpty());
-        log.info("2.. portfolios.isEmpty() ::> {}", portfolios.isEmpty());
-        log.info("2.. portfolios.stream().allMatch(MultipartFile::isEmpty) ::> {}", portfolios.stream().allMatch(MultipartFile::isEmpty));
+        log.info("portfolioFiles.stream().toList() {}", portfolioFiles.stream().toList());
+        log.info("resumePhotoData {}", resumePhotoData);
+        log.info("personalStateData {}", personalStateData);
+        // 엔티티 업데이트
+        existingResume = updateResumeEntity(existingResume, resumeDTO, resumePhotoData, personalStateData);
 
-        log.info("-----------------------------------------------------------------------------------------------");
+        // 연관 엔티티 저장
+        log.info("연관 엔티티 저장 보내기 전 existingResume {}", existingResume);
+        saveRelatedEntities(existingResume, resumeDTO, portfolioFiles);
 
-
-        String bucketName = "ziczone-bucket-jangindle-optimizer";
-
-        String resumePhotoUrl = existingResume.getResumePhoto();
-        if (!resumePhoto.isEmpty()) {
-            storageService.deleteFile(existingResume.getResumePhoto());
-            resumePhotoUrl = uploadFileAndDeleteOld(resumePhoto, "resumePhoto/", generateFileName("resumePhoto/", resumePhoto), bucketName, existingResume.getResumePhoto());
-        } else if (resumePhoto.isEmpty() && resumeDTO.getResumePhoto() == null) {
-            storageService.deleteFile(existingResume.getResumePhoto());
-            resumePhotoUrl = null;
-        }
-
-        String personalStateUrl = existingResume.getPersonalState();
-        if (!personalState.isEmpty()) {
-            storageService.deleteFile(existingResume.getPersonalState());
-            personalStateUrl = uploadFileAndDeleteOld(personalState, "personalState/", generateFileName("personalState/", personalState), bucketName, existingResume.getPersonalState());
-        } else if (personalState.isEmpty() && resumeDTO.getPersonalState() == null) {
-            storageService.deleteFile(existingResume.getPersonalState());
-            personalStateUrl = null;
-        }
-
-        List<String> portfolioUrls = !portfolios.stream().allMatch(MultipartFile::isEmpty) ? uploadPortfolios(portfolios, bucketName) : Collections.emptyList();
-
-
-        log.info("1. resumePhotoUrl ::: {}", resumePhotoUrl);
-        log.info("1. personalStateUrl ::: {}", personalStateUrl);
-        log.info("1. portfolioUrls ::: {}", portfolioUrls);
-
-        log.info("2. resumePhotoUrl.isEmpty() ::: {}", resumePhotoUrl == null || resumePhotoUrl.isEmpty());
-        log.info("2. personalStateUrl.isEmpty() ::: {}", personalStateUrl == null || personalStateUrl.isEmpty());
-        log.info("2. portfolios.stream().allMatch(MultipartFile::isEmpty) ::: {}", portfolios.stream().allMatch(MultipartFile::isEmpty));
-
-        log.info("3. resumeDTO ::: {}", resumeDTO);
-
-        existingResume = existingResume.toBuilder()
-                .resumeName(resumeDTO.getResumeName() != null ? resumeDTO.getResumeName() : existingResume.getResumeName())
-                .resumeDate(resumeDTO.getResumeDate() != null ? resumeDTO.getResumeDate() : existingResume.getResumeDate())
-                .phoneNum(resumeDTO.getPhoneNum() != null ? resumeDTO.getPhoneNum() : existingResume.getPhoneNum())
-                .resumeEmail(resumeDTO.getResumeEmail() != null ? resumeDTO.getResumeEmail() : existingResume.getResumeEmail())
-                .resumePhoto(resumePhotoUrl != null ? resumePhotoUrl : "")
-                .personalState(personalStateUrl != null ? personalStateUrl : "")
-                .resumeUpdate(LocalDateTime.now())
-                .build();
-
-        log.info("existingResume :: {}", existingResume);
-
-        saveRelatedEntities(existingResume, resumeDTO, portfolioUrls);
-
+        // 이력서 저장
         resumeRepository.save(existingResume);
 
-        log.info("4. resumeDTO :::> {}", resumeDTO);
-        log.info("4. existingResume :: {}", existingResume);
 
+        Resume afterResume = resumeRepository.findById(resumeDTO.getResumeId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid resume ID: " + resumeDTO.getResumeId()));
 
-        // DateTimeFormatter 생성
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        log.info("이력서 저장 후 afterResume {}", afterResume);
 
-        ResumeDTO.fromEntity(existingResume).toBuilder()
-                .resumeName(existingResume.getResumeName() != null ? existingResume.getResumeName() : Collections.emptyList().toString())
-                .resumeDate(existingResume.getResumeDate() != null ? existingResume.getResumeDate() : Collections.emptyList().toString())
-                .phoneNum(existingResume.getPhoneNum() != null ? existingResume.getPhoneNum() : Collections.emptyList().toString())
-                .resumePhoto(existingResume.getResumePhoto() != null ? existingResume.getResumePhoto() : Collections.emptyList().toString())
-                .resumeEmail(existingResume.getResumeEmail() != null ? existingResume.getResumeEmail() : Collections.emptyList().toString())
-                .resumeUpdate(existingResume.getResumeUpdate() != null ? existingResume.getResumeUpdate() : LocalDateTime.parse(LocalDateTime.now().format(formatter)))
-                .personalState(existingResume.getPersonalState() != null ? existingResume.getPersonalState() : Collections.emptyList().toString())
-                .archive(resumeDTO.getArchive() != null ? resumeDTO.getArchive() : new ArchiveDTO())
-                .certificates(resumeDTO.getCertificates() != null ? resumeDTO.getCertificates() : Collections.emptyList())
-                .educations(resumeDTO.getEducations() != null ? resumeDTO.getEducations() : Collections.emptyList())
-                .careers(resumeDTO.getCareers() != null ? resumeDTO.getCareers() : Collections.emptyList())
-                .curriculums(resumeDTO.getCurriculums() != null ? resumeDTO.getCurriculums() : Collections.emptyList())
-                .etcs(resumeDTO.getEtcs() != null ? resumeDTO.getEtcs() : Collections.emptyList())
-                .jobPositions(resumeDTO.getJobPositions() != null ? resumeDTO.getJobPositions() : Collections.emptyList())
-                .techStacks(resumeDTO.getTechStacks() != null ? resumeDTO.getTechStacks() : Collections.emptyList())
-                .portfolios(!portfolioUrls.isEmpty() ? portfolioUrls.stream()
-                        .map(url -> PortfolioDTO.builder().portFile(url).build())
-                        .collect(Collectors.toList()) : Collections.emptyList())
+        // 로그 추가 - 완료
+        log.info("Resume updated successfully for userId: {}, resumeId: {}", userId, resumeDTO.getResumeId());
+    }
+
+    @Transactional
+    @Override
+    public void deleteResume(Long resumeId) {
+        Resume resume = resumeRepository.findById(resumeId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid resume ID: " + resumeId));
+
+        // 포트폴리오 파일 삭제
+        List<Portfolio> portfolios = portfolioRepository.findByResume_ResumeId(resumeId);
+        if (portfolios != null && !portfolios.isEmpty()) {
+            portfolios.forEach(portfolio -> {
+                if (portfolio.getPortFileUuid() != null && !portfolio.getPortFileUuid().isEmpty()) {
+                    storageService.deleteFile(BUCKET_NAME, "portfolio", portfolio.getPortFileUuid());
+                }
+            });
+            portfolioRepository.deleteByResumeResumeId(resumeId);
+        }
+
+        // 이력서 사진 및 자기소개서 파일 삭제
+        if (resume.getResumePhotoUuid() != null && !resume.getResumePhotoUuid().isEmpty()) {
+            storageService.deleteFile(BUCKET_NAME, "resumePhoto", resume.getResumePhotoUuid());
+        }
+        if (resume.getPersonalStateUuid() != null && !resume.getPersonalStateUuid().isEmpty()) {
+            storageService.deleteFile(BUCKET_NAME, "personalState", resume.getPersonalStateUuid());
+        }
+
+        // 연관 엔티티 삭제
+        deleteRelatedEntities(resumeId, resume.getPersonalUser().getPersonalId());
+
+        // 이력서 삭제
+        resumeRepository.deleteById(resumeId);
+    }
+
+    // 개인 ID 유효성 검증
+    private void validatePersonalId(Long personalId) {
+        if (!personalUserRepository.existsById(personalId)) {
+            throw new IllegalArgumentException("Invalid personal ID: " + personalId);
+        }
+    }
+
+    // 파일 업로드
+    private Map<String, String> uploadFile(MultipartFile file, String folderName) {
+        if (file != null && !file.isEmpty()) {
+            return storageService.uploadFile(file, folderName, BUCKET_NAME);
+        }
+        return Collections.emptyMap();
+    }
+
+    // Resume 객체 생성
+    private Resume buildResume(ResumeDTO resumeDTO, Map<String, String> resumePhotoData, Map<String, String> personalStateData, PersonalUser personalUser) {
+        return resumeDTO.toEntity().toBuilder()
+                .resumePhotoUrl(resumePhotoData.getOrDefault("fileUrl", ""))
+                .resumePhotoUuid(resumePhotoData.getOrDefault("fileUUID", ""))
+                .resumePhotoFileName(resumePhotoData.getOrDefault("fileOriginalFileName", ""))
+                .personalStateUrl(personalStateData.getOrDefault("fileUrl", ""))
+                .personalStateUuid(personalStateData.getOrDefault("fileUUID", ""))
+                .personalStateFileName(personalStateData.getOrDefault("fileOriginalFileName" , ""))
+                .personalUser(personalUser)
                 .build();
     }
 
-    private List<String> uploadPortfolios(List<MultipartFile> portfolios, String bucketName) {
+    // 포트폴리오 파일 업로드
+    private List<Map<String, String>> uploadPortfolios(List<MultipartFile> portfolios) {
         return portfolios.stream()
-                .map(file -> {
-                    try {
-                        String fileName = generateFileName("portfolio/", file);
-                        return storageService.uploadFile(file, "portfolio/", fileName, bucketName);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
+                .filter(file -> file != null && !file.isEmpty())
+                .map(file -> storageService.uploadFile(file, "portfolio", BUCKET_NAME))
                 .collect(Collectors.toList());
     }
 
-    private void saveRelatedEntities(Resume existingResume, ResumeDTO resumeDTO, List<String> portfolioUrls) {
+    // 연관 엔티티 저장
+    private void saveRelatedEntities(Resume existingResume, ResumeDTO resumeDTO, List<Map<String, String>> portfolioFiles) {
         saveCertificates(existingResume, resumeDTO.getCertificates());
         saveEducations(existingResume, resumeDTO.getEducations());
         saveCareers(existingResume, resumeDTO.getCareers());
         saveCurriculums(existingResume, resumeDTO.getCurriculums());
         saveEtcs(existingResume, resumeDTO.getEtcs());
-        savePortfolios(existingResume, portfolioUrls);
+        savePortfolios(existingResume, portfolioFiles);
         saveJobPositions(existingResume.getPersonalUser(), resumeDTO.getJobPositions());
         saveTechStacks(existingResume.getPersonalUser(), resumeDTO.getTechStacks());
         saveArchive(existingResume, resumeDTO.getArchive());
     }
 
+    // ResumeDTO 객체 생성
+    private ResumeDTO buildResumeDTO(Resume resume, ResumeDTO resumeDTO, List<Map<String, String>> portfolioFiles) {
+        return ResumeDTO.fromEntity(resume).toBuilder()
+                .archive(resumeDTO.getArchive() != null ? resumeDTO.getArchive() : new ArchiveDTO())
+                .certificates(Optional.ofNullable(resumeDTO.getCertificates()).orElse(Collections.emptyList()))
+                .educations(Optional.ofNullable(resumeDTO.getEducations()).orElse(Collections.emptyList()))
+                .careers(Optional.ofNullable(resumeDTO.getCareers()).orElse(Collections.emptyList()))
+                .curriculums(Optional.ofNullable(resumeDTO.getCurriculums()).orElse(Collections.emptyList()))
+                .etcs(Optional.ofNullable(resumeDTO.getEtcs()).orElse(Collections.emptyList()))
+                .jobPositions(Optional.ofNullable(resumeDTO.getJobPositions()).orElse(Collections.emptyList()))
+                .techStacks(Optional.ofNullable(resumeDTO.getTechStacks()).orElse(Collections.emptyList()))
+                .portfolios(portfolioFiles.stream()
+                        .map(fileData -> PortfolioDTO.builder().portFileUrl(fileData.get("fileUrl")).build())
+                        .collect(Collectors.toList()))
+                .build();
+    }
+
+    // 파일 업데이트 처리
+    private Map<String, String> processFileUpdate(String existingFileUrl, String existingFileUUID, MultipartFile newFile, String folderName) {
+        Map<String, String> fileData = new HashMap<>();
+
+        // 새로운 파일이 없는 경우
+        if (newFile == null || newFile.isEmpty()) {
+            if (existingFileUUID != null && !existingFileUUID.isEmpty()) {
+                storageService.deleteFile(BUCKET_NAME, folderName, existingFileUUID);
+            }
+            fileData.put("fileUrl", existingFileUrl != null ? existingFileUrl : "");
+            fileData.put("fileUUID", existingFileUUID != null ? existingFileUUID : "");
+            fileData.put("fileOriginalFileName", newFile != null ? newFile.getOriginalFilename() : "");
+
+            log.info("fileData >>>  {}", fileData);
+            return fileData;
+        }
+
+        // 새로운 파일 업로드
+        fileData = storageService.uploadFile(newFile, folderName, BUCKET_NAME);
+
+        // 기존 파일 삭제
+        if (existingFileUUID != null && !existingFileUUID.isEmpty()) {
+            storageService.deleteFile(BUCKET_NAME, folderName, existingFileUUID);
+        }
+
+        return fileData;
+    }
+
+    // 포트폴리오 파일 업데이트 처리
+    private List<Map<String, String>> processPortfoliosUpdate(Long resumeId, List<MultipartFile> newPortfolios) {
+        List<Portfolio> existingPortfolios = portfolioRepository.findByResume_ResumeId(resumeId);
+
+        if (existingPortfolios != null && !existingPortfolios.isEmpty()) {
+            existingPortfolios.forEach(portfolio -> {
+                if (portfolio.getPortFileUuid() != null && !portfolio.getPortFileUuid().isEmpty()) {
+                    storageService.deleteFile(BUCKET_NAME, "portfolio", portfolio.getPortFileUuid());
+                }
+            });
+            portfolioRepository.deleteByResumeResumeId(resumeId);
+        }
+        for (MultipartFile file : newPortfolios) {
+            log.info("File Name: {}, File Size: {}", file.getOriginalFilename(), file.getSize());
+        }
+
+        return newPortfolios.stream()
+                .filter(file -> file != null && !file.isEmpty())
+                .map(file -> storageService.uploadFile(file, "portfolio", BUCKET_NAME))
+                .collect(Collectors.toList());
+    }
+
+    // 이력서 엔티티 업데이트
+    private Resume updateResumeEntity(Resume existingResume, ResumeDTO resumeDTO, Map<String, String> resumePhotoData, Map<String, String> personalStateData) {
+        log.info("Updating resume entity for resumeId: {}", existingResume.getResumeId());
+        log.info("Updating resume : {}", existingResume);
+
+        return existingResume.toBuilder()
+                .resumeName(Optional.ofNullable(resumeDTO.getResumeName()).orElse(existingResume.getResumeName()))
+                .resumeDate(Optional.ofNullable(resumeDTO.getResumeDate()).orElse(existingResume.getResumeDate()))
+                .phoneNum(Optional.ofNullable(resumeDTO.getPhoneNum()).orElse(existingResume.getPhoneNum()))
+                .resumeEmail(Optional.ofNullable(resumeDTO.getResumeEmail()).orElse(existingResume.getResumeEmail()))
+                .resumeEmail(Optional.ofNullable(resumeDTO.getResumeEmail()).orElse(existingResume.getResumeEmail()))
+
+//                .resumePhotoUrl(resumePhotoData.get("fileUrl").isEmpty() ? null : resumePhotoData.get("fileUrl"))
+//                .resumePhotoUuid(resumePhotoData.get("fileUUID").isEmpty() ? null : resumePhotoData.get("fileUUID"))
+//                .resumePhotoFileName(resumePhotoData.get("fileOriginalFileName").isEmpty() ? null : resumePhotoData.get("fileOriginalFileName"))
+//                .personalStateUrl(personalStateData.get("fileUrl").isEmpty() ? null : personalStateData.get("fileUrl"))
+//                .personalStateUuid(personalStateData.get("fileUUID").isEmpty() ? null : personalStateData.get("fileUUID"))
+//                .personalStateFileName(personalStateData.get("fileOriginalFileName").isEmpty() ? null : personalStateData.get("fileOriginalFileName"))
+//
+
+                .resumePhotoUrl(resumePhotoData.get("fileUrl").isEmpty() ? "" : resumePhotoData.get("fileUrl"))
+                .resumePhotoUuid(resumePhotoData.get("fileUUID").isEmpty() ? "" : resumePhotoData.get("fileUUID"))
+                .resumePhotoFileName(resumePhotoData.get("fileOriginalFileName").isEmpty() ? "" : resumePhotoData.get("fileOriginalFileName"))
+                .personalStateUrl(personalStateData.get("fileUrl").isEmpty() ? "" : personalStateData.get("fileUrl"))
+                .personalStateUuid(personalStateData.get("fileUUID").isEmpty() ? "" : personalStateData.get("fileUUID"))
+                .personalStateFileName(personalStateData.get("fileOriginalFileName").isEmpty() ? "" : personalStateData.get("fileOriginalFileName"))
+
+
+                .resumeUpdate(LocalDateTime.now())
+                .build();
+    }
+
+    // 연관 엔티티 저장 메서드들
     private void saveCertificates(Resume existingResume, List<CertificateDTO> certificates) {
         if (certificates != null) {
             certificateRepository.deleteByResumeResumeId(existingResume.getResumeId());
             certificates.forEach(certDTO -> {
                 Certificate certificate = Certificate.builder()
-                        .cert(certDTO.getCert() != null ? certDTO.getCert() : "")
-                        .certDate(certDTO.getCert_date() != null ? certDTO.getCert_date() : "")
+                        .cert(Optional.ofNullable(certDTO.getCert()).orElse(""))
+                        .certDate(Optional.ofNullable(certDTO.getCert_date()).orElse(""))
                         .resume(existingResume)
                         .build();
                 certificateRepository.save(certificate);
@@ -243,9 +313,9 @@ public class ResumeServiceImpl implements ResumeService {
             educationRepository.deleteByResumeResumeId(resume.getResumeId());
             educations.forEach(eduDTO -> {
                 Education education = Education.builder()
-                        .edu(eduDTO.getEdu() != null ? eduDTO.getEdu() : "")
-                        .credit(eduDTO.getCredit() != null ? eduDTO.getCredit() : "")
-                        .eduDate(eduDTO.getEdu_date() != null ? eduDTO.getEdu_date() : "")
+                        .edu(Optional.ofNullable(eduDTO.getEdu()).orElse(""))
+                        .credit(Optional.ofNullable(eduDTO.getCredit()).orElse(""))
+                        .eduDate(Optional.ofNullable(eduDTO.getEdu_date()).orElse(""))
                         .resume(resume)
                         .build();
                 educationRepository.save(education);
@@ -258,10 +328,10 @@ public class ResumeServiceImpl implements ResumeService {
             careerRepository.deleteByResumeResumeId(resume.getResumeId());
             careers.forEach(careerDTO -> {
                 Career career = Career.builder()
-                        .careerName(careerDTO.getCareer_name() != null ? careerDTO.getCareer_name() : "")
-                        .careerJob(careerDTO.getCareer_job() != null ? careerDTO.getCareer_job() : "")
-                        .careerPosition(careerDTO.getCareer_position() != null ? careerDTO.getCareer_position() : "")
-                        .careerDate(careerDTO.getCareer_date() != null ? careerDTO.getCareer_date() : "")
+                        .careerName(Optional.ofNullable(careerDTO.getCareer_name()).orElse(""))
+                        .careerJob(Optional.ofNullable(careerDTO.getCareer_job()).orElse(""))
+                        .careerPosition(Optional.ofNullable(careerDTO.getCareer_position()).orElse(""))
+                        .careerDate(Optional.ofNullable(careerDTO.getCareer_date()).orElse(""))
                         .resume(resume)
                         .build();
                 careerRepository.save(career);
@@ -274,9 +344,9 @@ public class ResumeServiceImpl implements ResumeService {
             curriculumRepository.deleteByResumeResumeId(resume.getResumeId());
             curriculums.forEach(curriDTO -> {
                 Curriculum curriculum = Curriculum.builder()
-                        .curriCompany(curriDTO.getCurri_company() != null ? curriDTO.getCurri_company() : "")
-                        .curriContent(curriDTO.getCurri_content() != null ? curriDTO.getCurri_content() : "")
-                        .curriDate(curriDTO.getCurri_date() != null ? curriDTO.getCurri_date() : "")
+                        .curriCompany(Optional.ofNullable(curriDTO.getCurri_company()).orElse(""))
+                        .curriContent(Optional.ofNullable(curriDTO.getCurri_content()).orElse(""))
+                        .curriDate(Optional.ofNullable(curriDTO.getCurri_date()).orElse(""))
                         .resume(resume)
                         .build();
                 curriculumRepository.save(curriculum);
@@ -289,8 +359,8 @@ public class ResumeServiceImpl implements ResumeService {
             etcRepository.deleteByResumeResumeId(resume.getResumeId());
             etcs.forEach(etcDTO -> {
                 Etc etc = Etc.builder()
-                        .etcContent(etcDTO.getEtc_content() != null ? etcDTO.getEtc_content() : "")
-                        .etcDate(etcDTO.getEtc_date() != null ? etcDTO.getEtc_date() : "")
+                        .etcContent(Optional.ofNullable(etcDTO.getEtc_content()).orElse(""))
+                        .etcDate(Optional.ofNullable(etcDTO.getEtc_date()).orElse(""))
                         .resume(resume)
                         .build();
                 etcRepository.save(etc);
@@ -298,13 +368,14 @@ public class ResumeServiceImpl implements ResumeService {
         }
     }
 
-    private void savePortfolios(Resume resume, List<String> portfolioUrls) {
-        if (portfolioUrls != null && !portfolioUrls.isEmpty()
-                || portfolioUrls.stream().allMatch(url -> url != null && !url.isEmpty())) {
+    private void savePortfolios(Resume resume, List<Map<String, String>> portfolioFiles) {
+        if (portfolioFiles != null && !portfolioFiles.isEmpty()) {
             portfolioRepository.deleteByResumeResumeId(resume.getResumeId());
-            portfolioUrls.forEach(url -> {
+            portfolioFiles.forEach(fileData -> {
                 Portfolio portfolio = Portfolio.builder()
-                        .portFile(url)
+                        .portFileUrl(fileData.get("fileUrl"))
+                        .portFileUuid(fileData.get("fileUUID"))
+                        .portFileName(fileData.get("fileOriginalFileName"))
                         .resume(resume)
                         .build();
                 portfolioRepository.save(portfolio);
@@ -342,32 +413,13 @@ public class ResumeServiceImpl implements ResumeService {
         if (archiveDTO != null) {
             archiveRepository.deleteByResumeResumeId(resume.getResumeId());
             Archive archive = Archive.builder()
-                    .archGit(archiveDTO.getArchGit() != null ? archiveDTO.getArchGit() : "")
-                    .archNotion(archiveDTO.getArchNotion() != null ? archiveDTO.getArchNotion() : "")
-                    .archBlog(archiveDTO.getArchBlog() != null ? archiveDTO.getArchBlog() : "")
+                    .archGit(Optional.ofNullable(archiveDTO.getArchGit()).orElse(""))
+                    .archNotion(Optional.ofNullable(archiveDTO.getArchNotion()).orElse(""))
+                    .archBlog(Optional.ofNullable(archiveDTO.getArchBlog()).orElse(""))
                     .resume(resume)
                     .build();
             archiveRepository.save(archive);
         }
-    }
-
-    @Transactional
-    @Override
-    public void deleteResume(Long resumeId) {
-        Resume resume = resumeRepository.findById(resumeId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid resume ID: " + resumeId));
-
-        List<Portfolio> portfolios = portfolioRepository.findByResume_ResumeId(resumeId);
-        if (portfolios != null && !portfolios.isEmpty()) {
-            portfolios.forEach(portfolio -> {
-                storageService.deleteFile(portfolio.getPortFile());
-            });
-        }
-
-        storageService.deleteFile(resume.getResumePhoto());
-        storageService.deleteFile(resume.getPersonalState());
-        deleteRelatedEntities(resumeId, resume.getPersonalUser().getPersonalId());
-        resumeRepository.deleteById(resumeId);
     }
 
     @Override
@@ -431,11 +483,15 @@ public class ResumeServiceImpl implements ResumeService {
                 .resumeName(resume.getResumeName())
                 .resumeDate(resume.getResumeDate())
                 .phoneNum(resume.getPhoneNum())
-                .resumePhoto(resume.getResumePhoto())
+                .resumePhotoUrl(resume.getResumePhotoUrl())
+                .resumePhotoUuid(resume.getResumePhotoUuid())
+                .resumePhotoFileName(resume.getResumePhotoFileName())
                 .resumeEmail(resume.getResumeEmail())
                 .resumeCreate(resume.getResumeCreate())
                 .resumeUpdate(resume.getResumeUpdate())
-                .personalState(resume.getPersonalState())
+                .personalStateUrl(resume.getPersonalStateUrl())
+                .personalStateUuid(resume.getPersonalStateUuid())
+                .personalStateFileName(resume.getPersonalStateFileName())
                 .personalId(resume.getPersonalUser().getPersonalId())
                 .certificates(certificates)
                 .educations(educations)
@@ -449,10 +505,10 @@ public class ResumeServiceImpl implements ResumeService {
                 .build();
     }
 
+    // 연관 엔티티 삭제
     private void deleteRelatedEntities(Long resumeId, Long personalUserId) {
         jobPositionRepository.deleteByPersonalUserPersonalId(personalUserId);
         techStackRepository.deleteByPersonalUserPersonalId(personalUserId);
-
         certificateRepository.deleteByResumeResumeId(resumeId);
         educationRepository.deleteByResumeResumeId(resumeId);
         careerRepository.deleteByResumeResumeId(resumeId);
@@ -460,18 +516,6 @@ public class ResumeServiceImpl implements ResumeService {
         etcRepository.deleteByResumeResumeId(resumeId);
         portfolioRepository.deleteByResumeResumeId(resumeId);
         archiveRepository.deleteByResumeResumeId(resumeId);
-    }
-
-    private String generateFileName(String folderName, MultipartFile file) {
-        return folderName + file.getOriginalFilename();
-    }
-
-    private String uploadFileAndDeleteOld(MultipartFile newFile, String folderName, String fileName, String bucketName, String oldFileUrl) {
-        String newFileUrl = storageService.uploadFile(newFile, folderName, fileName, bucketName);
-        if (newFileUrl != null && oldFileUrl != null && !oldFileUrl.isEmpty()) {
-            storageService.deleteFile(oldFileUrl);
-        }
-        return newFileUrl;
     }
 
 }

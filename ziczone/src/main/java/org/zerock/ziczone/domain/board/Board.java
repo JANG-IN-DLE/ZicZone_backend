@@ -1,14 +1,12 @@
 package org.zerock.ziczone.domain.board;
 
 import lombok.*;
-import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.zerock.ziczone.domain.member.User;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Getter
@@ -29,10 +27,12 @@ public class Board {
     private String corrContent;     // 게시물 내용
 
     @Column(length = 2048, nullable = false)
-    private String corrPdf;         // 게시물 파일
+    private String corrPdfUrl;         // 게시물 파일 URL
+    @Column(length = 2048, nullable = false)
+    private String corrPdfUuid;         // 게시물 파일 UUID
+    @Column(length = 2048, nullable = false)
+    private String corrPdfFileName;         // 게시물 파일 FileName
 
-//    @Column(length = 2048, nullable = false)
-//    private String corrPdfUrl;         // 게시물 파일 URL
 
     @Column(nullable = false)
     private Integer corrPoint;      // 게시물 등록 포인트
@@ -54,10 +54,10 @@ public class Board {
     private User user;                  // 유저 테이블
 
     // 게시물 수정할 때 사용하는 메소드(제목, 내용, pdf 파일 변경 가능)
-    public void change(String corrTitle, String corrContent, String corrPdf) {
+    public void change(String corrTitle, String corrContent, String corrPdfFileName) {
         this.corrTitle = corrTitle;
         this.corrContent = corrContent;
-        this.corrPdf = corrPdf;
+        this.corrPdfFileName = corrPdfFileName;
     }
 
     // 조회수 증가 메소드
