@@ -55,7 +55,7 @@ public class BoardServiceImpl implements BoardService {
      * @param corrPoint  게시물 포인트
      * @param corrTitle  게시물 제목
      * @param corrContent 게시물 내용
-     * @param corrPdf    첨부 파일 URL (String 형태)
+     * @param corrPdf    첨부 파일 (MultipartFile 형태)
      * @param userId     사용자 ID
      * @return Long      생성된 게시물 ID
      * @throws IllegalArgumentException 회원 ID가 없거나, 기업 회원이 게시물을 등록하려고 할 때 발생
@@ -79,7 +79,7 @@ public class BoardServiceImpl implements BoardService {
         }
 
         String corrPdfUUID = UUID.randomUUID().toString();
-        Map<String, String> corrPdfUrl = storageService.uploadFile(corrPdf, "CorrPdf/", BUCKETNAME);
+        Map<String, String> corrPdfUrl = storageService.uploadFile(corrPdf, "CorrPdf", BUCKETNAME);
 
         Board board = Board.builder()
                 .corrPoint(corrPoint)
@@ -285,25 +285,32 @@ public class BoardServiceImpl implements BoardService {
     /**
      * 게시물 수정
      *
-     * @param boardDTO 수정할 게시물 정보
-     * @return BoardDTO 수정된 게시물 정보
+     * @param corrId     게시물 ID
+     * @param userId     사용자 ID
+     * @param corrTitle  게시물 제목
+     * @param corrContent 게시물 내용
+     * @param corrPdf    첨부 파일 (MultipartFile 형태)
+     * @return Long      수정된 게시물 ID
      * @throws IllegalArgumentException 유효하지 않은 corrId이거나 작성자가 아닐 경우 발생
      */
     @Override
     @Transactional
-    public BoardDTO boardModify(BoardDTO boardDTO) {
-        Optional<Board> result = boardRepository.findById(boardDTO.getCorrId());
-        Board board = result.orElseThrow(() -> new IllegalArgumentException("유효하지 않은 corrId"));
+    public Long boardModify(Long corrId, Long userId, String corrTitle, String corrContent, MultipartFile corrPdf) {
+        Board board = boardRepository.findById(corrId)
+                .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 corrId"));
 
-        if(!board.getUser().getUserId().equals(boardDTO.getUserId())) {
+        if (!board.getUser().getUserId().equals(userId)) {
             throw new IllegalArgumentException("작성자만 수정할 수 있습니다.");
         }
 
-        board.change(boardDTO.getCorrTitle(), boardDTO.getCorrContent(), boardDTO.getCorrPdfFileName());
+        String corrPdfUUID = UUID.randomUUID().toString();
+        Map<String, String> corrPdfUrl = storageService.uploadFile(corrPdf, "CorrPdf", BUCKETNAME);
+
+        board.change(corrTitle, corrContent, corrPdfUUID, corrPdf.getOriginalFilename(), corrPdfUrl.get("fileUrl"));
 
         boardRepository.save(board);
 
-        return boardUserRead(board);
+        return board.getCorrId();
     }
 
     /**

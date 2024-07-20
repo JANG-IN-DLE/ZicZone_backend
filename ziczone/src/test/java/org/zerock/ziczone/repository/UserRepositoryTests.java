@@ -272,7 +272,7 @@ public class UserRepositoryTests {
         Board board = Board.builder()
                 .corrTitle("테스트 제목")
                 .corrContent("테스트 내용")
-                .corrPdf("테스트 pdf")
+//                .corrPdf("테스트 pdf")
                 .corrPoint(100)
                 .corrCreate(LocalDateTime.now())
                 .corrModify(LocalDateTime.now())

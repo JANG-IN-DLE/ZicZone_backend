@@ -15,7 +15,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @ToString
 public class Board {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long corrId;            // id
@@ -28,11 +27,12 @@ public class Board {
 
     @Column(length = 2048, nullable = false)
     private String corrPdfUrl;         // 게시물 파일 URL
+
     @Column(length = 2048, nullable = false)
     private String corrPdfUuid;         // 게시물 파일 UUID
+
     @Column(length = 2048, nullable = false)
     private String corrPdfFileName;         // 게시물 파일 FileName
-
 
     @Column(nullable = false)
     private Integer corrPoint;      // 게시물 등록 포인트
@@ -54,10 +54,12 @@ public class Board {
     private User user;                  // 유저 테이블
 
     // 게시물 수정할 때 사용하는 메소드(제목, 내용, pdf 파일 변경 가능)
-    public void change(String corrTitle, String corrContent, String corrPdfFileName) {
+    public void change(String corrTitle, String corrContent, String corrPdfUuid, String corrPdfFileName, String corrPdfUrl) {
         this.corrTitle = corrTitle;
         this.corrContent = corrContent;
+        this.corrPdfUuid = corrPdfUuid;
         this.corrPdfFileName = corrPdfFileName;
+        this.corrPdfUrl = corrPdfUrl;
     }
 
     // 조회수 증가 메소드
