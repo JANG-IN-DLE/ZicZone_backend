@@ -77,10 +77,10 @@ public class MyPageController {
 //        return ResponseEntity.ok(mypageService.updateCompanyUser(userId, payload, LogoFile));
 //    }
 @PutMapping("/company/{userId}")
-public ResponseEntity<String> companyUserUpdate(
-        @RequestParam("payload") String payloadStr,
-        @RequestPart(required = false) MultipartFile logoFile,
-        @PathVariable Long userId) {
+public ResponseEntity<String> companyUserUpdate(@PathVariable Long userId,
+        @RequestPart("payload") String payloadStr,
+        @RequestPart(value = "logoFile", required = false) MultipartFile logoFile
+) {
 
     ObjectMapper objectMapper = new ObjectMapper();
     Map<String, Object> payload;
