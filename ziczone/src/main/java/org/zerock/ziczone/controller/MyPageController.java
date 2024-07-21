@@ -1,24 +1,31 @@
 package org.zerock.ziczone.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.zerock.ziczone.domain.PayHistory;
+import org.zerock.ziczone.domain.member.PersonalUser;
+import org.zerock.ziczone.domain.member.User;
+import org.zerock.ziczone.domain.payment.Payment;
 import org.zerock.ziczone.dto.help.BoardDTO;
-import org.zerock.ziczone.dto.help.CommentDTO;
 import org.zerock.ziczone.dto.mypage.*;
+import org.zerock.ziczone.exception.mypage.PersonalNotFoundException;
 import org.zerock.ziczone.repository.PayHistoryRepository;
+import org.zerock.ziczone.repository.member.PersonalUserRepository;
+import org.zerock.ziczone.repository.member.UserRepository;
+import org.zerock.ziczone.repository.payment.PaymentRepository;
 import org.zerock.ziczone.service.help.BoardService;
 import org.zerock.ziczone.service.help.CommentService;
 import org.zerock.ziczone.service.myPage.MyPageService;
 import org.zerock.ziczone.service.myPage.MyPageServiceImpl;
 
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -29,6 +36,11 @@ public class MyPageController {
     private final MyPageServiceImpl myPageServiceImpl;
     private final BoardService boardService;
     private final CommentService commentService;
+    private final PaymentRepository paymentRepository;
+    private final PersonalUserRepository personalUserRepository;
+    private final UserRepository userRepository;
+    private final PayHistoryRepository payHistoryRepository;
+
 
     /**
      * 기업 유저 정보 조회
@@ -50,24 +62,40 @@ public class MyPageController {
      */
     @PostMapping("/user/pw/{userId}")
     public ResponseEntity<Map<String, Object>> getPasswordCheck(@PathVariable Long userId,
-                                                    @RequestBody Map<String,Object> json) {
+                                                                @RequestBody Map<String, Object> json
+//    ,@RequestHeader("Authorization") String authorizationHeader
+    ) {
         Map<String, Object> result = mypageService.PasswordCheck(userId, json);
         return ResponseEntity.ok(result);
     }
 
-
-
-
     /**
      * 기업 회원 정보 수정
-     * @param  @RequestBody companyUserUpdateDTO
-     * @param  @PathVariable userId
+     *
+     * @param @RequestBody  companyUserUpdateDTO
+     * @param @PathVariable userId
      * @return ResponseEntity.ok
      */
     @PutMapping("/company/{userId}")
-    public ResponseEntity<String> companyUserUpdate(@RequestBody CompanyUserUpdateDTO companyUserUpdateDTO, @PathVariable Long userId, MultipartFile file) {
-        return ResponseEntity.ok(mypageService.updateCompanyUser(userId, companyUserUpdateDTO, file));
+    public ResponseEntity<String> companyUserUpdate(@PathVariable Long userId,
+                                                    @RequestPart("payload") String payloadStr,
+                                                    @RequestPart(value = "logoFile", required = false) MultipartFile logoFile
+    ) {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, Object> payload;
+        try {
+            payload = objectMapper.readValue(payloadStr, Map.class);
+        } catch (IOException e) {
+            return ResponseEntity.badRequest().body("Invalid JSON format in payload");
+        }
+
+        return ResponseEntity.ok(mypageService.updateCompanyUser(userId, payload, logoFile));
     }
+
+
+
+
     /**
      * 개인 유저 정보 조회
      *
@@ -82,26 +110,17 @@ public class MyPageController {
 
     /**
      * 개인 회원 정보 수정
-     * @param  @RequestBody personalUserUpdateDTO
-     * @param  @PathVariable userId
+     *
+     * @param @RequestBody  personalUserUpdateDTO
+     * @param @PathVariable userId
      * @return ResponseEntity.ok
      */
     @PutMapping("/personal/{userId}")
-    public ResponseEntity<String> personalUserUpdate(@RequestBody PersonalUserUpdateDTO personalUserUpdateDTO, @PathVariable Long userId){
+    public ResponseEntity<String> personalUserUpdate(@RequestBody PersonalUserUpdateDTO personalUserUpdateDTO, @PathVariable Long userId) {
         return ResponseEntity.ok(mypageService.updatePersonalUser(userId, personalUserUpdateDTO));
     }
-//    /**
-//     * 남은 포인트 조회 사용불가 업데이트 예정
-//     *
-//     * @param userId 유저 아이디
-//     * @return ResponseEntity<PersonalUserPointDTO> 남은 포인트 정보
-//     */
-//    @GetMapping("/{userId}/points")
-//    public ResponseEntity<PersonalUserPointDTO> getPersonalUserRemainingPoints(@PathVariable Long userId) {
-//        return mypageService.getPersonalUserRemainingPoints(userId)
-//                .map(ResponseEntity::ok)
-//                .orElse(ResponseEntity.notFound().build());
-//    }
+
+
 
 
     /**

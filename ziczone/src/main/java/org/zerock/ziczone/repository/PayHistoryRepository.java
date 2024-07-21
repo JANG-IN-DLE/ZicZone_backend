@@ -21,7 +21,11 @@ public interface PayHistoryRepository extends JpaRepository<PayHistory, Long> {
     // pickCards 조회할 때 결제여부 파악하기 위해서
     List<PayHistory> findBySellerIdAndBuyerId(Long sellerId, Long buyerId);
 
-    // 특정 SellerId로 모든 BuyerId 조회
-    @Query("SELECT p.buyerId FROM PayHistory p WHERE p.sellerId = :sellerId")
-    List<Long> findBuyerIdsBySellerId(@Param("sellerId") Long sellerId);
+    // 특정 BuyerId로 모든 SellerId 조회
+    @Query("SELECT DISTINCT p.sellerId FROM PayHistory p WHERE p.buyerId = :buyerId")
+    List<Long> findSellerIdsByBuyerId(@Param("buyerId") Long buyerId);
+
+    // PersonalUser의 personalId로 PayHistory 조회
+    @Query("SELECT p FROM PayHistory p WHERE p.personalUser.personalId = :personalId")
+    List<PayHistory> findByPersonalUserPersonalId(@Param("personalId") Long personalId);
 }

@@ -14,7 +14,7 @@ public interface MyPageService {
     // 기업유저 정보 조회
     CompanyUserDTO getCompanyUserDTO(Long userId);
     // 기업유저 정보 업데이트
-    String updateCompanyUser(Long userId, CompanyUserUpdateDTO companyUserUpdateDTO, MultipartFile companyLogoFile);
+    String updateCompanyUser(Long userId,Map<String, Object>  payload, MultipartFile LogoFile);
     // Pick 탭 리스트 조회 (기업 회원)
     List<PersonalUserDTO> getPicksByCompanyUsers(Long userId);
     // Scrap 탭 리스트 조회 (기업 회원)

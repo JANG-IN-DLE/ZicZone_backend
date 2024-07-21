@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.domain.PickAndScrap;
@@ -36,10 +35,10 @@ import org.zerock.ziczone.repository.tech.TechRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
 import org.zerock.ziczone.service.storage.StorageService;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -67,6 +66,12 @@ public class MyPageServiceImpl implements  MyPageService{
         return passwordEncoder.encode(password);
     }
 
+    /**
+     * 비밀번호 확인 해서 회원 유혈별로 저장된 내역 리턴으로 제공
+     * @param userId
+     * @param json
+     * @return
+     */
     @Override
     public Map<String, Object> PasswordCheck(Long userId, Map<String, Object> json) {
         String role = (String) json.get("role");
@@ -131,51 +136,61 @@ public class MyPageServiceImpl implements  MyPageService{
     /**
      * 마이페이지 기업유저 정보 수정
      * @param userId
-     * @param companyUserUpdateDTO
+     * @param payload
      * @return
      */
     @Override
-    public String updateCompanyUser(Long userId, CompanyUserUpdateDTO companyUserUpdateDTO, MultipartFile companyLogoFile) {
+    public String updateCompanyUser(Long userId, Map<String, Object> payload, MultipartFile logoFile) {
         User user = getUserById(userId);
         CompanyUser companyUser = getCompanyUserById(userId);
 
-        // 기존 비밀번호 검증
-        if (companyUserUpdateDTO.getCurrentPassword() != null) {
-            if (!passwordEncoder.matches(companyUserUpdateDTO.getCurrentPassword(), user.getPassword())) {
+        String userName = (String) payload.get("userName");
+        String userIntro = (String) payload.get("userIntro");
+        String companyAddr = (String) payload.get("companyAddr");
+        String currentPassword = (String) payload.get("currentPassword");
+        String changePassword = (String) payload.get("changePassword");
+
+
+        if (currentPassword != null) {
+            if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
                 throw new InvalidPasswordException("Current password is incorrect");
             }
-        }else{ // 현재 비밀번호 입력 하지 않았을 경우
+        } else {
             throw new InvalidPasswordException("Current password is null");
         }
-        // 새로운 비밀번호 검증
-        if (companyUserUpdateDTO.getChangePassword() != null && !companyUserUpdateDTO.getChangePassword().isEmpty()) {
-            hashPassword(companyUserUpdateDTO.getChangePassword());
+
+        String hashedPassword = user.getPassword();
+        if (changePassword != null && !changePassword.isEmpty()) {
+            hashedPassword = hashPassword(changePassword);
         }
 
-        String companyLogoURL = companyUserUpdateDTO.getCompanyLogoUrl();
-//        String uuid = UUID.randomUUID().toString();
-            String bucketName= "ziczone-bucket-jangindle-optimizer";
-            String folderName = "resumePhoto";
+        String bucketName = "ziczone-bucket-jangindle-optimizer";
+        String folderName = "CompanyLogo";
         String companyLogoUrl = companyUser.getCompanyLogoUrl();
         String companyLogoUuid = companyUser.getCompanyLogoUuid();
         String companyLogoFileName = companyUser.getCompanyLogoFileName();
-        if(companyLogoURL != null && !companyLogoURL.isEmpty()){
-            //클라우드 오브젝트 스토리지 버켓 관련 설정
-            Map<String, String> S3uploadData = storageService.uploadFile(companyLogoFile, folderName, bucketName);
-            companyLogoUrl = S3uploadData.get("companyLogoUrl");
-            companyLogoUuid = S3uploadData.get("companyLogoUuid");
-            companyLogoFileName = companyLogoFile.getOriginalFilename();
-        }else if(companyLogoURL == null && companyLogoURL.isEmpty()){
-            if(companyUser.getCompanyLogoUrl() != null && !companyUser.getCompanyLogoUrl().isEmpty()){
-                storageService.deleteFile(bucketName,folderName,companyUser.getCompanyLogoUuid());
-                companyLogoUrl = null;
-                companyLogoUuid = null;
-                companyLogoFileName = null;
+        
+        // 기존 파일 삭제 로직
+        if ((logoFile == null || logoFile.isEmpty()) && companyLogoUuid != null) {
+            storageService.deleteFile(bucketName, folderName, companyLogoUuid);
+            companyLogoUrl = null;
+            companyLogoUuid = null;
+            companyLogoFileName = null;
+        }
+
+        // 새로운 파일 업로드 로직
+        if (logoFile != null && !logoFile.isEmpty()) {
+            if (companyLogoUuid != null) {
+                storageService.deleteFile(bucketName, folderName, companyLogoUuid);
             }
+            Map<String, String> S3uploadData = storageService.uploadFile(logoFile, folderName, bucketName);
+            companyLogoUrl = S3uploadData.get("fileUrl");
+            companyLogoUuid = S3uploadData.get("fileUUID");
+            companyLogoFileName = logoFile.getOriginalFilename();
         }
 
         CompanyUser updatedCompanyUser = companyUser.toBuilder()
-                .companyAddr(companyUserUpdateDTO.getCompanyAddr())
+                .companyAddr(companyAddr)
                 .companyLogoUrl(companyLogoUrl)
                 .companyLogoUuid(companyLogoUuid)
                 .companyLogoFileName(companyLogoFileName)
@@ -183,15 +198,18 @@ public class MyPageServiceImpl implements  MyPageService{
                 .build();
 
         user = user.toBuilder()
-                .userName(companyUserUpdateDTO.getUserName() != null ? companyUserUpdateDTO.getUserName() : user.getUserName())
-                .userIntro(companyUserUpdateDTO.getUserIntro() != null ? companyUserUpdateDTO.getUserIntro() : user.getUserIntro())
-                .password(companyUserUpdateDTO.getChangePassword() != null ? hashPassword(companyUserUpdateDTO.getChangePassword()) : user.getPassword())
+                .userName(userName != null ? userName : user.getUserName())
+                .userIntro(userIntro != null ? userIntro : user.getUserIntro())
+                .password(hashedPassword)
                 .build();
 
         userRepository.save(user);
         companyUserRepository.save(updatedCompanyUser);
         return "User Information Updated Successfully";
     }
+
+
+
 
     /**
      * 마이페이지 개인유저 정보 조회
@@ -259,13 +277,26 @@ public class MyPageServiceImpl implements  MyPageService{
      */
     @Override
     public AggregatedDataDTO getAggregatedData(Long userId) {
-        getPersonalUserById(userId);
-        List<Long> buyerIds = payHistoryRepository.findBuyerIdsBySellerId(userId);
+        User user = userRepository.findByUserId(userId);
+        if (user == null) {
+            return AggregatedDataDTO.builder().build(); // or throw an exception
+        }
 
-        List<PersonalUserDTO> personalUsers = personalUserRepository.findByUserIds(buyerIds)
-                .stream()
+        PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
+        if (personalUser == null) {
+            return AggregatedDataDTO.builder().build(); // or throw an exception
+        }
+
+        // 특정 BuyerId로 모든 SellerId 조회
+        List<Long> sellerIds = payHistoryRepository.findSellerIdsByBuyerId(personalUser.getUser().getUserId());
+
+        // SellerId 리스트로 PersonalUser 조회
+        List<PersonalUser> fetchedPersonalUsers = personalUserRepository.findByPersonalIds(sellerIds);
+
+        // PersonalUser를 PersonalUserDTO로 변환
+        List<PersonalUserDTO> personalUsers = fetchedPersonalUsers.stream()
                 .map(this::convertToPersonalUserDTO)
-                .toList();
+                .collect(Collectors.toList());
 
         return AggregatedDataDTO.builder()
                 .personalUsers(personalUsers)
@@ -412,6 +443,7 @@ public class MyPageServiceImpl implements  MyPageService{
                             .commContent(comment.getCommContent())
                             .commSelection(comment.isCommSelection())
                             .userId(user.getUserId())
+                            .commModify(LocalDateTime.now())
                             .userName(user.getUserName())
                             .personalCareer(personalUser.getPersonalCareer())
                             .corrId(board.getCorrId())
@@ -462,7 +494,7 @@ public class MyPageServiceImpl implements  MyPageService{
      * @param password
      */
     private void validatePassword(String password) {
-        String passwordPattern = "/^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,16}$/";
+        String passwordPattern = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{8,16}$";
         if (!Pattern.matches(passwordPattern, password)) {
             throw new InvalidPasswordException("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
         }

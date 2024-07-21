@@ -9,9 +9,14 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
-    // 남은 포인트조회에 사용 미사용이지만 수정예정
-    @Query("SELECT SUM(p.berryPoint) FROM Payment p WHERE p.payId = :userId")
-    Optional<Long> findTotalBerryPointsByUserId(Long userId);
+    // 특정 사용자의 모든 성공적인 결제 내역을 조회
+    @Query("SELECT p FROM Payment p WHERE p.personalUser.personalId = :personalId AND p.payState = 'SUCCESS'")
+    Optional<List<Payment>>  findAllSuccessfulPaymentsByPersonalId(Long personalId);
+
+    @Query("SELECT SUM(p.berryPoint) FROM Payment p WHERE p.personalUser.personalId = :personalId AND p.payState = org.zerock.ziczone.domain.payment.PayState.SUCCESS")
+    Optional<Integer> findTotalBerryPointsByPersonalId(Long personalId);
+
+
 
     Payment findByPersonalUser_PersonalId(Long personalId);
 

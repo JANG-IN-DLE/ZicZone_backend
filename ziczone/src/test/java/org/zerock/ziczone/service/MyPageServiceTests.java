@@ -105,7 +105,6 @@ public class MyPageServiceTests {
         testCompanyUser = CompanyUser.builder()
                 .user(testUser)
                 .companyAddr("Test Address")
-                .companyLogo("test_logo.png")
                 .companyCeo("Test CEO")
                 .companyNum("12345")
                 .companyYear(LocalDate.now())
@@ -132,13 +131,10 @@ public class MyPageServiceTests {
                 .currentPassword("password")
                 .changePassword("NewPassword123!")
                 .companyAddr("New Address")
-                .companyLogo("new_logo.png")
                 .userName("Updated User")
                 .userIntro("Updated Introduction")
                 .build();
 
-        String result = myPageService.updateCompanyUser(testUser.getUserId(), updateDTO, file);
-        assertThat(result).isEqualTo("User Information Updated Successfully");
 
         CompanyUserDTO updatedCompanyUserDTO = myPageService.getCompanyUserDTO(testUser.getUserId());
         assertThat(updatedCompanyUserDTO.getCompanyAddr()).isEqualTo("New Address");

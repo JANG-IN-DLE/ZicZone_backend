@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder(toBuilder = true)
 @AllArgsConstructor
@@ -23,6 +25,8 @@ public class MyCommentListDTO {
     private String personalCareer; // 댓글 작성자 경력
 
     private Long corrId; // 게시물 ID
-    
+
+    private LocalDateTime commModify; // 수정 시간
+
     private Integer corrPoint; // 게시물 등록 포인트
 }
