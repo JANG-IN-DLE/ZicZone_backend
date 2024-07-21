@@ -150,12 +150,6 @@ public class MyPageServiceImpl implements  MyPageService{
         String currentPassword = (String) payload.get("currentPassword");
         String changePassword = (String) payload.get("changePassword");
 
-        log.info("userName : {}", userName);
-        log.info("userIntro  : {}", userIntro);
-        log.info("companyAddr  : {}", companyAddr);
-        log.info("logoFile : {}", logoFile);
-        log.info("currentPassword : {}", currentPassword);
-        log.info("changePassword : {}", changePassword);
 
         if (currentPassword != null) {
             if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
@@ -175,13 +169,7 @@ public class MyPageServiceImpl implements  MyPageService{
         String companyLogoUrl = companyUser.getCompanyLogoUrl();
         String companyLogoUuid = companyUser.getCompanyLogoUuid();
         String companyLogoFileName = companyUser.getCompanyLogoFileName();
-        log.info("companyLogoFileName :{}", companyLogoFileName);
-        log.info("companyLogoUrl : {}", companyLogoUrl);
-        log.info("companyLogoUuid : {}", companyLogoUuid);
-
-
-        log.info("(logoFile == null || logoFile.isEmpty()) && companyLogoUuid != null : {}",(logoFile == null || logoFile.isEmpty()) && companyLogoUuid != null);
-        log.info("(logoFile != null && !logoFile.isEmpty()) : {}",logoFile != null && !logoFile.isEmpty());
+        
         // 기존 파일 삭제 로직
         if ((logoFile == null || logoFile.isEmpty()) && companyLogoUuid != null) {
             storageService.deleteFile(bucketName, folderName, companyLogoUuid);
@@ -291,31 +279,24 @@ public class MyPageServiceImpl implements  MyPageService{
     public AggregatedDataDTO getAggregatedData(Long userId) {
         User user = userRepository.findByUserId(userId);
         if (user == null) {
-            log.warn("User not found with ID: {}", userId);
             return AggregatedDataDTO.builder().build(); // or throw an exception
         }
-        log.info("User: {}", user);
 
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
         if (personalUser == null) {
-            log.warn("PersonalUser not found for User ID: {}", userId);
             return AggregatedDataDTO.builder().build(); // or throw an exception
         }
-        log.info("Personal User: {}", personalUser);
 
         // 특정 BuyerId로 모든 SellerId 조회
         List<Long> sellerIds = payHistoryRepository.findSellerIdsByBuyerId(personalUser.getUser().getUserId());
-        log.info("Seller IDs: {}", sellerIds);
 
         // SellerId 리스트로 PersonalUser 조회
         List<PersonalUser> fetchedPersonalUsers = personalUserRepository.findByPersonalIds(sellerIds);
-        log.info("Fetched Personal Users: {}", fetchedPersonalUsers);
 
         // PersonalUser를 PersonalUserDTO로 변환
         List<PersonalUserDTO> personalUsers = fetchedPersonalUsers.stream()
                 .map(this::convertToPersonalUserDTO)
                 .collect(Collectors.toList());
-        log.info("Personal User DTOs: {}", personalUsers);
 
         return AggregatedDataDTO.builder()
                 .personalUsers(personalUsers)
