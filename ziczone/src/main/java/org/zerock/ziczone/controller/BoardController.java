@@ -3,6 +3,7 @@ package org.zerock.ziczone.controller;
 import com.amazonaws.services.s3.model.*;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,7 +40,7 @@ public class BoardController {
      * @param corrContent 게시물 내용
      * @param corrPdf    첨부 파일 (MultipartFile 형태)
      * @param userId     사용자 ID
-     * @return ResponseEntity<Map<String, String>> 응답 메시지
+     * @return ResponseEntity<Map<String, Long>> 응답 메시지
      */
     @PostMapping("/api/personal/board/post")
     public ResponseEntity<Map<String, Long>> createBoard(@RequestParam("berry") int corrPoint,
@@ -118,21 +119,29 @@ public class BoardController {
     }
 
     /**
-     * 게시물 수정
+     * 첨삭 게시물 수정
      *
-     * @param corrId    게시물 ID
-     * @param userId    사용자 ID
-     * @param boardDTO  수정할 게시물 정보
-     * @return ResponseEntity<BoardDTO> 수정된 게시물 정보
+     * @param corrId            게시물 ID
+     * @param userId            사용자 ID
+     * @param corrTitle         게시물 제목
+     * @param corrContent       게시물 내용
+     * @param corrPdf           첨부 파일 (MultipartFile 형태, 선택사항)
+     * @param existingFileName  기존 파일 이름 (선택사항, 새로운 파일이 업로드되지 않은 경우 사용)
+     * @return ResponseEntity<Map<String, Long>> 응답 메시지 (수정된 게시물 ID를 포함)
      */
-    @PutMapping("/api/personal/board/{corrId}/{userId}")
-    public ResponseEntity<BoardDTO> modifyBoard(@PathVariable Long corrId, @PathVariable Long userId, @RequestBody BoardDTO boardDTO) {
-        boardDTO.setCorrId(corrId);
-        boardDTO.setUserId(userId);
+    @PutMapping(value = "/api/personal/board/{corrId}/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, Long>> modifyBoard(@PathVariable Long corrId,
+                                                         @PathVariable Long userId,
+                                                         @RequestParam("title") String corrTitle,
+                                                         @RequestParam("content") String corrContent,
+                                                         @RequestPart(value = "file", required = false) MultipartFile corrPdf,
+                                                         @RequestParam(value = "existingFileName", required = false) String existingFileName) {
+        Long updatedCorrId = boardService.boardModify(corrId, userId, corrTitle, corrContent, corrPdf, existingFileName);
 
-        BoardDTO updatedBoard = boardService.boardModify(boardDTO);
+        Map<String, Long> response = new HashMap<>();
+        response.put("corrId", updatedCorrId);
 
-        return ResponseEntity.ok(updatedBoard);
+        return ResponseEntity.ok(response);
     }
 
     /**

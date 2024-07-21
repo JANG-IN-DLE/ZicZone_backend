@@ -21,7 +21,7 @@ public interface BoardService {
     // 게시물 전체 조회 (필터링 및 페이지네이션)
     PageResponseDTO<BoardDTO> boardFilter(String filterType, PageRequestDTO pageRequestDTO, boolean showSelect);
     // 게시물 수정
-    BoardDTO boardModify(BoardDTO boardDTO);
+    Long boardModify(Long corrId, Long userId, String corrTitle, String corrContent, MultipartFile corrPdf, String existingFileName);
     // 게시물 삭제
     void boardDelete(Long userId, Long corrId);
     // 정보 추가(게시물 수정에서 필요)
