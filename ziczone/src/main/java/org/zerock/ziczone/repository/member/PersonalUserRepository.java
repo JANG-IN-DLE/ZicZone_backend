@@ -21,6 +21,6 @@ public interface PersonalUserRepository extends JpaRepository<PersonalUser, Long
     List<Long> findPersonalUserIdsByIsCompanyVisibleTrue();
 
     // 특정 BuyerId 리스트로 PersonalUser 조회
-    @Query("SELECT p FROM PersonalUser p WHERE p.user.userId IN :userIds")
-    List<PersonalUser> findByUserIds(@Param("userIds") List<Long> userIds);
+    @Query("SELECT p FROM PersonalUser p WHERE p.personalId IN :personalIds")
+    List<PersonalUser> findByPersonalIds(@Param("personalIds") List<Long> personalIds);
 }

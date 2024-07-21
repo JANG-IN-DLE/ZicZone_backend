@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.domain.PickAndScrap;
 import org.zerock.ziczone.domain.board.Board;
 import org.zerock.ziczone.domain.board.Comment;
@@ -268,13 +269,33 @@ public class MyPageServiceImpl implements  MyPageService{
      */
     @Override
     public AggregatedDataDTO getAggregatedData(Long userId) {
-        getPersonalUserById(userId);
-        List<Long> buyerIds = payHistoryRepository.findBuyerIdsBySellerId(userId);
+        User user = userRepository.findByUserId(userId);
+        if (user == null) {
+            log.warn("User not found with ID: {}", userId);
+            return AggregatedDataDTO.builder().build(); // or throw an exception
+        }
+        log.info("User: {}", user);
 
-        List<PersonalUserDTO> personalUsers = personalUserRepository.findByUserIds(buyerIds)
-                .stream()
+        PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
+        if (personalUser == null) {
+            log.warn("PersonalUser not found for User ID: {}", userId);
+            return AggregatedDataDTO.builder().build(); // or throw an exception
+        }
+        log.info("Personal User: {}", personalUser);
+
+        // 특정 BuyerId로 모든 SellerId 조회
+        List<Long> sellerIds = payHistoryRepository.findSellerIdsByBuyerId(personalUser.getUser().getUserId());
+        log.info("Seller IDs: {}", sellerIds);
+
+        // SellerId 리스트로 PersonalUser 조회
+        List<PersonalUser> fetchedPersonalUsers = personalUserRepository.findByPersonalIds(sellerIds);
+        log.info("Fetched Personal Users: {}", fetchedPersonalUsers);
+
+        // PersonalUser를 PersonalUserDTO로 변환
+        List<PersonalUserDTO> personalUsers = fetchedPersonalUsers.stream()
                 .map(this::convertToPersonalUserDTO)
-                .toList();
+                .collect(Collectors.toList());
+        log.info("Personal User DTOs: {}", personalUsers);
 
         return AggregatedDataDTO.builder()
                 .personalUsers(personalUsers)
