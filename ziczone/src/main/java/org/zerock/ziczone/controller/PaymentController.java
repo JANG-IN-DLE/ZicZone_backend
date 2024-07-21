@@ -158,18 +158,14 @@ public class PaymentController {
     public ResponseEntity<Map<String, List<Map<String, String>>>> getPersonalUserRemainingPoints(@PathVariable Long userId) {
         User user = userRepository.findByUserId(userId);
 
-        log.info("user : {} ", user);
-
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
-        log.info("personalUser : {}", personalUser);
+    
 
         Optional<List<Payment>> paymentsOptional = paymentRepository.findAllSuccessfulPaymentsByPersonalId(personalUser.getPersonalId());
         List<Map<String, String>> paymentDetailsList = new ArrayList<>();
         if (paymentsOptional.isEmpty() || paymentsOptional.get().isEmpty()) {
-            log.info("No successful payments found for personalId: {}", personalUser.getPersonalId());
         } else {
             List<Payment> payments = paymentsOptional.get();
-            log.info("Payments : {}", payments);
             paymentDetailsList = payments.stream().map(payment -> {
                 Map<String, String> paymentDetails = new HashMap<>();
                 paymentDetails.put("payId", payment.getPayId().toString());
@@ -186,9 +182,7 @@ public class PaymentController {
         List<PayHistory> payHistoryList = payHistoryRepository.findByPersonalUserPersonalId(personalUser.getPersonalId());
         List<Map<String, String>> payHistoryDetailsList = new ArrayList<>();
         if (payHistoryList.isEmpty()) {
-            log.info("No pay history found for personalId: {}", personalUser.getPersonalId());
         } else {
-            log.info("payHistoryList : {}", payHistoryList);
             payHistoryDetailsList = payHistoryList.stream().map(payHistory -> {
                 Map<String, String> payHistoryDetails = new HashMap<>();
                 payHistoryDetails.put("payHistoryId", payHistory.getPayHistoryId().toString());
