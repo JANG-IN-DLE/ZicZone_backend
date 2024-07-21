@@ -66,6 +66,12 @@ public class MyPageServiceImpl implements  MyPageService{
         return passwordEncoder.encode(password);
     }
 
+    /**
+     * 비밀번호 확인 해서 회원 유혈별로 저장된 내역 리턴으로 제공
+     * @param userId
+     * @param json
+     * @return
+     */
     @Override
     public Map<String, Object> PasswordCheck(Long userId, Map<String, Object> json) {
         String role = (String) json.get("role");
@@ -144,12 +150,12 @@ public class MyPageServiceImpl implements  MyPageService{
         String currentPassword = (String) payload.get("currentPassword");
         String changePassword = (String) payload.get("changePassword");
 
-        log.info("userName {}", userName);
-        log.info("userIntro {}", userIntro);
-        log.info("companyAddr {}", companyAddr);
-        log.info("logo {}", logoFile);
-        log.info("currentPassword {}", currentPassword);
-        log.info("changePassword {}", changePassword);
+        log.info("userName : {}", userName);
+        log.info("userIntro  : {}", userIntro);
+        log.info("companyAddr  : {}", companyAddr);
+        log.info("logoFile : {}", logoFile);
+        log.info("currentPassword : {}", currentPassword);
+        log.info("changePassword : {}", changePassword);
 
         if (currentPassword != null) {
             if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
@@ -169,12 +175,26 @@ public class MyPageServiceImpl implements  MyPageService{
         String companyLogoUrl = companyUser.getCompanyLogoUrl();
         String companyLogoUuid = companyUser.getCompanyLogoUuid();
         String companyLogoFileName = companyUser.getCompanyLogoFileName();
-        log.info("companyLogoFileName {}", companyLogoFileName);
-        log.info("companyLogoUrl {}", companyLogoUrl);
-        log.info("companyLogoUuid {}", companyLogoUuid);
+        log.info("companyLogoFileName :{}", companyLogoFileName);
+        log.info("companyLogoUrl : {}", companyLogoUrl);
+        log.info("companyLogoUuid : {}", companyLogoUuid);
 
+
+        log.info("(logoFile == null || logoFile.isEmpty()) && companyLogoUuid != null : {}",(logoFile == null || logoFile.isEmpty()) && companyLogoUuid != null);
+        log.info("(logoFile != null && !logoFile.isEmpty()) : {}",logoFile != null && !logoFile.isEmpty());
+        // 기존 파일 삭제 로직
+        if ((logoFile == null || logoFile.isEmpty()) && companyLogoUuid != null) {
+            storageService.deleteFile(bucketName, folderName, companyLogoUuid);
+            companyLogoUrl = null;
+            companyLogoUuid = null;
+            companyLogoFileName = null;
+        }
+
+        // 새로운 파일 업로드 로직
         if (logoFile != null && !logoFile.isEmpty()) {
-            storageService.deleteFile(bucketName, folderName, companyUser.getCompanyLogoUuid());
+            if (companyLogoUuid != null) {
+                storageService.deleteFile(bucketName, folderName, companyLogoUuid);
+            }
             Map<String, String> S3uploadData = storageService.uploadFile(logoFile, folderName, bucketName);
             companyLogoUrl = S3uploadData.get("fileUrl");
             companyLogoUuid = S3uploadData.get("fileUUID");

@@ -1,22 +1,25 @@
 package org.zerock.ziczone.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.minidev.json.JSONObject;
 import net.minidev.json.parser.ParseException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.zerock.ziczone.config.PayConfig;
+import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.domain.member.PersonalUser;
+import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.domain.payment.PayState;
 import org.zerock.ziczone.domain.payment.Payment;
 import org.zerock.ziczone.dto.payment.PaymentDTO;
 import org.zerock.ziczone.exception.UnauthorizedException;
+import org.zerock.ziczone.repository.PayHistoryRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
+import org.zerock.ziczone.repository.member.UserRepository;
+import org.zerock.ziczone.repository.payment.PaymentRepository;
 import org.zerock.ziczone.service.login.JwtService;
 import org.zerock.ziczone.service.payment.PaymentService;
 import org.zerock.ziczone.service.payment.TossPayService;
@@ -24,7 +27,8 @@ import org.zerock.ziczone.service.payment.TossPayService;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -35,8 +39,10 @@ public class PaymentController {
     private final TossPayService tossPayService;
     private final PersonalUserRepository personalUserRepository;
     private final PaymentService paymentService;
-    private final PayConfig payConfig;
     private final JwtService jwtService;
+    private final PaymentRepository paymentRepository;
+    private final PayHistoryRepository payHistoryRepository;
+    private final UserRepository userRepository;
 
     @PostMapping("/confirm")
     public ResponseEntity<JSONObject> confirmPayment(HttpServletRequest request, @RequestBody Map<String, Object> requestData) throws IOException, ParseException {
@@ -99,6 +105,8 @@ public class PaymentController {
             response.put("amount", approvedPayment.getAmount());
             response.put("berryPoint", approvedPayment.getBerryPoint());
 
+
+
             return ResponseEntity.ok(response);
         } else {
             // 데이터 불일치 시 결제 상태를 실패로 설정
@@ -106,10 +114,98 @@ public class PaymentController {
             throw new IllegalStateException("Payment information mismatch after approval");
         }
     }
-}
 
-/*
-    결제 요청을 보내고
-    승인 요청을 보낼 때
-    승인 요청 api를 보내기 전에 미리 데이터베이스에 값을 미리 저장
- */
+
+    /**
+     * 개인 유저의 총 베리 포인트를 반환
+     *
+     * @param userId 유저 아이디
+     * @return ResponseEntity<Map<String, Integer>> 총 베리 포인트
+     */
+    @GetMapping("/personal/totalBerryPoints/{userId}")
+    public ResponseEntity<Map<String, Integer>> getTotalBerryPoints(@PathVariable Long userId) {
+        // User ID로 PersonalUser 조회
+        PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
+
+        // personalId로 성공한 결제들의 베리 포인트 합산
+        Integer totalBerryPoints = paymentRepository.findTotalBerryPointsByPersonalId(personalUser.getPersonalId())
+                .orElse(0); // Optional이 비어있는 경우 0을 기본값으로 반환
+
+        // personalId로 PayHistory에서 berryBucket 값을 가져와 합산
+        List<PayHistory> payHistoryList = payHistoryRepository.findByPersonalUserPersonalId(personalUser.getPersonalId());
+        int totalBerryBucket = payHistoryList.stream()
+                .mapToInt(payHistory -> Integer.parseInt(payHistory.getBerryBucket()))
+                .sum();
+
+        // 최종 총 베리 포인트 계산
+        int finalTotalBerryPoints = totalBerryPoints + totalBerryBucket;
+
+        // 결과를 맵에 담아 반환
+        Map<String, Integer> response = new HashMap<>();
+        response.put("totalBerryPoints", finalTotalBerryPoints);
+
+        return ResponseEntity.ok(response);
+    }
+
+
+    /**
+     * 포인트 사용 내역 리스트
+     *
+     * @param userId 유저 아이디
+     * @return ResponseEntity<PersonalUserPointDTO> 남은 포인트 정보
+     */
+    @PostMapping("/personal/points/{userId}")
+    public ResponseEntity<Map<String, List<Map<String, String>>>> getPersonalUserRemainingPoints(@PathVariable Long userId) {
+        User user = userRepository.findByUserId(userId);
+
+        log.info("user : {} ", user);
+
+        PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
+        log.info("personalUser : {}", personalUser);
+
+        Optional<List<Payment>> paymentsOptional = paymentRepository.findAllSuccessfulPaymentsByPersonalId(personalUser.getPersonalId());
+        List<Map<String, String>> paymentDetailsList = new ArrayList<>();
+        if (paymentsOptional.isEmpty() || paymentsOptional.get().isEmpty()) {
+            log.info("No successful payments found for personalId: {}", personalUser.getPersonalId());
+        } else {
+            List<Payment> payments = paymentsOptional.get();
+            log.info("Payments : {}", payments);
+            paymentDetailsList = payments.stream().map(payment -> {
+                Map<String, String> paymentDetails = new HashMap<>();
+                paymentDetails.put("payId", payment.getPayId().toString());
+                paymentDetails.put("payState", payment.getPayState().name());
+                paymentDetails.put("amount", payment.getAmount().toString());
+                paymentDetails.put("payDate", payment.getPayDate().toString());
+                paymentDetails.put("paymentKey", payment.getPaymentKey());
+                paymentDetails.put("berryPoint", payment.getBerryPoint().toString());
+                paymentDetails.put("orderId", payment.getOrderId());
+                return paymentDetails;
+            }).collect(Collectors.toList());
+        }
+
+        List<PayHistory> payHistoryList = payHistoryRepository.findByPersonalUserPersonalId(personalUser.getPersonalId());
+        List<Map<String, String>> payHistoryDetailsList = new ArrayList<>();
+        if (payHistoryList.isEmpty()) {
+            log.info("No pay history found for personalId: {}", personalUser.getPersonalId());
+        } else {
+            log.info("payHistoryList : {}", payHistoryList);
+            payHistoryDetailsList = payHistoryList.stream().map(payHistory -> {
+                Map<String, String> payHistoryDetails = new HashMap<>();
+                payHistoryDetails.put("payHistoryId", payHistory.getPayHistoryId().toString());
+                payHistoryDetails.put("sellerId", payHistory.getSellerId().toString());
+                payHistoryDetails.put("buyerId", payHistory.getBuyerId().toString());
+                payHistoryDetails.put("berryBucket", payHistory.getBerryBucket());
+                payHistoryDetails.put("payHistoryContent", payHistory.getPayHistoryContent());
+                payHistoryDetails.put("payHistoryDate", payHistory.getPayHistoryDate().toString());
+                return payHistoryDetails;
+            }).collect(Collectors.toList());
+        }
+
+        Map<String, List<Map<String, String>>> response = new HashMap<>();
+        response.put("payment", paymentDetailsList);
+        response.put("payHistory", payHistoryDetailsList);
+
+        return ResponseEntity.ok(response);
+    }
+
+}
