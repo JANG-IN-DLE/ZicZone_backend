@@ -120,22 +120,23 @@ public class BoardController {
 
     /**
      * 첨삭 게시물 수정
-     * (특히, 파일은 S3에 업로드하고, 업로드된 파일의 URL을 데이터베이스에 저장)
      *
-     * @param corrId     게시물 ID
-     * @param userId     사용자 ID
-     * @param corrTitle  게시물 제목
-     * @param corrContent 게시물 내용
-     * @param corrPdf    첨부 파일 (MultipartFile 형태)
-     * @return ResponseEntity<Map<String, Long>> 응답 메시지
+     * @param corrId            게시물 ID
+     * @param userId            사용자 ID
+     * @param corrTitle         게시물 제목
+     * @param corrContent       게시물 내용
+     * @param corrPdf           첨부 파일 (MultipartFile 형태, 선택사항)
+     * @param existingFileName  기존 파일 이름 (선택사항, 새로운 파일이 업로드되지 않은 경우 사용)
+     * @return ResponseEntity<Map<String, Long>> 응답 메시지 (수정된 게시물 ID를 포함)
      */
     @PutMapping(value = "/api/personal/board/{corrId}/{userId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Long>> modifyBoard(@PathVariable Long corrId,
                                                          @PathVariable Long userId,
                                                          @RequestParam("title") String corrTitle,
                                                          @RequestParam("content") String corrContent,
-                                                         @RequestPart("file") MultipartFile corrPdf) {
-        Long updatedCorrId = boardService.boardModify(corrId, userId, corrTitle, corrContent, corrPdf);
+                                                         @RequestPart(value = "file", required = false) MultipartFile corrPdf,
+                                                         @RequestParam(value = "existingFileName", required = false) String existingFileName) {
+        Long updatedCorrId = boardService.boardModify(corrId, userId, corrTitle, corrContent, corrPdf, existingFileName);
 
         Map<String, Long> response = new HashMap<>();
         response.put("corrId", updatedCorrId);

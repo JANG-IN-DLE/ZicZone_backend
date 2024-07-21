@@ -285,17 +285,18 @@ public class BoardServiceImpl implements BoardService {
     /**
      * 게시물 수정
      *
-     * @param corrId     게시물 ID
-     * @param userId     사용자 ID
-     * @param corrTitle  게시물 제목
-     * @param corrContent 게시물 내용
-     * @param corrPdf    첨부 파일 (MultipartFile 형태)
-     * @return Long      수정된 게시물 ID
+     * @param corrId            게시물 ID
+     * @param userId            사용자 ID
+     * @param corrTitle         게시물 제목
+     * @param corrContent       게시물 내용
+     * @param corrPdf           첨부 파일 (MultipartFile 형태, 선택사항)
+     * @param existingFileName  기존 파일 이름 (선택사항, 새로운 파일이 업로드되지 않은 경우 사용)
+     * @return Long             수정된 게시물 ID
      * @throws IllegalArgumentException 유효하지 않은 corrId이거나 작성자가 아닐 경우 발생
      */
     @Override
     @Transactional
-    public Long boardModify(Long corrId, Long userId, String corrTitle, String corrContent, MultipartFile corrPdf) {
+    public Long boardModify(Long corrId, Long userId, String corrTitle, String corrContent, MultipartFile corrPdf, String existingFileName) {
         Board board = boardRepository.findById(corrId)
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 corrId"));
 
@@ -303,10 +304,20 @@ public class BoardServiceImpl implements BoardService {
             throw new IllegalArgumentException("작성자만 수정할 수 있습니다.");
         }
 
-        String corrPdfUUID = UUID.randomUUID().toString();
-        Map<String, String> corrPdfUrl = storageService.uploadFile(corrPdf, "CorrPdf", BUCKETNAME);
+        String corrPdfUUID = board.getCorrPdfUuid();
+        String corrPdfFileName = board.getCorrPdfFileName();
+        String corrPdfUrl = board.getCorrPdfUrl();
 
-        board.change(corrTitle, corrContent, corrPdfUUID, corrPdf.getOriginalFilename(), corrPdfUrl.get("fileUrl"));
+        if (corrPdf != null && !corrPdf.isEmpty()) {
+            corrPdfUUID = UUID.randomUUID().toString();
+            Map<String, String> uploadedFile = storageService.uploadFile(corrPdf, "CorrPdf", BUCKETNAME);
+            corrPdfFileName = corrPdf.getOriginalFilename();
+            corrPdfUrl = uploadedFile.get("fileUrl");
+        } else if (existingFileName != null) {
+            corrPdfFileName = existingFileName;
+        }
+
+        board.change(corrTitle, corrContent, corrPdfUUID, corrPdfFileName, corrPdfUrl);
 
         boardRepository.save(board);
 
