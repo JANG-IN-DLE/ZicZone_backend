@@ -95,6 +95,10 @@ public class ResumeServiceImpl implements ResumeService {
         // 엔티티 업데이트
         existingResume = updateResumeEntity(existingResume, resumeDTO, resumePhotoData, personalStateData);
 
+
+        // 연관 엔티티 삭제
+        log.info("연관 엔티티 삭제 보내기 전 existingResume {}", existingResume);
+        deleteRelatedEntities(existingResume.getResumeId(), existingResume.getPersonalUser().getPersonalId());
         // 연관 엔티티 저장
         log.info("연관 엔티티 저장 보내기 전 existingResume {}", existingResume);
         saveRelatedEntities(existingResume, resumeDTO, portfolioFiles);
@@ -387,6 +391,7 @@ public class ResumeServiceImpl implements ResumeService {
 
     private void saveJobPositions(PersonalUser personalUser, List<JobPositionDTO> jobPositions) {
         if (jobPositions != null) {
+            log.info("jobPositions : {} ",jobPositions);
             jobPositionRepository.deleteByPersonalUserPersonalId(personalUser.getPersonalId());
             jobPositions.forEach(jobPosDTO -> {
                 JobPosition jobPosition = JobPosition.builder()
