@@ -162,8 +162,8 @@ public class MyPageController {
         return ResponseEntity.ok(companyUserDTOS);
     }
     /**
-     * 기업회원 마이페이지 Pick 탭 조회
-     * 기업의 픽 탭에는 기업의 정보를 조회할 수 있는 카드형식의 리스트 데이터를 전송
+     * 기업회원 마이페이지 scraps 탭 조회
+     * 기업의 스크랩 탭에는 기업의 정보를 조회할 수 있는 카드형식의 리스트 데이터를 전송
      * @PathVariable userId 개인유저 아이디
      * @return ResponseEntity<List<PersonalUserDTO>> 개인 유저 정보 리스트
      */

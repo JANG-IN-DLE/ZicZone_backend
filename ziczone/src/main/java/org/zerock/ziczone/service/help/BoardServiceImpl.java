@@ -16,7 +16,9 @@ import org.zerock.ziczone.dto.help.BoardDTO;
 import org.zerock.ziczone.dto.help.BoardProfileCardDTO;
 import org.zerock.ziczone.dto.page.PageRequestDTO;
 import org.zerock.ziczone.dto.page.PageResponseDTO;
+import org.zerock.ziczone.exception.board.BoardNotFoundException;
 import org.zerock.ziczone.exception.mypage.PersonalNotFoundException;
+import org.zerock.ziczone.exception.mypage.UserNotFoundException;
 import org.zerock.ziczone.repository.board.BoardRepository;
 import org.zerock.ziczone.repository.board.CommentRepository;
 import org.zerock.ziczone.repository.job.JobPositionRepository;
@@ -393,7 +395,13 @@ public class BoardServiceImpl implements BoardService {
     @Override
     public List<BoardDTO> userReadAll(Long userId) {
         List<Board> boards = boardRepository.findByUserUserId(userId);
+        if(boards == null){
+            throw new BoardNotFoundException("Board not found");
+        }
         User userCheck = userRepository.findByUserId(userId);
+        if(userCheck == null){
+            throw new UserNotFoundException("User not found");
+        }
         PersonalUser personalUserCheck = userCheck.getPersonalUser();
         if (personalUserCheck == null){
             throw new PersonalNotFoundException("Personal User Not Found");
