@@ -259,6 +259,9 @@ public class ResumeServiceImpl implements ResumeService {
             log.info("File Name: {}, File Size: {}", file.getOriginalFilename(), file.getSize());
         }
 
+        if (newPortfolios == null) {
+            return Collections.emptyList();
+        }
         return newPortfolios.stream()
                 .filter(file -> file != null && !file.isEmpty())
                 .map(file -> storageService.uploadFile(file, "portfolio", BUCKET_NAME))
