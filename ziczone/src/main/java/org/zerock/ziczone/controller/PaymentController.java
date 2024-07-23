@@ -1,6 +1,5 @@
 package org.zerock.ziczone.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.minidev.json.JSONObject;
@@ -8,7 +7,6 @@ import net.minidev.json.parser.ParseException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.zerock.ziczone.config.PayConfig;
 import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
@@ -16,6 +14,7 @@ import org.zerock.ziczone.domain.payment.PayState;
 import org.zerock.ziczone.domain.payment.Payment;
 import org.zerock.ziczone.dto.payment.PaymentDTO;
 import org.zerock.ziczone.exception.UnauthorizedException;
+import org.zerock.ziczone.exception.mypage.PersonalNotFoundException;
 import org.zerock.ziczone.repository.PayHistoryRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
@@ -66,8 +65,12 @@ public class PaymentController {
             throw new UnauthorizedException("Invalid user ID");
         }
 
-        // PersonalUser 객체 생성 (실제로는 데이터베이스에서 가져오는 로직이 필요할 수 있음)
+        // PersonalUser
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
+
+        if(personalUser == null) {
+            throw new PersonalNotFoundException("Personal User Not Found");
+        }
 
         // PaymentDTO 생성
         PaymentDTO paymentDTO = PaymentDTO.builder()
@@ -124,27 +127,7 @@ public class PaymentController {
      */
     @GetMapping("/personal/totalBerryPoints/{userId}")
     public ResponseEntity<Map<String, Integer>> getTotalBerryPoints(@PathVariable Long userId) {
-        // User ID로 PersonalUser 조회
-        PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
-
-        // personalId로 성공한 결제들의 베리 포인트 합산
-        Integer totalBerryPoints = paymentRepository.findTotalBerryPointsByPersonalId(personalUser.getPersonalId())
-                .orElse(0); // Optional이 비어있는 경우 0을 기본값으로 반환
-
-        // personalId로 PayHistory에서 berryBucket 값을 가져와 합산
-        List<PayHistory> payHistoryList = payHistoryRepository.findByPersonalUserPersonalId(personalUser.getPersonalId());
-        int totalBerryBucket = payHistoryList.stream()
-                .mapToInt(payHistory -> Integer.parseInt(payHistory.getBerryBucket()))
-                .sum();
-
-        // 최종 총 베리 포인트 계산
-        int finalTotalBerryPoints = totalBerryPoints + totalBerryBucket;
-
-        // 결과를 맵에 담아 반환
-        Map<String, Integer> response = new HashMap<>();
-        response.put("totalBerryPoints", finalTotalBerryPoints);
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(paymentService.myTotalBerryPoints(userId));
     }
 
 

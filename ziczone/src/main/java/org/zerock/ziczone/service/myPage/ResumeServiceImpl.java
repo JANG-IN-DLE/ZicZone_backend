@@ -2,7 +2,6 @@ package org.zerock.ziczone.service.myPage;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.juli.logging.Log;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -96,6 +95,10 @@ public class ResumeServiceImpl implements ResumeService {
         // 엔티티 업데이트
         existingResume = updateResumeEntity(existingResume, resumeDTO, resumePhotoData, personalStateData);
 
+
+        // 연관 엔티티 삭제
+        log.info("연관 엔티티 삭제 보내기 전 existingResume {}", existingResume);
+        deleteRelatedEntities(existingResume.getResumeId(), existingResume.getPersonalUser().getPersonalId());
         // 연관 엔티티 저장
         log.info("연관 엔티티 저장 보내기 전 existingResume {}", existingResume);
         saveRelatedEntities(existingResume, resumeDTO, portfolioFiles);
@@ -251,10 +254,13 @@ public class ResumeServiceImpl implements ResumeService {
             });
             portfolioRepository.deleteByResumeResumeId(resumeId);
         }
+
+        if (newPortfolios == null) {
+            return Collections.emptyList();
+        }
         for (MultipartFile file : newPortfolios) {
             log.info("File Name: {}, File Size: {}", file.getOriginalFilename(), file.getSize());
         }
-
         return newPortfolios.stream()
                 .filter(file -> file != null && !file.isEmpty())
                 .map(file -> storageService.uploadFile(file, "portfolio", BUCKET_NAME))
@@ -385,6 +391,7 @@ public class ResumeServiceImpl implements ResumeService {
 
     private void saveJobPositions(PersonalUser personalUser, List<JobPositionDTO> jobPositions) {
         if (jobPositions != null) {
+            log.info("jobPositions : {} ",jobPositions);
             jobPositionRepository.deleteByPersonalUserPersonalId(personalUser.getPersonalId());
             jobPositions.forEach(jobPosDTO -> {
                 JobPosition jobPosition = JobPosition.builder()

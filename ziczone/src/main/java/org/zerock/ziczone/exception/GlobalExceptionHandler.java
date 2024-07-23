@@ -6,12 +6,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.zerock.ziczone.dto.error.ErrorResponse;
+import org.zerock.ziczone.exception.board.BoardNotFoundException;
 import org.zerock.ziczone.exception.mypage.*;
+import org.zerock.ziczone.exception.payhisotry.PayHistoryNotFoundException;
 import org.zerock.ziczone.exception.payment.PaymentNotFoundException;
+import org.zerock.ziczone.exception.resume.ResumeNotFoundException;
 import org.zerock.ziczone.service.mainPage.MainPageServiceImpl;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler  {
@@ -91,6 +91,34 @@ public class GlobalExceptionHandler  {
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex) {
         ErrorResponse errorResponse = ErrorResponse.builder()
                 .message(ex.getMessage())
+                .code(HttpStatus.NOT_FOUND.value())
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+    // 지원서 찾지 못했을 때 예외
+    @ExceptionHandler(ResumeNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResumeNotFoundException(ResourceNotFoundException ex) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .message(ex.getMessage())
+                .code(HttpStatus.NOT_FOUND.value())
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+    // 게시글 찾지 못 했을 때
+    @ExceptionHandler(BoardNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleBoardNotFoundException(ResourceNotFoundException e){
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .message(e.getMessage())
+                .code(HttpStatus.NOT_FOUND.value())
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+
+    // PayHistory가 없을 때
+    @ExceptionHandler(PayHistoryNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePayHistoryNotFoundException(PayHistoryNotFoundException e){
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .message(e.getMessage())
                 .code(HttpStatus.NOT_FOUND.value())
                 .build();
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);

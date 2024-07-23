@@ -4,12 +4,16 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.dto.mypage.ResumeDTO;
+import org.zerock.ziczone.exception.mypage.PersonalNotFoundException;
+import org.zerock.ziczone.exception.mypage.UserNotFoundException;
+import org.zerock.ziczone.exception.resume.ResumeNotFoundException;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.service.myPage.ResumeService;
@@ -68,21 +72,23 @@ public class MyPageResumeController {
             @RequestPart(required = false) MultipartFile resumePhoto,
             @RequestPart(required = false) MultipartFile personalState,
             @RequestPart(required = false) List<MultipartFile> portfolios) {
+//        try {
+            ResumeDTO resumeDTO = convertJsonToResumeDTO(resumeDTOString);
+            log.info("resumeDTO: {}", resumeDTO);
 
+            User user = userRepository.findByUserId(userId);
+            if (user == null) {
+                throw new IllegalArgumentException("User not found with userId: " + userId);
+            }
 
-        ResumeDTO resumeDTO = convertJsonToResumeDTO(resumeDTOString);
+            Long personalId = user.getPersonalUser().getPersonalId();
+            resumeDTO = resumeDTO.toBuilder().personalId(personalId).build();
 
-        User user = userRepository.findByUserId(userId);
-        if (user == null) {
-            throw new IllegalArgumentException("User not found with userId: " + userId);
-        }
-
-        Long personalId = user.getPersonalUser().getPersonalId();
-
-        resumeDTO = resumeDTO.toBuilder().personalId(personalId).build();
-
-        resumeService.updateResume(resumeDTO.getResumeId(), resumeDTO, resumePhoto, personalState, portfolios);
-        return ResponseEntity.ok("Resume updated successfully.");
+            resumeService.updateResume(resumeDTO.getResumeId(), resumeDTO, resumePhoto, personalState, portfolios);
+            return ResponseEntity.ok("Resume updated successfully.");
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error updating resume: " + e.getStackTrace());
+//        }
     }
 
     /**
@@ -115,9 +121,17 @@ public class MyPageResumeController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<ResumeDTO> getResumeByUserId(@PathVariable Long userId) {
         User user = userRepository.findByUserId(userId);
+        if (user == null) {
+            throw new UserNotFoundException("User not found");
+        }
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
-
+        if (personalUser == null) {
+            throw new PersonalNotFoundException("Personal user not found");
+        }
         ResumeDTO resumeDTO = resumeService.getResumeByUserId(personalUser.getPersonalId());
+        if (resumeDTO == null){
+            throw new ResumeNotFoundException("Resume not found");
+        }
         resumeDTO.setResumeName(user.getUserName());
         return ResponseEntity.ok(resumeDTO);
     }
