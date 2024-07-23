@@ -16,4 +16,6 @@ public interface PaymentService {
     Payment approvePayment(Long payId, int berryPoint);
 
     Payment failPayment(Long payId);
+
+    Map<String, Integer> myTotalBerryPoints(Long userId);
 }

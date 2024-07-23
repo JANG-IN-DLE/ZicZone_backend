@@ -2,7 +2,6 @@ package org.zerock.ziczone.service.myPage;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.juli.logging.Log;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -251,10 +250,13 @@ public class ResumeServiceImpl implements ResumeService {
             });
             portfolioRepository.deleteByResumeResumeId(resumeId);
         }
+
+        if (newPortfolios == null) {
+            return Collections.emptyList();
+        }
         for (MultipartFile file : newPortfolios) {
             log.info("File Name: {}, File Size: {}", file.getOriginalFilename(), file.getSize());
         }
-
         return newPortfolios.stream()
                 .filter(file -> file != null && !file.isEmpty())
                 .map(file -> storageService.uploadFile(file, "portfolio", BUCKET_NAME))

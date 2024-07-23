@@ -3,6 +3,7 @@ package org.zerock.ziczone.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,6 +43,10 @@ public class MyPageController {
     private final PayHistoryRepository payHistoryRepository;
 
 
+    // 토큰 검사 로직
+
+
+
     /**
      * 기업 유저 정보 조회
      *
@@ -49,7 +54,8 @@ public class MyPageController {
      * @return ResponseEntity<CompanyUserDTO> 기업 유저 정보
      */
     @GetMapping("/company/{userId}")
-    public ResponseEntity<CompanyUserDTO> getCompanyUserDTO(@PathVariable Long userId) {
+    public ResponseEntity<CompanyUserDTO> getCompanyUserDTO(@PathVariable Long userId,
+                                                            @RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
         CompanyUserDTO companyUserDTO = mypageService.getCompanyUserDTO(userId);
         return ResponseEntity.ok(companyUserDTO);
     }
