@@ -8,15 +8,19 @@ import org.zerock.ziczone.domain.board.Comment;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.domain.member.UserType;
+import org.zerock.ziczone.domain.payment.Payment;
 import org.zerock.ziczone.dto.help.CommentDTO;
+import org.zerock.ziczone.repository.PayHistoryRepository;
 import org.zerock.ziczone.repository.board.BoardRepository;
 import org.zerock.ziczone.repository.board.CommentRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
+import org.zerock.ziczone.repository.payment.PaymentRepository;
 
 import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,6 +32,8 @@ public class CommentServiceImpl implements CommentService {
     private final BoardRepository boardRepository;
     private final CommentRepository commentRepository;
     private final PersonalUserRepository personalUserRepository;
+    private final PaymentRepository paymentRepository;
+    private final PayHistoryRepository payHistoryRepository;
 
     /**
      * 댓글 등록
@@ -197,6 +203,15 @@ public class CommentServiceImpl implements CommentService {
         }
 
         comment.changeSelection(true);
+
+        Payment payment = paymentRepository.findByPersonalUser_PersonalId(comment.getUser().getPersonalUser().getPersonalId());
+        if (payment == null) {
+            payment = new Payment();
+            String orderId = UUID.randomUUID().toString();
+            String paymentKey = UUID.randomUUID().toString();
+            payment.initializePayment(comment.getUser().getPersonalUser(), orderId, paymentKey);
+            paymentRepository.save(payment);
+        }
 
         commentRepository.save(comment);
     }

@@ -6,6 +6,7 @@ import org.zerock.ziczone.domain.member.PersonalUser;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -66,5 +67,16 @@ public class Payment {
         } else {
             throw new IllegalArgumentException("보유한 베리 포인트가 부족합니다.");
         }
+    }
+
+    // 만약, 댓글 채택된 작성자가 payment 값이 없을 경우
+    public void initializePayment(PersonalUser personalUser, String orderId, String paymentKey) {
+        this.personalUser = personalUser;
+        this.berryPoint = 0;
+        this.amount = 0;
+        this.orderId = orderId;
+        this.payDate = LocalDateTime.now();
+        this.payState = PayState.ADOPT;
+        this.paymentKey = paymentKey;
     }
 }
