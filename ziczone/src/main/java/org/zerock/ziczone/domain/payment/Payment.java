@@ -60,6 +60,7 @@ public class Payment {
         this.berryPoint -= points;
     }
 
+    // TODO: Payment가 아니라 PaymentHistory(수정필요)
     // 게시물 작성 시 베리 포인트 차감
     public void deductionBoardBerryPoint (int corrPoint) {
         if (this.berryPoint >= corrPoint) {

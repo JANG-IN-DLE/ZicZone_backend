@@ -68,17 +68,21 @@ public class BoardServiceImpl implements BoardService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 userId"));
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(user.getUserId());
+        // TODO: Payment가 아니라 PaymentHistory(수정필요)
         Payment payment = paymentRepository.findByPersonalUser(personalUser);
+        // TODO : ---------------------------------------
 
         if (user.getUserType() != UserType.PERSONAL) {
             throw new IllegalArgumentException("개인 회원만 게시물을 등록할 수 있습니다.");
         }
+        // TODO: berryPoint가 보유 포인트가 아님(수정 필요)
         if (payment.getBerryPoint() < corrPoint) {
             throw new IllegalArgumentException("보유한 베리 포인트가 부족합니다.");
         } else {
             payment.deductionBoardBerryPoint(corrPoint);
             paymentRepository.save(payment);
         }
+        // TODO:--------------------------------------------
 
         String corrPdfUUID = UUID.randomUUID().toString();
         Map<String, String> corrPdfUrl = storageService.uploadFile(corrPdf, "CorrPdf", BUCKETNAME);
@@ -121,11 +125,14 @@ public class BoardServiceImpl implements BoardService {
         List<String> jobNames = jobPositionRepository.findByPersonalUser(personalUser).stream()
                 .map(jobPosition -> jobPosition.getJob().getJobName())
                 .collect(Collectors.toList());
+        // TODO: Payment가 아니라 PaymentHistory(수정필요)
         Payment payment = paymentRepository.findByPersonalUser(personalUser);
+        // TODO : ---------------------------------------
         List<String> techUrls = techStackRepository.findByPersonalUser(personalUser).stream()
                 .map(techStack -> techStack.getTech().getTechUrl())
                 .collect(Collectors.toList());
 
+        // TODO: berryPoint가 보유 포인트가 아님(수정 필요)
         BoardProfileCardDTO boardProfileCardDTO = BoardProfileCardDTO.builder()
                 .userId(user.getUserId())
                 .personalId(personalUser.getPersonalId())
@@ -137,6 +144,7 @@ public class BoardServiceImpl implements BoardService {
                 .userIntro(user.getUserIntro())
                 .techUrl(String.join(",", techUrls))
                 .build();
+        // TODO : ---------------------------------------
 
         return boardProfileCardDTO;
     }
@@ -186,6 +194,7 @@ public class BoardServiceImpl implements BoardService {
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 corrId"));
         User user = board.getUser();
         PersonalUser personalUser = user.getPersonalUser();
+        // TODO: Payment가 아니라 PaymentHistory(수정필요)
         Payment payment = paymentRepository.findByPersonalUser(personalUser);
         List<String> jobNames = jobPositionRepository.findByPersonalUser(personalUser).stream()
                 .map(jobPosition -> jobPosition.getJob().getJobName())
@@ -194,6 +203,7 @@ public class BoardServiceImpl implements BoardService {
                 .map(techStack -> techStack.getTech().getTechUrl())
                 .collect(Collectors.toList());
 
+        // TODO: Payment가 아니라 PaymentHistory(수정필요)
         BoardProfileCardDTO boardProfileCardDTO = BoardProfileCardDTO.builder()
                 .userId(user.getUserId())
                 .personalId(personalUser.getPersonalId())
