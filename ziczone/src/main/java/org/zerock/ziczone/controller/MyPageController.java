@@ -54,8 +54,7 @@ public class MyPageController {
      * @return ResponseEntity<CompanyUserDTO> 기업 유저 정보
      */
     @GetMapping("/company/{userId}")
-    public ResponseEntity<CompanyUserDTO> getCompanyUserDTO(@PathVariable Long userId,
-                                                            @RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
+    public ResponseEntity<CompanyUserDTO> getCompanyUserDTO(@PathVariable Long userId) {
         CompanyUserDTO companyUserDTO = mypageService.getCompanyUserDTO(userId);
         return ResponseEntity.ok(companyUserDTO);
     }
