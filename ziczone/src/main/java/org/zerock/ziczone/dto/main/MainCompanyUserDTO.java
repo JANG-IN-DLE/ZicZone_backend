@@ -17,4 +17,6 @@ public class MainCompanyUserDTO {
     private String email;
 
     private String companyLogo;
+
+    private String userIntro;
 }
