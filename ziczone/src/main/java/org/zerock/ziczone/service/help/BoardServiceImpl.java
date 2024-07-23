@@ -341,6 +341,9 @@ public class BoardServiceImpl implements BoardService {
             throw new IllegalArgumentException("작성자만 삭제할 수 있습니다.");
         }
 
+        // TODO: 수정 필요
+        storageService.deleteFile("ziczone-bucket-jangindle", "CorrPdf", board.getCorrPdfUuid());
+
         boardRepository.deleteById(corrId);
     }
 
