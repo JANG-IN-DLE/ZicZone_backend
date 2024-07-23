@@ -85,8 +85,8 @@ public class ResumeServiceImpl implements ResumeService {
         log.info("Updating resume Start(Before): {}, DTO: {}", userId, resumeDTO);
 
         // 파일 처리
-        Map<String, String> resumePhotoData = processFileUpdate(existingResume.getResumePhotoUrl(), existingResume.getResumePhotoUuid(), resumePhoto, "resumePhoto");
-        Map<String, String> personalStateData = processFileUpdate(existingResume.getPersonalStateUrl(), existingResume.getPersonalStateUuid(), personalState, "personalState");
+        Map<String, String> resumePhotoData = processFileUpdate(existingResume.getResumePhotoFileName(),existingResume.getResumePhotoUrl(), existingResume.getResumePhotoUuid(), resumePhoto, "resumePhoto");
+        Map<String, String> personalStateData = processFileUpdate(existingResume.getPersonalStateFileName(),existingResume.getPersonalStateUrl(), existingResume.getPersonalStateUuid(), personalState, "personalState");
         List<Map<String, String>> portfolioFiles = processPortfoliosUpdate(resumeDTO.getResumeId(), portfolios);
 
         log.info("portfolioFiles.stream().toList() {}", portfolioFiles.stream().toList());
@@ -102,6 +102,7 @@ public class ResumeServiceImpl implements ResumeService {
         // 연관 엔티티 저장
         log.info("연관 엔티티 저장 보내기 전 existingResume {}", existingResume);
         saveRelatedEntities(existingResume, resumeDTO, portfolioFiles);
+
 
         // 이력서 저장
         resumeRepository.save(existingResume);
@@ -215,7 +216,7 @@ public class ResumeServiceImpl implements ResumeService {
     }
 
     // 파일 업데이트 처리
-    private Map<String, String> processFileUpdate(String existingFileUrl, String existingFileUUID, MultipartFile newFile, String folderName) {
+    private Map<String, String> processFileUpdate(String existingFileName,String existingFileUrl, String existingFileUUID, MultipartFile newFile, String folderName) {
         Map<String, String> fileData = new HashMap<>();
 
         // 새로운 파일이 없는 경우
@@ -235,6 +236,11 @@ public class ResumeServiceImpl implements ResumeService {
         fileData = storageService.uploadFile(newFile, folderName, BUCKET_NAME);
 
         // 기존 파일 삭제
+        // 등록한 파일
+        if(existingFileName.equals(fileData.get("fileOriginalFileName"))){
+            log.info("기존 파일이름이랑 새로 등록한 파일 이름이 같음 삭제하지 않고 유지 @@");
+            return fileData;
+        }
         if (existingFileUUID != null && !existingFileUUID.isEmpty()) {
             storageService.deleteFile(BUCKET_NAME, folderName, existingFileUUID);
         }
@@ -278,23 +284,18 @@ public class ResumeServiceImpl implements ResumeService {
                 .phoneNum(Optional.ofNullable(resumeDTO.getPhoneNum()).orElse(existingResume.getPhoneNum()))
                 .resumeEmail(Optional.ofNullable(resumeDTO.getResumeEmail()).orElse(existingResume.getResumeEmail()))
                 .resumeEmail(Optional.ofNullable(resumeDTO.getResumeEmail()).orElse(existingResume.getResumeEmail()))
-
 //                .resumePhotoUrl(resumePhotoData.get("fileUrl").isEmpty() ? null : resumePhotoData.get("fileUrl"))
 //                .resumePhotoUuid(resumePhotoData.get("fileUUID").isEmpty() ? null : resumePhotoData.get("fileUUID"))
 //                .resumePhotoFileName(resumePhotoData.get("fileOriginalFileName").isEmpty() ? null : resumePhotoData.get("fileOriginalFileName"))
 //                .personalStateUrl(personalStateData.get("fileUrl").isEmpty() ? null : personalStateData.get("fileUrl"))
 //                .personalStateUuid(personalStateData.get("fileUUID").isEmpty() ? null : personalStateData.get("fileUUID"))
 //                .personalStateFileName(personalStateData.get("fileOriginalFileName").isEmpty() ? null : personalStateData.get("fileOriginalFileName"))
-//
-
                 .resumePhotoUrl(resumePhotoData.get("fileUrl").isEmpty() ? "" : resumePhotoData.get("fileUrl"))
                 .resumePhotoUuid(resumePhotoData.get("fileUUID").isEmpty() ? "" : resumePhotoData.get("fileUUID"))
                 .resumePhotoFileName(resumePhotoData.get("fileOriginalFileName").isEmpty() ? "" : resumePhotoData.get("fileOriginalFileName"))
                 .personalStateUrl(personalStateData.get("fileUrl").isEmpty() ? "" : personalStateData.get("fileUrl"))
                 .personalStateUuid(personalStateData.get("fileUUID").isEmpty() ? "" : personalStateData.get("fileUUID"))
                 .personalStateFileName(personalStateData.get("fileOriginalFileName").isEmpty() ? "" : personalStateData.get("fileOriginalFileName"))
-
-
                 .resumeUpdate(LocalDateTime.now())
                 .build();
     }

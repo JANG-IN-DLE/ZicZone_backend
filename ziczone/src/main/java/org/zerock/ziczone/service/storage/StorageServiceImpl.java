@@ -39,6 +39,7 @@ public class StorageServiceImpl implements StorageService {
             //  모든 사용자에게 읽기 권한 부여
             accessControlList.grantPermission(GroupGrantee.AllUsers, Permission.Read);
             amazonS3.setObjectAcl(bucketName, fullObjectName, accessControlList);
+
             // 업로드된 파일의 URL 가져오기
             fileUrl = amazonS3.getUrl(bucketName, fullObjectName).toString();
         } catch (IOException e) {
@@ -53,6 +54,8 @@ public class StorageServiceImpl implements StorageService {
         result.put("fileUrl",fileUrl);
         result.put("fileUUID",fileUUID);
         result.put("fileOriginalFileName",file.getOriginalFilename());
+
+        log.info("result : {}",result);
 
         return result;
     }
