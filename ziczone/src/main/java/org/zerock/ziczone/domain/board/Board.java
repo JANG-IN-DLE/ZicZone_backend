@@ -61,9 +61,4 @@ public class Board {
         this.corrPdfFileName = corrPdfFileName;
         this.corrPdfUrl = corrPdfUrl;
     }
-
-    // 조회수 증가 메소드
-    public void boardViewCount() {
-        this.corrView += 1;
-    }
 }
