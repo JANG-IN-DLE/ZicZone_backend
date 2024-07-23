@@ -22,6 +22,7 @@ import org.zerock.ziczone.repository.member.CompanyUserRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.payment.PaymentRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
+import org.zerock.ziczone.service.payment.PaymentServiceImpl;
 
 import javax.transaction.Transactional;
 import java.util.*;
@@ -49,6 +50,7 @@ public class PickServiceImpl implements PickService {
     private final PayHistoryRepository payHistoryRepository;
     private final PickAndScrapRepository pickAndScrapRepository;
     private final CompanyUserRepository companyUserRepository;
+    private final PaymentServiceImpl paymentServiceImpl;
 
     // (로그인 안되었을때) 메인페이지에서 pickCards 전송
     @Override
@@ -105,8 +107,8 @@ public class PickServiceImpl implements PickService {
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(loggedInUserId);
 
         // 개인회원의 totalBerryPoints를 가져온다.
-        Integer totalBerryPoints = paymentRepository.findTotalBerryPointsByPersonalId(personalUser.getPersonalId())
-                .orElse(0);
+        Map<String, Integer> totalBerryPointsMap = paymentServiceImpl.myTotalBerryPoints(loggedInUserId);
+        Integer totalBerryPoints = totalBerryPointsMap.get("totalBerryPoints");
 
         return latestResumes.stream().map(resume -> {
             PersonalUser user = resume.getPersonalUser();
@@ -126,9 +128,7 @@ public class PickServiceImpl implements PickService {
             List<PickAndScrap> pickAndScraps = pickAndScrapRepository.findByPersonalUser(user);
             List<Boolean> scrapList = pickAndScraps.stream().map(PickAndScrap::isScrap).collect(Collectors.toList());
             List<Boolean> pickList = pickAndScraps.stream().map(PickAndScrap::isPick).collect(Collectors.toList());
-            List<Long> companyIdList = pickAndScraps.stream()
-                    .map(pickAndScrap -> pickAndScrap.getCompanyUser().getCompanyId())
-                    .collect(Collectors.toList());
+
             // 결제 내역 추출
             List<Long> payHistoryId = payHistoryRepository.findBySellerIdAndBuyerId(user.getPersonalId(), personalUser.getPersonalId()).stream()
                     .map(PayHistory::getPayHistoryId).collect(Collectors.toList());
@@ -146,7 +146,6 @@ public class PickServiceImpl implements PickService {
                     .jobName(String.join(",", jobNames))
                     .scrap(scrapList)
                     .pick(pickList)
-//                    .companyId(companyIdList)
                     .resumeUpdate(resume.getResumeUpdate())
                     .payHistoryId(payHistoryId)
                     .berryPoint(totalBerryPoints)
@@ -413,24 +412,6 @@ public class PickServiceImpl implements PickService {
         if(payHistoryRepository.existsByBuyerIdAndSellerId(buyer.getPersonalId(), seller.getPersonalId())){
             return true;    // 이미 결제가 존재함
         }
-        // 현재 포인트 확인
-//        Payment buyerPayment = paymentRepository.findByPersonalUser_PersonalId(buyer.getPersonalId());
-//        if(buyerPayment == null) {
-//            throw new RuntimeException("personal user not found");
-//        }
-        // Buyer의 총 베리 포인트 확인
-        Integer totalBerryPoints = paymentRepository.findTotalBerryPointsByPersonalId(buyer.getPersonalId())
-                .orElse(0);
-        // 50보다 적으면 error
-//        if(totalBerryPoints < 50){
-//            throw new IllegalArgumentException("Not enough points");
-//        }
-
-        // 포인트 차감
-//        buyerPayment.subtractBerryPoints(50);
-//        paymentRepository.save(buyerPayment);
-        subtractBerryPoints(buyer, 50);
-
 
         // 결제 내역 저장
         PayHistory payHistory = PayHistory.builder()
@@ -444,23 +425,6 @@ public class PickServiceImpl implements PickService {
 
         payHistoryRepository.save(payHistory);
         return false;
-    }
-    // 포인트차감하는 로직 따로 만들어서 handlePayment에서 활용
-    private void subtractBerryPoints(PersonalUser buyer, int points) {
-        List<Payment> payments = paymentRepository.findAllSuccessfulPaymentsByPersonalId(buyer.getPersonalId())
-                .orElse(Collections.emptyList());
-        for(Payment payment : payments) {
-            int berryPoints = payment.getBerryPoint();
-            if(berryPoints >= points) {
-                payment.subtractBerryPoints(points);
-                paymentRepository.save(payment);
-                break;
-            }else{
-                payment.subtractBerryPoints(berryPoints);
-                paymentRepository.save(payment);
-                points -= berryPoints;
-            }
-        }
     }
 
     // scrap데이터 저장하는 메서드
