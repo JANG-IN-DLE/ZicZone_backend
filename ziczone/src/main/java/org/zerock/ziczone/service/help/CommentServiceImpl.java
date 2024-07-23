@@ -2,7 +2,9 @@ package org.zerock.ziczone.service.help;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.tomcat.jni.Local;
 import org.springframework.stereotype.Service;
+import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.domain.board.Board;
 import org.zerock.ziczone.domain.board.Comment;
 import org.zerock.ziczone.domain.member.PersonalUser;
@@ -18,6 +20,7 @@ import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.repository.payment.PaymentRepository;
 
 import javax.transaction.Transactional;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -212,6 +215,17 @@ public class CommentServiceImpl implements CommentService {
             payment.initializePayment(comment.getUser().getPersonalUser(), orderId, paymentKey);
             paymentRepository.save(payment);
         }
+
+        PayHistory payHistory = PayHistory.builder()
+                .sellerId(comment.getUser().getPersonalUser().getPersonalId())
+                .buyerId(board.getUser().getPersonalUser().getPersonalId())
+                .berryBucket(board.getCorrPoint().toString())
+                .payHistoryContent("댓글 채택")
+                .payHistoryDate(LocalDateTime.now())
+                .personalUser(board.getUser().getPersonalUser())
+                .build();
+
+        payHistoryRepository.save(payHistory);
 
         commentRepository.save(comment);
     }
