@@ -101,6 +101,8 @@ public class ResumeServiceImpl implements ResumeService {
         deleteRelatedEntities(existingResume.getResumeId(), existingResume.getPersonalUser().getPersonalId());
         // 연관 엔티티 저장
         log.info("연관 엔티티 저장 보내기 전 existingResume {}", existingResume);
+        log.info("연관 엔티티 저장 보내기 전 portfolioFiles {}", portfolioFiles);
+
         saveRelatedEntities(existingResume, resumeDTO, portfolioFiles);
 
 
@@ -216,33 +218,39 @@ public class ResumeServiceImpl implements ResumeService {
     }
 
     // 파일 업데이트 처리
-    private Map<String, String> processFileUpdate(String existingFileName,String existingFileUrl, String existingFileUUID, MultipartFile newFile, String folderName) {
+    private Map<String, String> processFileUpdate(String existingFileName,
+                                                  String existingFileUrl,
+                                                  String existingFileUUID,
+                                                  MultipartFile newFile,
+                                                  String folderName) {
         Map<String, String> fileData = new HashMap<>();
+
+        /*
+        새로운 파일을 등록하면 기존에 저장되어 있는 파일을 삭제한다.
+        단,
+         */
+
 
         // 새로운 파일이 없는 경우
         if (newFile == null || newFile.isEmpty()) {
-            if (existingFileUUID != null && !existingFileUUID.isEmpty()) {
-                storageService.deleteFile(BUCKET_NAME, folderName, existingFileUUID);
-            }
-            fileData.put("fileUrl", existingFileUrl != null ? existingFileUrl : "");
-            fileData.put("fileUUID", existingFileUUID != null ? existingFileUUID : "");
-            fileData.put("fileOriginalFileName", newFile != null ? newFile.getOriginalFilename() : "");
+            // 기존 파일 정보를 그대로 유지
+            fileData.put("fileUrl", Optional.ofNullable(existingFileUrl).orElse(""));
+            fileData.put("fileUUID", Optional.ofNullable(existingFileUUID).orElse(""));
+            fileData.put("fileOriginalFileName", Optional.ofNullable(existingFileName).orElse(""));
 
             log.info("fileData >>>  {}", fileData);
             return fileData;
         }
 
-        // 새로운 파일 업로드
+// 새로운 파일 업로드
         fileData = storageService.uploadFile(newFile, folderName, BUCKET_NAME);
 
-        // 기존 파일 삭제
-        // 등록한 파일
-        if(existingFileName.equals(fileData.get("fileOriginalFileName"))){
-            log.info("기존 파일이름이랑 새로 등록한 파일 이름이 같음 삭제하지 않고 유지 @@");
-            return fileData;
-        }
-        if (existingFileUUID != null && !existingFileUUID.isEmpty()) {
-            storageService.deleteFile(BUCKET_NAME, folderName, existingFileUUID);
+// 기존 파일 삭제
+// 새로 업로드한 파일 이름이 기존 파일 이름과 다른 경우에만 삭제
+        if (!existingFileName.equals(fileData.get("fileOriginalFileName"))) {
+            if (existingFileUUID != null && !existingFileUUID.isEmpty()) {
+                storageService.deleteFile(BUCKET_NAME, folderName, existingFileUUID);
+            }
         }
 
         return fileData;
@@ -251,27 +259,63 @@ public class ResumeServiceImpl implements ResumeService {
     // 포트폴리오 파일 업데이트 처리
     private List<Map<String, String>> processPortfoliosUpdate(Long resumeId, List<MultipartFile> newPortfolios) {
         List<Portfolio> existingPortfolios = portfolioRepository.findByResume_ResumeId(resumeId);
+        List<Map<String, String>> portfolioFiles = new ArrayList<>();
+
+
+        if (newPortfolios == null || newPortfolios.isEmpty() || newPortfolios.stream().allMatch(MultipartFile::isEmpty)) {
+            // 새로운 포트폴리오 파일이 없는 경우 기존 파일 유지
+            log.info("새로운 포트폴리오 파일이 없는 경우 기존 파일 유지");
+            if (existingPortfolios != null && !existingPortfolios.isEmpty()) {
+            log.info("existingPortfolios != null && !existingPortfolios.isEmpty()");
+                existingPortfolios.forEach(portfolio -> {
+                    Map<String, String> existingFileData = new HashMap<>();
+                    existingFileData.put("fileUrl", Optional.ofNullable(portfolio.getPortFileUrl()).orElse(""));
+                    existingFileData.put("fileUUID", Optional.ofNullable(portfolio.getPortFileUuid()).orElse(""));
+                    existingFileData.put("fileOriginalFileName", Optional.ofNullable(portfolio.getPortFileName()).orElse(""));
+                    portfolioFiles.add(existingFileData);
+                });
+            }
+            return portfolioFiles;
+        }
 
         if (existingPortfolios != null && !existingPortfolios.isEmpty()) {
             existingPortfolios.forEach(portfolio -> {
-                if (portfolio.getPortFileUuid() != null && !portfolio.getPortFileUuid().isEmpty()) {
+                log.info("새로운 포트폴리오 파일과 기존 파일 이름 비교");
+                // 새로운 포트폴리오 파일과 기존 파일 이름 비교
+                boolean isSameFile = newPortfolios.stream()
+                        .anyMatch(newFile -> {
+                            String newFileName = newFile.getOriginalFilename();
+                            String portFileName = portfolio.getPortFileName();
+                            log.info("newFileName : {}", newFileName);
+                            log.info("portFileName : {}", portFileName);
+                            return newFileName != null && newFileName.equals(portFileName);
+                        });
+
+                log.info("isSameFile : {}", isSameFile);
+                if (!isSameFile && portfolio.getPortFileName() != null && !portfolio.getPortFileName().isEmpty()) {
+                    log.info("이름이 다르면 기존 파일 삭제");
+                    // 이름이 다르면 기존 파일 삭제
                     storageService.deleteFile(BUCKET_NAME, "portfolio", portfolio.getPortFileUuid());
                 }
             });
+            // 기존 포트폴리오 레코드 삭제
             portfolioRepository.deleteByResumeResumeId(resumeId);
+            log.info("기존 포트폴리오 레코드 삭제");
         }
 
-        if (newPortfolios == null) {
-            return Collections.emptyList();
-        }
+        // 새로운 포트폴리오 파일 업로드
         for (MultipartFile file : newPortfolios) {
             log.info("File Name: {}, File Size: {}", file.getOriginalFilename(), file.getSize());
+            if (file != null && !file.isEmpty()) {
+                log.info("새로운 포트폴리오 파일 업로드");
+                Map<String, String> fileData = storageService.uploadFile(file, "portfolio", BUCKET_NAME);
+                portfolioFiles.add(fileData);
+            }
         }
-        return newPortfolios.stream()
-                .filter(file -> file != null && !file.isEmpty())
-                .map(file -> storageService.uploadFile(file, "portfolio", BUCKET_NAME))
-                .collect(Collectors.toList());
+
+        return portfolioFiles;
     }
+
 
     // 이력서 엔티티 업데이트
     private Resume updateResumeEntity(Resume existingResume, ResumeDTO resumeDTO, Map<String, String> resumePhotoData, Map<String, String> personalStateData) {
@@ -290,12 +334,12 @@ public class ResumeServiceImpl implements ResumeService {
 //                .personalStateUrl(personalStateData.get("fileUrl").isEmpty() ? null : personalStateData.get("fileUrl"))
 //                .personalStateUuid(personalStateData.get("fileUUID").isEmpty() ? null : personalStateData.get("fileUUID"))
 //                .personalStateFileName(personalStateData.get("fileOriginalFileName").isEmpty() ? null : personalStateData.get("fileOriginalFileName"))
-                .resumePhotoUrl(resumePhotoData.get("fileUrl").isEmpty() ? "" : resumePhotoData.get("fileUrl"))
-                .resumePhotoUuid(resumePhotoData.get("fileUUID").isEmpty() ? "" : resumePhotoData.get("fileUUID"))
-                .resumePhotoFileName(resumePhotoData.get("fileOriginalFileName").isEmpty() ? "" : resumePhotoData.get("fileOriginalFileName"))
-                .personalStateUrl(personalStateData.get("fileUrl").isEmpty() ? "" : personalStateData.get("fileUrl"))
-                .personalStateUuid(personalStateData.get("fileUUID").isEmpty() ? "" : personalStateData.get("fileUUID"))
-                .personalStateFileName(personalStateData.get("fileOriginalFileName").isEmpty() ? "" : personalStateData.get("fileOriginalFileName"))
+                .resumePhotoUrl(resumePhotoData.get("fileUrl") == null || resumePhotoData.get("fileUrl").isEmpty() ? "" : resumePhotoData.get("fileUrl"))
+                .resumePhotoUuid(resumePhotoData.get("fileUUID") == null ||resumePhotoData.get("fileUUID").isEmpty() ? "" : resumePhotoData.get("fileUUID"))
+                .resumePhotoFileName(resumePhotoData.get("fileOriginalFileName") == null || resumePhotoData.get("fileOriginalFileName").isEmpty() ? "" : resumePhotoData.get("fileOriginalFileName"))
+                .personalStateUrl(personalStateData.get("fileUrl") == null || personalStateData.get("fileUrl").isEmpty() ? "" : personalStateData.get("fileUrl"))
+                .personalStateUuid(personalStateData.get("fileUUID") == null ||personalStateData.get("fileUUID").isEmpty() ? "" : personalStateData.get("fileUUID"))
+                .personalStateFileName(personalStateData.get("fileOriginalFileName") == null ||personalStateData.get("fileOriginalFileName").isEmpty() ? "" : personalStateData.get("fileOriginalFileName"))
                 .resumeUpdate(LocalDateTime.now())
                 .build();
     }
@@ -376,6 +420,8 @@ public class ResumeServiceImpl implements ResumeService {
     }
 
     private void savePortfolios(Resume resume, List<Map<String, String>> portfolioFiles) {
+        log.info("savePortfolio resume: {}", resume);
+        log.info("savePortfolio port: portfolioFiles.stream().toList() {}", portfolioFiles.stream().toList());
         if (portfolioFiles != null && !portfolioFiles.isEmpty()) {
             portfolioRepository.deleteByResumeResumeId(resume.getResumeId());
             portfolioFiles.forEach(fileData -> {

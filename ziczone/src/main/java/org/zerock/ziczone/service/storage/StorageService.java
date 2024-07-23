@@ -10,4 +10,6 @@ public interface StorageService {
     Map<String, String> uploadFile(MultipartFile file, String folderName, String bucketName);
 
     void deleteFile(String bucketName, String folderName, String fileUUID);
+
+    Map<String, Object> getFile(String bucketName, String folderName, String fileUUID);
 }

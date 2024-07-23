@@ -33,6 +33,9 @@ public class StorageServiceImpl implements StorageService {
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentType(file.getContentType());
             metadata.setContentLength(file.getSize());
+//            metadata.addUserMetadata("original-filename", file.getOriginalFilename());
+//            metadata.addUserMetadata("file-size", String.valueOf(file.getSize()));
+            log.info("file.getInputStream() : {}", file.getInputStream());
             amazonS3.putObject(new PutObjectRequest(bucketName, fullObjectName, file.getInputStream(), metadata));
             // 업로드된 파일의 접근 제어 리스트 가져오기
             AccessControlList accessControlList = amazonS3.getObjectAcl(bucketName, fullObjectName);
@@ -75,7 +78,7 @@ public class StorageServiceImpl implements StorageService {
         try {
             String fileKey = folderName + "/" + fileUUID;  // 폴더 이름과 파일 UUID를 결합하여 파일 키 생성
             amazonS3.deleteObject(bucketName, fileKey);
-            log.info("Object %s has been deleted.{}", fileKey);
+            log.info("Object has been deleted. : {}", fileKey);
         } catch (AmazonS3Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Failed to delete object: " + fileUUID, e);
@@ -84,4 +87,22 @@ public class StorageServiceImpl implements StorageService {
             throw new RuntimeException("SDK client error while deleting object: " + fileUUID, e);
         }
     }
+
+    @Override
+    public Map<String, Object> getFile(String bucketName, String folderName, String fileUUID) {
+        String objectKey = folderName + "/" + fileUUID;
+
+        GetObjectMetadataRequest metadataRequest = new GetObjectMetadataRequest(bucketName, objectKey);
+        ObjectMetadata metadata = amazonS3.getObjectMetadata(metadataRequest);
+
+        long actualFileSize = metadata.getContentLength();
+        String originalFileName = metadata.getUserMetaDataOf("original-filename");
+
+        return Map.of(
+                "fileUUID", fileUUID,
+                "fileSize", actualFileSize,
+                "originalFileName", originalFileName
+        );
+    }
+
 }
