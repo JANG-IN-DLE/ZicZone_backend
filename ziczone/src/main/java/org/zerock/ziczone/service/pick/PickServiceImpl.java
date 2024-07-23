@@ -103,9 +103,10 @@ public class PickServiceImpl implements PickService {
         List<Resume> latestResumes = resumeRepository.findAllByPersonalUserIsPersonalVisibleTrueOrderByResumeUpdateDesc();
         // 개인회원의 정보를 가져온다.
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(loggedInUserId);
-        // 개인회원의 berryPoint를 가져온다.
-        Payment payment = paymentRepository.findByPersonalUser_PersonalId(personalUser.getPersonalId());
-        Integer userBerryPoint = (payment != null && payment.getBerryPoint() != null) ? payment.getBerryPoint() : 0;
+
+        // 개인회원의 totalBerryPoints를 가져온다.
+        Integer totalBerryPoints = paymentRepository.findTotalBerryPointsByPersonalId(personalUser.getPersonalId())
+                .orElse(0);
 
         return latestResumes.stream().map(resume -> {
             PersonalUser user = resume.getPersonalUser();
@@ -148,7 +149,7 @@ public class PickServiceImpl implements PickService {
 //                    .companyId(companyIdList)
                     .resumeUpdate(resume.getResumeUpdate())
                     .payHistoryId(payHistoryId)
-                    .berryPoint(userBerryPoint)
+                    .berryPoint(totalBerryPoints)
                     .build();
         }).collect(Collectors.toList());
 
@@ -401,30 +402,35 @@ public class PickServiceImpl implements PickService {
         // Buyer 정보 가져오기
         PersonalUser buyer = personalUserRepository.findByUser_UserId(openCardDTO.getBuyerId());
         if(buyer == null) {
-            throw new RuntimeException("personal user not found");
+            throw new RuntimeException("Buyer not found");
         }
         // Seller 정보 가져오기
         PersonalUser seller = personalUserRepository.findByPersonalId(openCardDTO.getSellerId());
         if(seller == null) {
-            throw new RuntimeException("personal user not found");
+            throw new RuntimeException("Seller not found");
         }
         // PayHistory에 buyerId와 sellerId가 존재하는지 확인
         if(payHistoryRepository.existsByBuyerIdAndSellerId(buyer.getPersonalId(), seller.getPersonalId())){
             return true;    // 이미 결제가 존재함
         }
         // 현재 포인트 확인
-        Payment buyerPayment = paymentRepository.findByPersonalUser_PersonalId(buyer.getPersonalId());
-        if(buyerPayment == null) {
-            throw new RuntimeException("personal user not found");
-        }
+//        Payment buyerPayment = paymentRepository.findByPersonalUser_PersonalId(buyer.getPersonalId());
+//        if(buyerPayment == null) {
+//            throw new RuntimeException("personal user not found");
+//        }
+        // Buyer의 총 베리 포인트 확인
+        Integer totalBerryPoints = paymentRepository.findTotalBerryPointsByPersonalId(buyer.getPersonalId())
+                .orElse(0);
         // 50보다 적으면 error
-        if(buyerPayment.getBerryPoint() < 50){
-            throw new IllegalArgumentException("Not enough points");
-        }
+//        if(totalBerryPoints < 50){
+//            throw new IllegalArgumentException("Not enough points");
+//        }
 
         // 포인트 차감
-        buyerPayment.subtractBerryPoints(50);
-        paymentRepository.save(buyerPayment);
+//        buyerPayment.subtractBerryPoints(50);
+//        paymentRepository.save(buyerPayment);
+        subtractBerryPoints(buyer, 50);
+
 
         // 결제 내역 저장
         PayHistory payHistory = PayHistory.builder()
@@ -438,6 +444,23 @@ public class PickServiceImpl implements PickService {
 
         payHistoryRepository.save(payHistory);
         return false;
+    }
+    // 포인트차감하는 로직 따로 만들어서 handlePayment에서 활용
+    private void subtractBerryPoints(PersonalUser buyer, int points) {
+        List<Payment> payments = paymentRepository.findAllSuccessfulPaymentsByPersonalId(buyer.getPersonalId())
+                .orElse(Collections.emptyList());
+        for(Payment payment : payments) {
+            int berryPoints = payment.getBerryPoint();
+            if(berryPoints >= points) {
+                payment.subtractBerryPoints(points);
+                paymentRepository.save(payment);
+                break;
+            }else{
+                payment.subtractBerryPoints(berryPoints);
+                paymentRepository.save(payment);
+                points -= berryPoints;
+            }
+        }
     }
 
     // scrap데이터 저장하는 메서드
