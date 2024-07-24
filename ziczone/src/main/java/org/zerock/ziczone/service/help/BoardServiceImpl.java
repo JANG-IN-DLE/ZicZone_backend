@@ -101,7 +101,7 @@ public class BoardServiceImpl implements BoardService {
                 .sellerId(userId)
                 .buyerId(userId)
                 .berryBucket("-"+board.getCorrPoint().toString())
-                .payHistoryContent("게시물 등록")
+                .payHistoryContent("게시물등록")
                 .payHistoryDate(LocalDateTime.now())
                 .personalUser(board.getUser().getPersonalUser())
                 .build();

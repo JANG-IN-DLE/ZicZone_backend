@@ -1,5 +1,6 @@
 package org.zerock.ziczone.repository.board;
 
+import java.time.LocalDateTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -38,4 +39,8 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
     @Modifying
     @Query("UPDATE Board b SET b.corrView = b.corrView + 1 WHERE b.corrId = :corrId")
     void boardViewCount(@Param("corrId") Long corrId);
+    // 7일 지난 댓글 없는 게시물 삭제
+    @Modifying
+    @Query("DELETE FROM Board b WHERE b.corrCreate < :sevenDaysAgo")
+    int deleteOldBoards(@Param("sevenDaysAgo") LocalDateTime sevenDaysAgo);
 }
