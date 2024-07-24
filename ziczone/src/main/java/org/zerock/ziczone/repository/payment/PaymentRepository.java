@@ -2,6 +2,7 @@ package org.zerock.ziczone.repository.payment;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.payment.Payment;
 
@@ -20,6 +21,5 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     Payment findByPersonalUser_PersonalId(Long personalId);
 
-    Payment findByPersonalUser(PersonalUser personalUser);
-
+    List<Payment> findByPersonalUser(PersonalUser personalUser);
 }

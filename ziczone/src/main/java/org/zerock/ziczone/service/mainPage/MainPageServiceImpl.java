@@ -49,7 +49,7 @@ public class MainPageServiceImpl implements MainPageService {
     public MainPersonalUserDTO getPersonalUser(Long userId) {
         User user = userRepository.findByUserId(userId);
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(user.getUserId());
-        Payment payment = paymentRepository.findByPersonalUser(personalUser);
+//        Payment payment = paymentRepository.findByPersonalUser(personalUser);
 
         return MainPersonalUserDTO.builder()
                 .userName(user.getUserName())

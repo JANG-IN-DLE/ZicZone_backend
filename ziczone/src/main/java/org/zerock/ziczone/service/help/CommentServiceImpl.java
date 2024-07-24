@@ -207,8 +207,9 @@ public class CommentServiceImpl implements CommentService {
 
         comment.changeSelection(true);
 
-        Payment payment = paymentRepository.findByPersonalUser_PersonalId(comment.getUser().getPersonalUser().getPersonalId());
-        if (payment == null) {
+        List<Payment> payments = paymentRepository.findByPersonalUser(comment.getUser().getPersonalUser());
+        Payment payment;
+        if (payments.isEmpty()) {
             payment = new Payment();
             String orderId = UUID.randomUUID().toString();
             String paymentKey = UUID.randomUUID().toString();
@@ -220,7 +221,7 @@ public class CommentServiceImpl implements CommentService {
                 .sellerId(comment.getUser().getPersonalUser().getPersonalId())
                 .buyerId(board.getUser().getPersonalUser().getPersonalId())
                 .berryBucket(board.getCorrPoint().toString())
-                .payHistoryContent("댓글 채택")
+                .payHistoryContent("댓글채택")
                 .payHistoryDate(LocalDateTime.now())
                 .personalUser(board.getUser().getPersonalUser())
                 .build();
