@@ -247,8 +247,10 @@ public class ResumeServiceImpl implements ResumeService {
 
 // 기존 파일 삭제
 // 새로 업로드한 파일 이름이 기존 파일 이름과 다른 경우에만 삭제
-        if (!existingFileName.equals(fileData.get("fileOriginalFileName"))) {
+        // 파일 이름이 같으면 일단 삭제
+        if (existingFileName.equals(fileData.get("fileOriginalFileName")) || !existingFileName.equals(fileData.get("fileOriginalFileName"))) {
             if (existingFileUUID != null && !existingFileUUID.isEmpty()) {
+                log.info("기존 파일 삭제 시작 : {}", existingFileUUID);
                 storageService.deleteFile(BUCKET_NAME, folderName, existingFileUUID);
             }
         }
@@ -295,6 +297,9 @@ public class ResumeServiceImpl implements ResumeService {
                 if (!isSameFile && portfolio.getPortFileName() != null && !portfolio.getPortFileName().isEmpty()) {
                     log.info("이름이 다르면 기존 파일 삭제");
                     // 이름이 다르면 기존 파일 삭제
+                    storageService.deleteFile(BUCKET_NAME, "portfolio", portfolio.getPortFileUuid());
+                }else if(isSameFile && portfolio.getPortFileName() != null && !portfolio.getPortFileName().isEmpty()){
+                    log.info("이름이 같아도 기존 파일 삭제");
                     storageService.deleteFile(BUCKET_NAME, "portfolio", portfolio.getPortFileUuid());
                 }
             });
