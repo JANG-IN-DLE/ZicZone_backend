@@ -8,12 +8,17 @@ import org.springframework.web.multipart.MultipartFile;
 import org.zerock.ziczone.domain.application.*;
 import org.zerock.ziczone.domain.job.JobPosition;
 import org.zerock.ziczone.domain.member.PersonalUser;
+import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.domain.tech.TechStack;
 import org.zerock.ziczone.dto.mypage.*;
+import org.zerock.ziczone.exception.mypage.PersonalNotFoundException;
 import org.zerock.ziczone.exception.mypage.ResumeAlreadyExistsException;
+import org.zerock.ziczone.exception.mypage.UserNotFoundException;
+import org.zerock.ziczone.exception.resume.ResumeNotFoundException;
 import org.zerock.ziczone.repository.application.*;
 import org.zerock.ziczone.repository.job.JobPositionRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
+import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
 import org.zerock.ziczone.service.storage.StorageService;
 
@@ -40,6 +45,7 @@ public class ResumeServiceImpl implements ResumeService {
     private final PersonalUserRepository personalUserRepository;
 
     final static String BUCKET_NAME = "ziczone-bucket-jangindle-optimizer";
+    private final UserRepository userRepository;
 
     @Transactional
     @Override
@@ -121,10 +127,23 @@ public class ResumeServiceImpl implements ResumeService {
 
     @Transactional
     @Override
-    public void deleteResume(Long resumeId) {
+    public void deleteResume(Long userId) {
+        User user = userRepository.findByUserId(userId);
+        if(user == null){
+            throw new UserNotFoundException("User not found");
+        }
+        PersonalUser personalUser = personalUserRepository.findByUser_UserId(user.getUserId());
+        if(personalUser == null){
+            throw new PersonalNotFoundException("Personal user not found");
+        }
+        Resume resumeEntity = resumeRepository.findResumeByPersonalUser_PersonalId(personalUser.getPersonalId());
+        if(resumeEntity == null){
+            throw new ResumeNotFoundException("Resume not found");
+        }
+        Long resumeId = resumeEntity.getResumeId();
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid resume ID: " + resumeId));
-
+//
         // 포트폴리오 파일 삭제
         List<Portfolio> portfolios = portfolioRepository.findByResume_ResumeId(resumeId);
         if (portfolios != null && !portfolios.isEmpty()) {
@@ -499,6 +518,87 @@ public class ResumeServiceImpl implements ResumeService {
         return resumeRepository.findAll().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean ResumeExist(Long userId) {
+        PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
+        return resumeRepository.existsByPersonalUser_PersonalId(personalUser.getPersonalId());
+    }
+
+    /**
+     * 포트폴리오 삭제
+     * @param portfolioId
+     * @return
+     */
+    @Override
+    public void deletePortfolio(Long portfolioId) {
+        Portfolio portfolio = portfolioRepository.findById(portfolioId).orElseThrow(() -> new NoSuchElementException("Portfolio not found"));
+        String fileUUID = portfolio.getPortFileUuid();
+        storageService.deleteFile(BUCKET_NAME, "portfolio", fileUUID);
+        portfolioRepository.deleteById(portfolioId);
+        Resume resume = portfolio.getResume();
+        resumeRepository.save(resume);
+    }
+
+    /**
+     * 사진 삭제
+     * @param resumeId
+     * @return
+     */
+    @Override
+    public void deleteResumePhoto(Long resumeId) {
+        Resume resume = resumeRepository.findById(resumeId).orElseThrow(() -> new NoSuchElementException("Resume not found"));
+        storageService.deleteFile(BUCKET_NAME, "resume-photos", resume.getResumePhotoUuid());
+
+        Resume updatedResume = Resume.builder()
+                .resumeId(resume.getResumeId())
+                .resumeName(resume.getResumeName())
+                .resumeDate(resume.getResumeDate())
+                .phoneNum(resume.getPhoneNum())
+                .resumePhotoUrl("")
+                .resumePhotoUuid("")
+                .resumePhotoFileName("")
+                .resumeEmail(resume.getResumeEmail())
+                .resumeCreate(resume.getResumeCreate())
+                .resumeUpdate(LocalDateTime.now())
+                .personalStateUrl(resume.getPersonalStateUrl())
+                .personalStateUuid(resume.getPersonalStateUuid())
+                .personalStateFileName(resume.getPersonalStateFileName())
+                .personalUser(resume.getPersonalUser())
+                .build();
+
+        resumeRepository.save(updatedResume);
+    }
+
+    /**
+     * 자소서 삭제
+     * @param resumeId
+     * @return
+     */
+    @Override
+    public void deleteResumePersonalState(Long resumeId) {
+        Resume resume = resumeRepository.findById(resumeId).orElseThrow(() -> new NoSuchElementException("Resume not found"));
+        storageService.deleteFile(BUCKET_NAME, "personal-states", resume.getPersonalStateUuid());
+
+        Resume updatedResume = Resume.builder()
+                .resumeId(resume.getResumeId())
+                .resumeName(resume.getResumeName())
+                .resumeDate(resume.getResumeDate())
+                .phoneNum(resume.getPhoneNum())
+                .resumePhotoUrl(resume.getResumePhotoUrl())
+                .resumePhotoUuid(resume.getResumePhotoUuid())
+                .resumePhotoFileName(resume.getResumePhotoFileName())
+                .resumeEmail(resume.getResumeEmail())
+                .resumeCreate(resume.getResumeCreate())
+                .resumeUpdate(LocalDateTime.now())
+                .personalStateUrl("")
+                .personalStateUuid("")
+                .personalStateFileName("")
+                .personalUser(resume.getPersonalUser())
+                .build();
+
+        resumeRepository.save(updatedResume);
     }
 
     private ResumeDTO convertToDto(Resume resume) {
