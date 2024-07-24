@@ -142,14 +142,17 @@ public class MyPageServiceImpl implements  MyPageService{
     @Override
     public String updateCompanyUser(Long userId, Map<String, Object> payload, MultipartFile logoFile) {
         User user = getUserById(userId);
-        CompanyUser companyUser = getCompanyUserById(userId);
+        CompanyUser companyUser = getCompanyUserById(user.getUserId());
+
+        if (companyUser == null) {
+            throw new CompanyNotFoundException("Company User Not Found");
+        }
 
         String userName = (String) payload.get("userName");
         String userIntro = (String) payload.get("userIntro");
         String companyAddr = (String) payload.get("companyAddr");
         String currentPassword = (String) payload.get("currentPassword");
         String changePassword = (String) payload.get("changePassword");
-
 
         if (currentPassword != null) {
             if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
@@ -169,14 +172,6 @@ public class MyPageServiceImpl implements  MyPageService{
         String companyLogoUrl = companyUser.getCompanyLogoUrl();
         String companyLogoUuid = companyUser.getCompanyLogoUuid();
         String companyLogoFileName = companyUser.getCompanyLogoFileName();
-        
-        // 기존 파일 삭제 로직
-        if ((logoFile == null || logoFile.isEmpty()) && companyLogoUuid != null) {
-            storageService.deleteFile(bucketName, folderName, companyLogoUuid);
-            companyLogoUrl = null;
-            companyLogoUuid = null;
-            companyLogoFileName = null;
-        }
 
         // 새로운 파일 업로드 로직
         if (logoFile != null && !logoFile.isEmpty()) {
@@ -187,6 +182,9 @@ public class MyPageServiceImpl implements  MyPageService{
             companyLogoUrl = S3uploadData.get("fileUrl");
             companyLogoUuid = S3uploadData.get("fileUUID");
             companyLogoFileName = logoFile.getOriginalFilename();
+        } else {
+            // 새로운 파일이 없는 경우, 기존 파일 정보는 유지
+            log.info("No new logo file uploaded, keeping existing logo.");
         }
 
         CompanyUser updatedCompanyUser = companyUser.toBuilder()
@@ -207,6 +205,7 @@ public class MyPageServiceImpl implements  MyPageService{
         companyUserRepository.save(updatedCompanyUser);
         return "User Information Updated Successfully";
     }
+
 
 
 

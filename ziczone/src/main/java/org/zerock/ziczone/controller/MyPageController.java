@@ -88,9 +88,10 @@ public class MyPageController {
     ) {
 
         ObjectMapper objectMapper = new ObjectMapper();
-        Map<String, Object> payload;
+        Map<String,Object> payload;
         try {
             payload = objectMapper.readValue(payloadStr, Map.class);
+            log.info("PayLoad Map : {}", payload);
         } catch (IOException e) {
             return ResponseEntity.badRequest().body("Invalid JSON format in payload");
         }
