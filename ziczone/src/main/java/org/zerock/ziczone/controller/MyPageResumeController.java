@@ -57,7 +57,7 @@ public class MyPageResumeController {
         ResumeDTO resumeDTO = convertJsonToResumeDTO(resumeDTOString);
         User user = userRepository.findByUserId(userId);
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
-//        resumeDTO.setPersonalId(personalUser.getPersonalId());
+        resumeDTO.setPersonalId(personalUser.getPersonalId());
 //        resumeDTO.setResumeName(user.getUserName());
         ResumeDTO savedResume = resumeService.saveResume(resumeDTO, resumePhoto, personalState, portfolios);
         return ResponseEntity.ok("Success Create Resume");
@@ -101,12 +101,12 @@ public class MyPageResumeController {
 
     /**
      * 이력서를 삭제합니다.
-     * @param resumeId 삭제할 이력서 ID
+     * @param userId 삭제할 이력서 ID
      * @return 삭제 결과 메시지
      */
-    @DeleteMapping("/{resumeId}")
-    public ResponseEntity<String> deleteResume(@PathVariable Long resumeId) {
-        resumeService.deleteResume(resumeId);
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<String> deleteResume(@PathVariable Long userId) {
+        resumeService.deleteResume(userId);
         return ResponseEntity.ok("Resume deleted successfully.");
     }
 
