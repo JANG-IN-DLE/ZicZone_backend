@@ -41,6 +41,6 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
     void boardViewCount(@Param("corrId") Long corrId);
     // 7일 지난 댓글 없는 게시물 삭제
     @Modifying
-    @Query("DELETE FROM Board b WHERE b.corrCreate < :sevenDaysAgo")
-    int deleteOldBoards(@Param("sevenDaysAgo") LocalDateTime sevenDaysAgo);
+    @Query("DELETE FROM Board b WHERE b.corrCreate < :sevenDaysAgo AND NOT EXISTS (SELECT c FROM Comment c WHERE c.board = b)")
+    int deleteOldBoardsWithoutComments(@Param("sevenDaysAgo") LocalDateTime sevenDaysAgo);
 }

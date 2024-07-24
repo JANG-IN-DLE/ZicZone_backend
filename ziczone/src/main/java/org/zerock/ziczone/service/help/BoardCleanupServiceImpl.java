@@ -23,7 +23,7 @@ public class BoardCleanupServiceImpl implements BoardCleanupService {
     public void cleanupOldBoards() {
         LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
 
-        int deletedCount = boardRepository.deleteOldBoards(sevenDaysAgo);
+        int deletedCount = boardRepository.deleteOldBoardsWithoutComments(sevenDaysAgo);
 
         log.info("Total deleted posts: {}", deletedCount);
     }
