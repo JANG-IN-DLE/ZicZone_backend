@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.domain.PickAndScrap;
 import org.zerock.ziczone.domain.board.Board;
 import org.zerock.ziczone.domain.board.Comment;
@@ -50,10 +49,6 @@ public class MyPageServiceImpl implements  MyPageService{
     private final UserRepository userRepository;
     private final CompanyUserRepository companyUserRepository;
     private final PersonalUserRepository personalUserRepository;
-    private final PaymentRepository paymentRepository;
-    private final ResumeRepository resumeRepository;
-    private final JobRepository jobRepository;
-    private final TechRepository techRepository;;
     private final PickAndScrapRepository pickAndScrapRepository;
     private final CommentRepository commentRepository;
     private final JobPositionRepository jobPositionRepository;
@@ -285,8 +280,9 @@ public class MyPageServiceImpl implements  MyPageService{
             return AggregatedDataDTO.builder().build(); // or throw an exception
         }
 
+
         // 특정 BuyerId로 모든 SellerId 조회
-        List<Long> sellerIds = payHistoryRepository.findSellerIdsByBuyerId(personalUser.getUser().getUserId());
+        List<Long> sellerIds = payHistoryRepository.findSellerIdsByPersonalId(personalUser.getPersonalId());
 
         // SellerId 리스트로 PersonalUser 조회
         List<PersonalUser> fetchedPersonalUsers = personalUserRepository.findByPersonalIds(sellerIds);

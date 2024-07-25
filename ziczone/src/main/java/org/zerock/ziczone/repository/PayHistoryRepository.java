@@ -4,11 +4,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.zerock.ziczone.domain.PayHistory;
-import org.zerock.ziczone.domain.payment.Payment;
-import org.zerock.ziczone.dto.mypage.PayHistoryDTO;
-
-import java.util.List;
-import java.util.Optional;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,8 +17,8 @@ public interface PayHistoryRepository extends JpaRepository<PayHistory, Long> {
     List<PayHistory> findBySellerIdAndBuyerId(Long sellerId, Long buyerId);
 
     // 특정 BuyerId로 모든 SellerId 조회
-    @Query("SELECT DISTINCT p.sellerId FROM PayHistory p WHERE p.buyerId = :buyerId")
-    List<Long> findSellerIdsByBuyerId(@Param("buyerId") Long buyerId);
+    @Query("SELECT DISTINCT p.sellerId FROM PayHistory p WHERE p.personalUser.personalId = :personalId")
+    List<Long> findSellerIdsByPersonalId(@Param("personalId") Long personalId);
 
     // PersonalUser의 personalId로 PayHistory 조회
     @Query("SELECT p FROM PayHistory p WHERE p.personalUser.personalId = :personalId")

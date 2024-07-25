@@ -9,14 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.zerock.ziczone.dto.help.BoardDTO;
 import org.zerock.ziczone.dto.mypage.*;
-import org.zerock.ziczone.repository.PayHistoryRepository;
-import org.zerock.ziczone.repository.member.PersonalUserRepository;
-import org.zerock.ziczone.repository.member.UserRepository;
-import org.zerock.ziczone.repository.payment.PaymentRepository;
 import org.zerock.ziczone.service.help.BoardService;
-import org.zerock.ziczone.service.help.CommentService;
 import org.zerock.ziczone.service.myPage.MyPageService;
-import org.zerock.ziczone.service.myPage.MyPageServiceImpl;
 
 import java.io.IOException;
 import java.util.List;

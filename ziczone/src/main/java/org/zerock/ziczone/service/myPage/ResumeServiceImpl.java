@@ -102,12 +102,15 @@ public class ResumeServiceImpl implements ResumeService {
         existingResume = updateResumeEntity(existingResume, resumeDTO, resumePhotoData, personalStateData);
 
 
+
+
         // 연관 엔티티 삭제
         log.info("연관 엔티티 삭제 보내기 전 existingResume {}", existingResume);
-        deleteRelatedEntities(existingResume.getResumeId(), existingResume.getPersonalUser().getPersonalId());
+        deleteAllEntities(existingResume.getResumeId(), existingResume.getPersonalUser().getPersonalId());
         // 연관 엔티티 저장
         log.info("연관 엔티티 저장 보내기 전 existingResume {}", existingResume);
         log.info("연관 엔티티 저장 보내기 전 portfolioFiles {}", portfolioFiles);
+
 
         saveRelatedEntities(existingResume, resumeDTO, portfolioFiles);
 
@@ -164,7 +167,7 @@ public class ResumeServiceImpl implements ResumeService {
         }
 
         // 연관 엔티티 삭제
-        deleteRelatedEntities(resumeId, resume.getPersonalUser().getPersonalId());
+        deletePartialEntities(resumeId, resume.getPersonalUser().getPersonalId());
 
         // 이력서 삭제
         resumeRepository.deleteById(resumeId);
@@ -200,9 +203,6 @@ public class ResumeServiceImpl implements ResumeService {
 
     // 포트폴리오 파일 업로드
     private List<Map<String, String>> uploadPortfolios(List<MultipartFile> portfolios) {
-        if (portfolios == null) {
-            return Collections.emptyList();
-        }
         return portfolios.stream()
                 .filter(file -> file != null && !file.isEmpty())
                 .map(file -> storageService.uploadFile(file, "portfolio", BUCKET_NAME))
@@ -290,7 +290,7 @@ public class ResumeServiceImpl implements ResumeService {
             // 새로운 포트폴리오 파일이 없는 경우 기존 파일 유지
             log.info("새로운 포트폴리오 파일이 없는 경우 기존 파일 유지");
             if (existingPortfolios != null && !existingPortfolios.isEmpty()) {
-            log.info("existingPortfolios != null && !existingPortfolios.isEmpty()");
+                log.info("existingPortfolios != null && !existingPortfolios.isEmpty()");
                 existingPortfolios.forEach(portfolio -> {
                     Map<String, String> existingFileData = new HashMap<>();
                     existingFileData.put("fileUrl", Optional.ofNullable(portfolio.getPortFileUrl()).orElse(""));
@@ -668,9 +668,18 @@ public class ResumeServiceImpl implements ResumeService {
     }
 
     // 연관 엔티티 삭제
-    private void deleteRelatedEntities(Long resumeId, Long personalUserId) {
+    private void deleteAllEntities(Long resumeId, Long personalUserId) {
         jobPositionRepository.deleteByPersonalUserPersonalId(personalUserId);
         techStackRepository.deleteByPersonalUserPersonalId(personalUserId);
+        certificateRepository.deleteByResumeResumeId(resumeId);
+        educationRepository.deleteByResumeResumeId(resumeId);
+        careerRepository.deleteByResumeResumeId(resumeId);
+        curriculumRepository.deleteByResumeResumeId(resumeId);
+        etcRepository.deleteByResumeResumeId(resumeId);
+        portfolioRepository.deleteByResumeResumeId(resumeId);
+        archiveRepository.deleteByResumeResumeId(resumeId);
+    }
+    private void deletePartialEntities(Long resumeId, Long personalUserId) {
         certificateRepository.deleteByResumeResumeId(resumeId);
         educationRepository.deleteByResumeResumeId(resumeId);
         careerRepository.deleteByResumeResumeId(resumeId);
