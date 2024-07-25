@@ -2,7 +2,6 @@ package org.zerock.ziczone.service.help;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.tomcat.jni.Local;
 import org.springframework.stereotype.Service;
 import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.domain.board.Board;
