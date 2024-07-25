@@ -3,23 +3,23 @@ package org.zerock.ziczone.service.alarm;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.zerock.ziczone.domain.alarm.Alarm;
 import org.zerock.ziczone.domain.alarm.AlarmContent;
 import org.zerock.ziczone.domain.board.Board;
 import org.zerock.ziczone.domain.member.User;
-import org.zerock.ziczone.dto.Alarm.RequestAlarmDTO;
 import org.zerock.ziczone.dto.Alarm.ResponseAlarmDTO;
 import org.zerock.ziczone.repository.alarm.AlarmContentRepository;
 import org.zerock.ziczone.repository.alarm.AlarmRepository;
 import org.zerock.ziczone.repository.board.BoardRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
+import org.zerock.ziczone.service.login.JwtService;
 
 import javax.transaction.Transactional;
+import java.io.IOException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 
@@ -29,15 +29,49 @@ import java.util.stream.Collectors;
 @Transactional
 public class AlarmServiceImpl implements AlarmService {
 
+    private final Map<Long, SseEmitter> sseEmitters = new ConcurrentHashMap<>();
+
     private final AlarmRepository alarmRepository;
     private final AlarmContentRepository alarmContentRepository;
     private final UserRepository userRepository;
     private final BoardRepository boardRepository;
 
+    private final JwtService jwtService;
+
+
+    //구독
+    @Override
+    public SseEmitter subscribe(Long userId, String token) {
+        if (!jwtService.validateToken(token, jwtService.extractUsername(token))) {
+            throw new SecurityException("Invalid token");
+        }
+
+        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+        sseEmitters.put(userId, emitter);
+        log.info("Subscribe to user id : " + userId);
+
+        emitter.onCompletion(() -> sseEmitters.remove(userId));
+        emitter.onTimeout(() -> sseEmitters.remove(userId));
+
+        return emitter;
+    }
+
+
+    //로그이웃
+    @Override
+    public void logout(Long userId) {
+        SseEmitter emitter = sseEmitters.get(userId);
+        if (emitter != null) {
+            emitter.complete();
+            sseEmitters.remove(userId);
+        }
+    }
+
+
     //회원 이름 조회
     public String getUserName(Long id) {
         User user = userRepository.findByUserId(id);
-        return maskUserName(user.getUserName());
+        return user.getUserName();
     }
 
     //게시글 제목 조회
@@ -55,7 +89,7 @@ public class AlarmServiceImpl implements AlarmService {
         }
     }
 
-
+    //유저이름 필터링
     public String maskUserName(String userName) {
         if(userName == null || userName.isEmpty()) {
             return "Unknown User";
@@ -72,11 +106,11 @@ public class AlarmServiceImpl implements AlarmService {
     }
     //알림저장
     @Override
-    public Alarm saveAlarm(RequestAlarmDTO requestAlarmDTO) {
+    public Alarm saveAlarm(String type, Long senderId, Long receiverId) {
 
         AlarmContent alarmContent = AlarmContent.builder()
-                .alarmType(requestAlarmDTO.getType())
-                .senderId(requestAlarmDTO.getSenderId())
+                .alarmType(type)
+                .senderId(senderId)
                 .build();
         alarmContentRepository.save(alarmContent);
 
@@ -84,7 +118,7 @@ public class AlarmServiceImpl implements AlarmService {
                 .alarmContent(alarmContent)
                 .alarmCreate(LocalDateTime.now())
                 .readOrNot(false)
-                .user(userRepository.findByUserId(requestAlarmDTO.getReceiverId()))
+                .user(userRepository.findByUserId(receiverId))
                 .build();
         alarmRepository.save(alarm);
 
@@ -125,9 +159,10 @@ public class AlarmServiceImpl implements AlarmService {
             return ResponseAlarmDTO.builder()
                     .Type("SELECTION")
                     .sender(getPostName(alarm.getAlarmContent().getSenderId()))
-                    .receiver(getUserName(userId))
+                    .receiver(maskUserName(getUserName(userId)))
                     .getBerry(board.getCorrPoint())
                     .alarmCreate(alarm.getAlarmCreate())
+                    .readOrNot(alarm.isReadOrNot())
                     .build();
         } else {
             log.warn("Board not found for userId: " + userId);
@@ -143,6 +178,7 @@ public class AlarmServiceImpl implements AlarmService {
                 .receiver(getUserName(userId))
                 .getBerry(null)
                 .alarmCreate(alarm.getAlarmCreate())
+                .readOrNot(alarm.isReadOrNot())
                 .build();
     }
 
@@ -154,6 +190,7 @@ public class AlarmServiceImpl implements AlarmService {
                 .receiver(getUserName(userId))
                 .getBerry(null)
                 .alarmCreate(alarm.getAlarmCreate())
+                .readOrNot(alarm.isReadOrNot())
                 .build();
     }
 
@@ -165,17 +202,61 @@ public class AlarmServiceImpl implements AlarmService {
                 .receiver(getUserName(userId))
                 .getBerry(50)
                 .alarmCreate(alarm.getAlarmCreate())
+                .readOrNot(alarm.isReadOrNot())
                 .build();
     }
 
-
-
+    //다른 컨트롤러에서 사용해야함
     //새로 생성된 알람
     @Override
-    public ResponseAlarmDTO sendAlarm(RequestAlarmDTO requestAlarmDTO) {
+    public ResponseAlarmDTO addAlarm(String type, Long senderId, Long receiverId) {
 
-        Alarm savedAlarm = saveAlarm(requestAlarmDTO);
+        Alarm savedAlarm = saveAlarm(type, senderId, receiverId);
 
-        return createResponseAlarmDTO(savedAlarm, savedAlarm.getUser().getUserId());
+        ResponseAlarmDTO responseAlarmDTO = createResponseAlarmDTO(savedAlarm, receiverId);
+
+        if(sseEmitters.get(receiverId) != null){
+            sendAlarm(receiverId, responseAlarmDTO);
+        }
+
+        return responseAlarmDTO;
+    }
+
+    public void sendAlarm(Long userId, ResponseAlarmDTO responseAlarmDTO) {
+        SseEmitter emitter = sseEmitters.get(userId);
+        // 사용자가 존재하면
+        if (emitter != null) {
+            try {
+                log.info("Sending alarm to user: {}", userId);
+                // 'alarm'이벤트를 alarm데이터를 담아서 클라이언트로 전송
+                emitter.send(SseEmitter.event()
+                        .name("alarm")
+                        .data(responseAlarmDTO)); //타입, sender, receiver, berry
+            } catch (IOException e) {
+                log.error("Error sending alarm to user: {}", userId, e);
+                sseEmitters.remove(userId);
+            }
+        } else {
+            log.warn("No SSE emitter found for user: {}", userId);
+        }
+    }
+
+    @Override
+    public void readAlarm(Long userId){
+        List<Alarm> alarmList = alarmRepository.findByUser_UserId(userId);
+// 알림의 readOrNot 값을 true로 변경
+        List<Alarm> updatedAlarms = alarmList.stream().map(alarm ->
+                Alarm.builder()
+                        .alarmId(alarm.getAlarmId())
+                        .alarmContent(alarm.getAlarmContent())
+                        .alarmCreate(alarm.getAlarmCreate())
+                        .readOrNot(true) // readOrNot을 true로 설정
+                        .user(alarm.getUser())
+                        .build()
+        ).collect(Collectors.toList());
+
+        // 변경된 알림 저장
+        alarmRepository.saveAll(updatedAlarms);
+
     }
 }

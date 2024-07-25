@@ -30,41 +30,30 @@ public class AlarmSseController {
 
     // 클라이언트 구독
     @GetMapping("/subscribe/{userId}")
-    public SseEmitter subscribe(@PathVariable Long userId, @RequestParam("token") String token) {
-        // 토큰 검증
-        if (!jwtService.validateToken(token, jwtService.extractUsername(token))) {
-            throw new SecurityException("Invalid token");
-        }
+    public ResponseEntity<SseEmitter> subscribe(@PathVariable Long userId, @RequestParam("token") String token) {
 
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
-        sseEmitters.put(userId, emitter);
-//        log.info("Subscribe to user id : " + userId);
-
-        emitter.onCompletion(() -> sseEmitters.remove(userId));
-        emitter.onTimeout(() -> sseEmitters.remove(userId));
-
-        return emitter;
+        return ResponseEntity.ok(alarmService.subscribe(userId, token));
     }
 
     //알람보냄
-    public void sendAlarm(Long userId, ResponseAlarmDTO responseAlarmDTO) {
-        SseEmitter emitter = sseEmitters.get(userId);
-        // 사용자가 존재하면
-        if (emitter != null) {
-            try {
-                log.info("Sending alarm to user: {}", userId);
-                // 'alarm'이벤트를 alarm데이터를 담아서 클라이언트로 전송
-                emitter.send(SseEmitter.event()
-                        .name("alarm")
-                        .data(responseAlarmDTO)); //타입, sender, receiver, berry
-            } catch (IOException e) {
-                log.error("Error sending alarm to user: {}", userId, e);
-                sseEmitters.remove(userId);
-            }
-        } else {
-            log.warn("No SSE emitter found for user: {}", userId);
-        }
-    }
+//    public void sendAlarm(Long userId, ResponseAlarmDTO responseAlarmDTO) {
+//        SseEmitter emitter = sseEmitters.get(userId);
+//        // 사용자가 존재하면
+//        if (emitter != null) {
+//            try {
+//                log.info("Sending alarm to user: {}", userId);
+//                // 'alarm'이벤트를 alarm데이터를 담아서 클라이언트로 전송
+//                emitter.send(SseEmitter.event()
+//                        .name("alarm")
+//                        .data(responseAlarmDTO)); //타입, sender, receiver, berry
+//            } catch (IOException e) {
+//                log.error("Error sending alarm to user: {}", userId, e);
+//                sseEmitters.remove(userId);
+//            }
+//        } else {
+//            log.warn("No SSE emitter found for user: {}", userId);
+//        }
+//    }
 
     // 알림요청
     // SELECTION : 게시글 작성자(게시물ID) / 댓글 작성자(회원ID)
@@ -72,34 +61,41 @@ public class AlarmSseController {
     // PICK      : 기업 회원(회원ID) / 개인 회원(회원ID)
     // SCRAP     : 기업 회원(회원ID) / 개인 회원(회원ID)
     // BUYRESUME : 이력서 구매자(회원ID) / 이력서 소유자(회원ID)
+//    @PostMapping("/send")
+//    public ResponseEntity<ResponseAlarmDTO> Notification(@RequestBody RequestAlarmDTO alarm) {
+//
+//        ResponseAlarmDTO responseAlarmDTO = alarmService.sendAlarm(alarm);
+//
+////        sendAlarm(alarm.getReceiverId(), responseAlarmDTO); //프론트로 알림보냄
+//
+//        return ResponseEntity.ok(responseAlarmDTO);
+//    }
+
+
+
     @PostMapping("/send")
-    public ResponseEntity<ResponseAlarmDTO> Notification(@RequestBody RequestAlarmDTO alarm) {
-
-        ResponseAlarmDTO responseAlarmDTO = alarmService.sendAlarm(alarm);
-
-        sendAlarm(alarm.getReceiverId(), responseAlarmDTO); //프론트로 알림보냄
-
-        return ResponseEntity.ok(responseAlarmDTO);
+    public void sendAlarm() {
+        alarmService.addAlarm("COMMENT", 98L, 14L);
     }
-
-    // 로그인시에 알람 불러오기
+    // 로그인시에 알람 불러오기(알람초기화)
     @GetMapping("/initAlarm/{userId}")
     public ResponseEntity<List<ResponseAlarmDTO>> initAlarm(@PathVariable Long userId) {
-        List<ResponseAlarmDTO> responseAlarmDTO = alarmService.AlarmList(userId);
-        log.info("Initial alarm list : {}", responseAlarmDTO);
 
+        List<ResponseAlarmDTO> responseAlarmDTO = alarmService.AlarmList(userId);
         return ResponseEntity.ok(responseAlarmDTO);
     }
 
     // 로그아웃
     @PostMapping("/logout/{userId}")
     public ResponseEntity<String> logout(@PathVariable Long userId) {
-        //sse emitter 조회
-        SseEmitter emitter = sseEmitters.get(userId);
-        if (emitter != null) {
-            emitter.complete(); //연결종료
-            sseEmitters.remove(userId); //emitter맵에서 제거
-        }
+        alarmService.logout(userId);
         return ResponseEntity.ok("logout successful");
+    }
+
+    //읽음처리
+    @PostMapping("/readAlarm/{userId}")
+    public ResponseEntity readAlarm(@PathVariable Long userId) {
+        alarmService.readAlarm(userId);
+        return ResponseEntity.ok("read alarm successful");
     }
 }
