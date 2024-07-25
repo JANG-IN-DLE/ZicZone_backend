@@ -140,7 +140,7 @@ public class AlarmServiceImpl implements AlarmService {
     private ResponseAlarmDTO createResponseAlarmDTO(Alarm alarm, Long userId) {
         String alarmType = alarm.getAlarmContent().getAlarmType();
         return switch (alarmType) {
-            case "SELECTION" -> createSelectionAlarmDTO(alarm, userId);
+            case "SELECTION", "DELETEBOARD" -> createSelectionAlarmDTO(alarm, userId);
             case "COMMENT" -> createCommentAlarmDTO(alarm, userId);
             case "PICK", "SCRAP" -> createPickOrScrapAlarmDTO(alarm, userId);
             case "BUYRESUME" -> createBuyResumeAlarmDTO(alarm, userId);
@@ -152,30 +152,30 @@ public class AlarmServiceImpl implements AlarmService {
     }
 
     // 채택알림
-    private ResponseAlarmDTO createSelectionAlarmDTO(Alarm alarm, Long userId) {
+    private ResponseAlarmDTO createSelectionAlarmDTO(Alarm alarm, Long boardId) {
         Optional<Board> boardOpt = boardRepository.findById(alarm.getAlarmContent().getSenderId());
         if (boardOpt.isPresent()) {
             Board board = boardOpt.get();
             return ResponseAlarmDTO.builder()
-                    .Type("SELECTION")
+                    .Type(alarm.getAlarmContent().getAlarmType())
                     .sender(getPostName(alarm.getAlarmContent().getSenderId()))
-                    .receiver(maskUserName(getUserName(userId)))
+                    .receiver(maskUserName(getUserName(boardId)))
                     .getBerry(board.getCorrPoint())
                     .alarmCreate(alarm.getAlarmCreate())
                     .readOrNot(alarm.isReadOrNot())
                     .build();
         } else {
-            log.warn("Board not found for userId: " + userId);
+            log.warn("Board not found for userId: " + boardId);
             return null;
         }
     }
 
     // 댓글알림
-    private ResponseAlarmDTO createCommentAlarmDTO(Alarm alarm, Long userId) {
+    private ResponseAlarmDTO createCommentAlarmDTO(Alarm alarm, Long boardId) {
         return ResponseAlarmDTO.builder()
                 .Type("COMMENT")
                 .sender(getPostName(alarm.getAlarmContent().getSenderId()))
-                .receiver(getUserName(userId))
+                .receiver(getUserName(boardId))
                 .getBerry(null)
                 .alarmCreate(alarm.getAlarmCreate())
                 .readOrNot(alarm.isReadOrNot())
