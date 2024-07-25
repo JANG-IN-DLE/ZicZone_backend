@@ -45,4 +45,7 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
     int deleteOldBoardsWithoutComments(@Param("sevenDaysAgo") LocalDateTime sevenDaysAgo);
     // [알림] corrId로 board 정보 가져오기
     Board findByCorrId(Long corrId);
+
+    @Query("SELECT b FROM Board b WHERE b.corrCreate < :sevenDaysAgo AND NOT EXISTS (SELECT c FROM Comment c WHERE c.board = b)")
+    List<Board> findOldBoardsWithoutComments(LocalDateTime sevenDaysAgo);
 }

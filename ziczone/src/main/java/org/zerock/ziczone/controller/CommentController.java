@@ -117,7 +117,6 @@ public class CommentController {
     @PostMapping("/api/personal/comments/{commId}/select")
     public ResponseEntity<String> selectComment(@PathVariable Long commId, @RequestParam Long userId) {
         Comment comment = commentRepository.findByCommId(commId);
-        log.info("#######" + comment);
 
         try {
             commentService.selectComment(commId, userId);
