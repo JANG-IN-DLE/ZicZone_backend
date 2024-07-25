@@ -35,44 +35,6 @@ public class AlarmSseController {
         return ResponseEntity.ok(alarmService.subscribe(userId, token));
     }
 
-    //알람보냄
-//    public void sendAlarm(Long userId, ResponseAlarmDTO responseAlarmDTO) {
-//        SseEmitter emitter = sseEmitters.get(userId);
-//        // 사용자가 존재하면
-//        if (emitter != null) {
-//            try {
-//                log.info("Sending alarm to user: {}", userId);
-//                // 'alarm'이벤트를 alarm데이터를 담아서 클라이언트로 전송
-//                emitter.send(SseEmitter.event()
-//                        .name("alarm")
-//                        .data(responseAlarmDTO)); //타입, sender, receiver, berry
-//            } catch (IOException e) {
-//                log.error("Error sending alarm to user: {}", userId, e);
-//                sseEmitters.remove(userId);
-//            }
-//        } else {
-//            log.warn("No SSE emitter found for user: {}", userId);
-//        }
-//    }
-
-    // 알림요청
-    // SELECTION : 게시글 작성자(게시물ID) / 댓글 작성자(회원ID)
-    // COMMENT   : 댓글 작성자(게시물ID) / 게시글 작성자(회원ID)
-    // PICK      : 기업 회원(회원ID) / 개인 회원(회원ID)
-    // SCRAP     : 기업 회원(회원ID) / 개인 회원(회원ID)
-    // BUYRESUME : 이력서 구매자(회원ID) / 이력서 소유자(회원ID)
-//    @PostMapping("/send")
-//    public ResponseEntity<ResponseAlarmDTO> Notification(@RequestBody RequestAlarmDTO alarm) {
-//
-//        ResponseAlarmDTO responseAlarmDTO = alarmService.sendAlarm(alarm);
-//
-////        sendAlarm(alarm.getReceiverId(), responseAlarmDTO); //프론트로 알림보냄
-//
-//        return ResponseEntity.ok(responseAlarmDTO);
-//    }
-
-
-
     @PostMapping("/send")
     public void sendAlarm() {
         alarmService.addAlarm("COMMENT", 98L, 14L);
