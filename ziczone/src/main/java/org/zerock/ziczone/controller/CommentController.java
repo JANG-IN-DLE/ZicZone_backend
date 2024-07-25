@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.zerock.ziczone.dto.Alarm.ResponseAlarmDTO;
 import org.zerock.ziczone.dto.help.CommentDTO;
+import org.zerock.ziczone.service.alarm.AlarmService;
 import org.zerock.ziczone.service.help.CommentService;
 
 import java.util.List;
@@ -15,6 +17,7 @@ import java.util.List;
 @Log4j2
 public class CommentController {
     private final CommentService commentService;
+    private final AlarmService alarmService;
 
     /**
      * 댓글 등록
@@ -30,7 +33,8 @@ public class CommentController {
         }
 
         CommentDTO createdComment = commentService.commentRegister(commentDTO);
-
+        ResponseAlarmDTO responseAlarmDTO = alarmService.addAlarm("COMMENT", commentDTO.getCorrId(), 75L);
+        log.info(responseAlarmDTO);
         return ResponseEntity.ok(createdComment);
     }
 
