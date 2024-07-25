@@ -14,7 +14,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("SELECT p FROM Payment p WHERE p.personalUser.personalId = :personalId AND p.payState = 'SUCCESS'")
     Optional<List<Payment>>  findAllSuccessfulPaymentsByPersonalId(Long personalId);
 
-    @Query("SELECT SUM(p.berryPoint) FROM Payment p WHERE p.personalUser.personalId = :personalId AND p.payState = org.zerock.ziczone.domain.payment.PayState.SUCCESS")
+    @Query("SELECT SUM(p.berryPoint) FROM Payment p WHERE p.personalUser.personalId = :personalId AND p.payState IN (org.zerock.ziczone.domain.payment.PayState.SUCCESS,org.zerock.ziczone.domain.payment.PayState.ADOPT)")
     Optional<Integer> findTotalBerryPointsByPersonalId(Long personalId);
 
 

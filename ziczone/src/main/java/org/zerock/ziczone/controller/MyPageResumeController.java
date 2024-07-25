@@ -4,16 +4,18 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.zerock.ziczone.domain.application.Portfolio;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.dto.mypage.ResumeDTO;
 import org.zerock.ziczone.exception.mypage.PersonalNotFoundException;
 import org.zerock.ziczone.exception.mypage.UserNotFoundException;
 import org.zerock.ziczone.exception.resume.ResumeNotFoundException;
+import org.zerock.ziczone.repository.application.PortfolioRepository;
+import org.zerock.ziczone.repository.application.ResumeRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.service.myPage.ResumeService;
@@ -30,7 +32,13 @@ public class MyPageResumeController {
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
     private final PersonalUserRepository personalUserRepository;
+    private final PortfolioRepository portfolioRepository;
 
+
+    @GetMapping("/check/{userId}")
+    public ResponseEntity<Boolean> userCheck(@PathVariable Long userId) {
+        return ResponseEntity.ok(resumeService.ResumeExist(userId));
+    }
     /**
      * 새로운 이력서를 저장합니다.
      * @param resumePhoto 이력서 사진 파일
@@ -50,7 +58,6 @@ public class MyPageResumeController {
         User user = userRepository.findByUserId(userId);
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
         resumeDTO.setPersonalId(personalUser.getPersonalId());
-        resumeDTO.setResumeName(user.getUserName());
         ResumeDTO savedResume = resumeService.saveResume(resumeDTO, resumePhoto, personalState, portfolios);
         return ResponseEntity.ok("Success Create Resume");
     }
@@ -72,9 +79,9 @@ public class MyPageResumeController {
             @RequestPart(required = false) MultipartFile resumePhoto,
             @RequestPart(required = false) MultipartFile personalState,
             @RequestPart(required = false) List<MultipartFile> portfolios) {
-//        try {
+
             ResumeDTO resumeDTO = convertJsonToResumeDTO(resumeDTOString);
-            log.info("resumeDTO: {}", resumeDTO);
+
 
             User user = userRepository.findByUserId(userId);
             if (user == null) {
@@ -86,20 +93,35 @@ public class MyPageResumeController {
 
             resumeService.updateResume(resumeDTO.getResumeId(), resumeDTO, resumePhoto, personalState, portfolios);
             return ResponseEntity.ok("Resume updated successfully.");
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error updating resume: " + e.getStackTrace());
-//        }
+
     }
 
     /**
      * 이력서를 삭제합니다.
-     * @param resumeId 삭제할 이력서 ID
+     * @param userId 삭제할 이력서 ID
      * @return 삭제 결과 메시지
      */
-    @DeleteMapping("/{resumeId}")
-    public ResponseEntity<String> deleteResume(@PathVariable Long resumeId) {
-        resumeService.deleteResume(resumeId);
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<String> deleteResume(@PathVariable Long userId) {
+        resumeService.deleteResume(userId);
         return ResponseEntity.ok("Resume deleted successfully.");
+    }
+
+    @DeleteMapping("/portfolio/{portfolioId}")
+    public ResponseEntity<String> deletePortfolio(@PathVariable Long portfolioId) {
+        Portfolio portfolio = portfolioRepository.findByPortId(portfolioId);
+        resumeService.deletePortfolio(portfolio.getPortId());
+        return ResponseEntity.ok("Portfolio deleted successfully.");
+    }
+    @DeleteMapping("/photo/{resumeId}")
+    public ResponseEntity<String> deletePhoto(@PathVariable Long resumeId) {
+        resumeService.deleteResumePhoto(resumeId);
+        return ResponseEntity.ok("Photos deleted successfully.");
+    }
+    @DeleteMapping("/personal-state/{resumeId}")
+    public ResponseEntity<String> deletePersonalState(@PathVariable Long resumeId) {
+        resumeService.deleteResumePersonalState(resumeId);
+        return ResponseEntity.ok("PersonalState deleted successfully.");
     }
 
     /**

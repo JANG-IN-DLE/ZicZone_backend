@@ -3,18 +3,12 @@ package org.zerock.ziczone.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.zerock.ziczone.domain.PayHistory;
-import org.zerock.ziczone.domain.member.PersonalUser;
-import org.zerock.ziczone.domain.member.User;
-import org.zerock.ziczone.domain.payment.Payment;
 import org.zerock.ziczone.dto.help.BoardDTO;
 import org.zerock.ziczone.dto.mypage.*;
-import org.zerock.ziczone.exception.mypage.PersonalNotFoundException;
 import org.zerock.ziczone.repository.PayHistoryRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
@@ -25,8 +19,8 @@ import org.zerock.ziczone.service.myPage.MyPageService;
 import org.zerock.ziczone.service.myPage.MyPageServiceImpl;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -34,16 +28,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MyPageController {
     private final MyPageService mypageService;
-    private final MyPageServiceImpl myPageServiceImpl;
     private final BoardService boardService;
-    private final CommentService commentService;
-    private final PaymentRepository paymentRepository;
-    private final PersonalUserRepository personalUserRepository;
-    private final UserRepository userRepository;
-    private final PayHistoryRepository payHistoryRepository;
-
-
-    // 토큰 검사 로직
 
 
 
@@ -88,7 +73,7 @@ public class MyPageController {
     ) {
 
         ObjectMapper objectMapper = new ObjectMapper();
-        Map<String, Object> payload;
+        Map<String,Object> payload;
         try {
             payload = objectMapper.readValue(payloadStr, Map.class);
         } catch (IOException e) {
@@ -137,7 +122,6 @@ public class MyPageController {
     @GetMapping("/personal/purchased/{userId}")
     public ResponseEntity<AggregatedDataDTO> getAggregatedData(@PathVariable Long userId) {
         AggregatedDataDTO aggregatedData = mypageService.getAggregatedData(userId);
-        log.info(aggregatedData.toString());
         return new ResponseEntity<>(aggregatedData, HttpStatus.OK);
     }
 

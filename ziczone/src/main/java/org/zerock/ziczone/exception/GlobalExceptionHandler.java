@@ -10,6 +10,7 @@ import org.zerock.ziczone.exception.board.BoardNotFoundException;
 import org.zerock.ziczone.exception.mypage.*;
 import org.zerock.ziczone.exception.payhisotry.PayHistoryNotFoundException;
 import org.zerock.ziczone.exception.payment.PaymentNotFoundException;
+import org.zerock.ziczone.exception.resume.ResumeDataIntegrityViolationException;
 import org.zerock.ziczone.exception.resume.ResumeNotFoundException;
 import org.zerock.ziczone.service.mainPage.MainPageServiceImpl;
 
@@ -122,5 +123,14 @@ public class GlobalExceptionHandler  {
                 .code(HttpStatus.NOT_FOUND.value())
                 .build();
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+    // 유효하지 않는 지원서 생성 요청
+    @ExceptionHandler(ResumeDataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleResumeDataIntegrityViolationException(ResumeDataIntegrityViolationException ex) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .message(ex.getMessage())
+                .code(HttpStatus.BAD_REQUEST.value())
+                .build();
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
     }
 }
