@@ -285,10 +285,6 @@ public class PickServiceImpl implements PickService {
     // (PersonalId로 로그인했을 경우) pickDetailzone 왼쪽 회원정보 가져오는 메서드
     @Override
     public PickPersonalDetailDTO getPickCardsByPersonalId(Long loggedInUserId, Long personalId) {
-        PersonalUser loggedInPersonalUser = personalUserRepository.findByUser_UserId(loggedInUserId);
-        if(loggedInPersonalUser == null) {
-            throw new RuntimeException("personal user not found");
-        }
         PersonalUser personalUser = personalUserRepository.findByPersonalId(personalId);
         if(personalUser == null) {
             throw new RuntimeException("personal user not found");
@@ -303,10 +299,6 @@ public class PickServiceImpl implements PickService {
         List<String> jobNames = jobPositionRepository.findByPersonalUserPersonalId(personalId).stream()
                 .map(jobPosition -> jobPosition.getJob().getJobName())
                 .collect(Collectors.toList());
-        // payHistoryId에 결제한 내역이 있으면 바로 Detail로 들어갈 수 있게 하기 위해
-        // 아 여기서 보내면 안되고 pickzone에서 card호출할때 거기서 보내야지
-        // 지워도 될듯
-        Optional<PayHistory> payHistoryOptional = payHistoryRepository.findByBuyerIdAndSellerId(loggedInPersonalUser.getPersonalId(), personalId);
 
         PickPersonalDetailDTO pickPersonalDetailDTO = PickPersonalDetailDTO.builder()
                 .userId(personalUser.getUser().getUserId())
