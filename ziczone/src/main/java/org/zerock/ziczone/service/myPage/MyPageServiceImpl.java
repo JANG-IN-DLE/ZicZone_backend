@@ -184,7 +184,6 @@ public class MyPageServiceImpl implements  MyPageService{
             companyLogoFileName = logoFile.getOriginalFilename();
         } else {
             // 새로운 파일이 없는 경우, 기존 파일 정보는 유지
-            log.info("No new logo file uploaded, keeping existing logo.");
         }
 
         CompanyUser updatedCompanyUser = companyUser.toBuilder()
