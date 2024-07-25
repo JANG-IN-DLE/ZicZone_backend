@@ -76,7 +76,6 @@ public class MyPageController {
         Map<String,Object> payload;
         try {
             payload = objectMapper.readValue(payloadStr, Map.class);
-            log.info("PayLoad Map : {}", payload);
         } catch (IOException e) {
             return ResponseEntity.badRequest().body("Invalid JSON format in payload");
         }
@@ -123,7 +122,6 @@ public class MyPageController {
     @GetMapping("/personal/purchased/{userId}")
     public ResponseEntity<AggregatedDataDTO> getAggregatedData(@PathVariable Long userId) {
         AggregatedDataDTO aggregatedData = mypageService.getAggregatedData(userId);
-        log.info(aggregatedData.toString());
         return new ResponseEntity<>(aggregatedData, HttpStatus.OK);
     }
 
