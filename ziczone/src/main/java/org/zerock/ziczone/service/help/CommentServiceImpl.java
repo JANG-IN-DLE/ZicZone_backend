@@ -218,12 +218,12 @@ public class CommentServiceImpl implements CommentService {
         }
 
         PayHistory payHistory = PayHistory.builder()
-                .sellerId(comment.getUser().getPersonalUser().getPersonalId())
-                .buyerId(board.getUser().getPersonalUser().getPersonalId())
+                .buyerId(comment.getUser().getPersonalUser().getPersonalId())
+                .sellerId(board.getUser().getPersonalUser().getPersonalId())
                 .berryBucket(board.getCorrPoint().toString())
                 .payHistoryContent("댓글채택")
                 .payHistoryDate(LocalDateTime.now())
-                .personalUser(board.getUser().getPersonalUser())
+                .personalUser(comment.getUser().getPersonalUser())
                 .build();
 
         payHistoryRepository.save(payHistory);
