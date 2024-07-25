@@ -4,9 +4,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.zerock.ziczone.domain.board.Board;
+import org.zerock.ziczone.domain.board.Comment;
 import org.zerock.ziczone.dto.Alarm.ResponseAlarmDTO;
 import org.zerock.ziczone.dto.help.CommentDTO;
+import org.zerock.ziczone.repository.board.BoardRepository;
+import org.zerock.ziczone.repository.board.CommentRepository;
 import org.zerock.ziczone.service.alarm.AlarmService;
+import org.zerock.ziczone.service.help.BoardService;
 import org.zerock.ziczone.service.help.CommentService;
 
 import java.util.List;
@@ -16,8 +21,10 @@ import java.util.List;
 @RequiredArgsConstructor
 @Log4j2
 public class CommentController {
+    private final BoardRepository boardRepository;
     private final CommentService commentService;
     private final AlarmService alarmService;
+    private final CommentRepository commentRepository;
 
     /**
      * 댓글 등록
@@ -28,13 +35,16 @@ public class CommentController {
      */
     @PostMapping("/api/personal/comments")
     public ResponseEntity<CommentDTO> createComment(@RequestBody CommentDTO commentDTO) {
+        Board board = boardRepository.findByCorrId(commentDTO.getCorrId());
+
         if (commentDTO.getUserId() == null || commentDTO.getCorrId() == null) {
             return ResponseEntity.badRequest().body(null);
         }
 
         CommentDTO createdComment = commentService.commentRegister(commentDTO);
-        ResponseAlarmDTO responseAlarmDTO = alarmService.addAlarm("COMMENT", commentDTO.getCorrId(), 75L);
-        log.info(responseAlarmDTO);
+
+        alarmService.addAlarm("COMMENT", commentDTO.getCorrId(), board.getUser().getUserId());
+
         return ResponseEntity.ok(createdComment);
     }
 
@@ -106,8 +116,14 @@ public class CommentController {
      */
     @PostMapping("/api/personal/comments/{commId}/select")
     public ResponseEntity<String> selectComment(@PathVariable Long commId, @RequestParam Long userId) {
+        Comment comment = commentRepository.findByCommId(commId);
+        log.info("#######" + comment);
+
         try {
             commentService.selectComment(commId, userId);
+
+            alarmService.addAlarm("SELECTION", comment.getBoard().getCorrId(), comment.getUser().getUserId());
+
             return ResponseEntity.ok("댓글이 채택되었습니다.");
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
