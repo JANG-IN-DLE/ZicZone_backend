@@ -21,21 +21,21 @@ public class TossPayServiceImpl implements TossPayService{
     private final PayConfig payConfig;
     private final ObjectMapper objectMapper;
 
+    private final String SECRET_KEY = "test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6";
 
     @Override
     public Map<String, Object> confirmPayment(String orderId, String paymentKey, int amount) throws IOException {
         // 결제 요청 후 승인 요청 주소
         URL url = new URL("https://api.tosspayments.com/v1/payments/confirm");
 
-        String secreatApiKey = payConfig.getTestSecretApiKey();
+//        String secreatApiKey = payConfig.getTestSecretApiKey();
 
         // Request Headers
 //        Base64.Encoder encoder = Base64.getEncoder();
 //        byte[] encodedBytes = encoder.encode((secreatApiKey + ":").getBytes(StandardCharsets.UTF_8));
 //        String authorizations = "Basic " + new String(encodedBytes);
-        String widgetSecretKey = "test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6";
         Base64.Encoder encoder = Base64.getEncoder();
-        byte[] encodedBytes = encoder.encode((widgetSecretKey + ":").getBytes(StandardCharsets.UTF_8));
+        byte[] encodedBytes = encoder.encode((SECRET_KEY + ":").getBytes(StandardCharsets.UTF_8));
         String authorizations = "Basic " + new String(encodedBytes);
 
 
