@@ -43,6 +43,11 @@ public class AlarmSseController {
         return ResponseEntity.ok(responseAlarmDTO);
     }
 
+    @PostMapping("/send")
+    public void send(){
+        alarmService.addAlarm("DELETEBOARD", 1L, 26L);
+    }
+
     // 로그아웃
     @PostMapping("/logout/{userId}")
     public ResponseEntity<String> logout(@PathVariable Long userId) {
