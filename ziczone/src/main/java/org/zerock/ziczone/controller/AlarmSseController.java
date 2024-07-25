@@ -35,10 +35,6 @@ public class AlarmSseController {
         return ResponseEntity.ok(alarmService.subscribe(userId, token));
     }
 
-    @PostMapping("/send")
-    public void sendAlarm() {
-        alarmService.addAlarm("COMMENT", 98L, 14L);
-    }
     // 로그인시에 알람 불러오기(알람초기화)
     @GetMapping("/initAlarm/{userId}")
     public ResponseEntity<List<ResponseAlarmDTO>> initAlarm(@PathVariable Long userId) {
