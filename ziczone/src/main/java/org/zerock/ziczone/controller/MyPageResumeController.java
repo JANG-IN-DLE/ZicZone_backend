@@ -80,9 +80,9 @@ public class MyPageResumeController {
             @RequestPart(required = false) MultipartFile resumePhoto,
             @RequestPart(required = false) MultipartFile personalState,
             @RequestPart(required = false) List<MultipartFile> portfolios) {
-//        try {
+
             ResumeDTO resumeDTO = convertJsonToResumeDTO(resumeDTOString);
-            log.info("resumeDTO: {}", resumeDTO);
+
 
             User user = userRepository.findByUserId(userId);
             if (user == null) {
@@ -94,9 +94,7 @@ public class MyPageResumeController {
 
             resumeService.updateResume(resumeDTO.getResumeId(), resumeDTO, resumePhoto, personalState, portfolios);
             return ResponseEntity.ok("Resume updated successfully.");
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error updating resume: " + e.getStackTrace());
-//        }
+
     }
 
     /**
