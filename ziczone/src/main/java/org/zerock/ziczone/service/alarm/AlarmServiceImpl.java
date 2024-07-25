@@ -231,7 +231,7 @@ public class AlarmServiceImpl implements AlarmService {
                 // 'alarm'이벤트를 alarm데이터를 담아서 클라이언트로 전송
                 emitter.send(SseEmitter.event()
                         .name("alarm")
-                        .data(responseAlarmDTO)); //타입, sender, receiver, berry
+                        .data(responseAlarmDTO)); //타입, sender, receiver, berry, 읽음여부
             } catch (IOException e) {
                 log.error("Error sending alarm to user: {}", userId, e);
                 sseEmitters.remove(userId);
