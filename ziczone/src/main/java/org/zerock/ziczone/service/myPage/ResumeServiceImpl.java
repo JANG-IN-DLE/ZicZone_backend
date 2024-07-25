@@ -200,6 +200,9 @@ public class ResumeServiceImpl implements ResumeService {
 
     // 포트폴리오 파일 업로드
     private List<Map<String, String>> uploadPortfolios(List<MultipartFile> portfolios) {
+        if (portfolios == null) {
+            return Collections.emptyList();
+        }
         return portfolios.stream()
                 .filter(file -> file != null && !file.isEmpty())
                 .map(file -> storageService.uploadFile(file, "portfolio", BUCKET_NAME))

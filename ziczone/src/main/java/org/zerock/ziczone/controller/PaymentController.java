@@ -101,7 +101,7 @@ public class PaymentController {
 
         if (responseAmount == amount && responseOrderId.equals(orderId) && responsePaymentKey.equals(paymentKey)) {
             // 승인 완료 처리
-            Payment approvedPayment = paymentService.approvePayment(savedPayment.getPayId(), amount / 10);
+            Payment approvedPayment = paymentService.approvePayment(savedPayment.getPayId(), amount);
 
             // 클라이언트에게 반환할 정보 구성
             JSONObject response = new JSONObject();
