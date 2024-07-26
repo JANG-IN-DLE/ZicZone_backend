@@ -26,14 +26,12 @@ public class BoardCleanupServiceImpl implements BoardCleanupService {
 
     @Override
     @Scheduled(cron = "0 0 0 * * ?")
-//    @Scheduled(cron = "0 * * * * ?") // 테스트 (매 분마다 실행)
+    // @Scheduled(cron = "0 * * * * ?") // 테스트 (매 분마다 실행)
     @Transactional
     public void cleanupOldBoards() {
         LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
 
         List<Board> oldBoards = boardRepository.findOldBoardsWithoutComments(sevenDaysAgo);
-
-        int deletedCount = boardRepository.deleteOldBoardsWithoutComments(sevenDaysAgo);
 
         for (Board board : oldBoards) {
             PayHistory payHistory = PayHistory.builder()
@@ -46,7 +44,10 @@ public class BoardCleanupServiceImpl implements BoardCleanupService {
                     .build();
 
             payHistoryRepository.save(payHistory);
+            alarmService.addAlarm("DELETEBOARD", board.getCorrId(), board.getUser().getUserId());
         }
+
+        int deletedCount = boardRepository.deleteOldBoardsWithoutComments(sevenDaysAgo);
 
         log.info("Total deleted posts: {}", deletedCount);
     }
