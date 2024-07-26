@@ -58,7 +58,7 @@ public class MyPageResumeController {
         User user = userRepository.findByUserId(userId);
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
         resumeDTO.setPersonalId(personalUser.getPersonalId());
-        ResumeDTO savedResume = resumeService.saveResume(resumeDTO, resumePhoto, personalState, portfolios);
+        resumeService.saveResume(resumeDTO, resumePhoto, personalState, portfolios);
         return ResponseEntity.ok("Success Create Resume");
     }
 

@@ -58,6 +58,8 @@ public class ResumeServiceImpl implements ResumeService {
             throw new ResumeAlreadyExistsException("Resume already exists for personal ID: " + personalId);
         }
 
+        List<JobPosition> jobPositions = jobPositionRepository.findByPersonalUserPersonalId(personalId);
+        List<TechStack> techStacks = techStackRepository.findByPersonalUserPersonalId(personalId);
         // 파일 업로드
         Map<String, String> resumePhotoData = uploadFile(resumePhoto, "resumePhoto");
         Map<String, String> personalStateData = uploadFile(personalState, "personalState");
@@ -70,6 +72,18 @@ public class ResumeServiceImpl implements ResumeService {
 
         // Resume 객체 생성
         Resume resume = buildResume(resumeDTO, resumePhotoData, personalStateData, personalUser);
+        if (resumeDTO.getJobPositions() == null || resumeDTO.getJobPositions().isEmpty()) {
+            List<JobPositionDTO> jobPositionDTOs = jobPositions.stream()
+                    .map(JobPositionDTO::fromEntity)
+                    .toList();
+            resumeDTO = resumeDTO.toBuilder().jobPositions(jobPositionDTOs).build();
+        }
+        if (resumeDTO.getTechStacks() == null || resumeDTO.getTechStacks().isEmpty()) {
+            List<TechStackDTO> techStackDTOs = techStacks.stream()
+                    .map(TechStackDTO::fromEntity)
+                    .toList();
+            resumeDTO = resumeDTO.toBuilder().techStacks(techStackDTOs).build();
+        }
         resumeRepository.save(resume);
         saveRelatedEntities(resume, resumeDTO, portfolioFiles);
 
@@ -102,11 +116,28 @@ public class ResumeServiceImpl implements ResumeService {
         existingResume = updateResumeEntity(existingResume, resumeDTO, resumePhotoData, personalStateData);
 
 
+        Long resumeId = existingResume.getResumeId();
+        Long personalUserId= existingResume.getPersonalUser().getPersonalId();
+
 
 
         // 연관 엔티티 삭제
         log.info("연관 엔티티 삭제 보내기 전 existingResume {}", existingResume);
-        deleteAllEntities(existingResume.getResumeId(), existingResume.getPersonalUser().getPersonalId());
+
+        if(resumeDTO.getJobPositions() != null && !resumeDTO.getJobPositions().isEmpty()) {
+            jobPositionRepository.deleteByPersonalUserPersonalId(personalUserId);
+        }
+        if(resumeDTO.getTechStacks() != null && !resumeDTO.getTechStacks().isEmpty()) {
+            techStackRepository.deleteByPersonalUserPersonalId(personalUserId);
+        }
+
+        certificateRepository.deleteByResumeResumeId(resumeId);
+        educationRepository.deleteByResumeResumeId(resumeId);
+        careerRepository.deleteByResumeResumeId(resumeId);
+        curriculumRepository.deleteByResumeResumeId(resumeId);
+        etcRepository.deleteByResumeResumeId(resumeId);
+        portfolioRepository.deleteByResumeResumeId(resumeId);
+        archiveRepository.deleteByResumeResumeId(resumeId);
         // 연관 엔티티 저장
         log.info("연관 엔티티 저장 보내기 전 existingResume {}", existingResume);
         log.info("연관 엔티티 저장 보내기 전 portfolioFiles {}", portfolioFiles);
@@ -203,6 +234,9 @@ public class ResumeServiceImpl implements ResumeService {
 
     // 포트폴리오 파일 업로드
     private List<Map<String, String>> uploadPortfolios(List<MultipartFile> portfolios) {
+        if(portfolios == null || portfolios.isEmpty()){
+            return Collections.emptyList();
+        }
         return portfolios.stream()
                 .filter(file -> file != null && !file.isEmpty())
                 .map(file -> storageService.uploadFile(file, "portfolio", BUCKET_NAME))
