@@ -1,14 +1,12 @@
 package org.zerock.ziczone.controller;
 
-import com.amazonaws.services.s3.model.*;
+import com.amazonaws.services.s3.AmazonS3;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import com.amazonaws.services.s3.AmazonS3;
-import lombok.RequiredArgsConstructor;
 import org.zerock.ziczone.dto.help.BoardDTO;
 import org.zerock.ziczone.dto.help.BoardProfileCardDTO;
 import org.zerock.ziczone.dto.page.PageRequestDTO;
@@ -16,8 +14,6 @@ import org.zerock.ziczone.dto.page.PageResponseDTO;
 import org.zerock.ziczone.service.help.BoardService;
 import org.zerock.ziczone.service.help.CommentService;
 
-import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 

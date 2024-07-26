@@ -15,14 +15,14 @@ public class CorsConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**")
 //                        .allowedOrigins("http://localhost:3000")
-                        .allowedOrigins("http://175.106.98.57:3000")
+                        .allowedOrigins("*")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
                 // SSE 엔드포인트에 대한 CORS 설정 추가
                 registry.addMapping("/sse/**")
 //                        .allowedOrigins("http://localhost:3000")
-                        .allowedOrigins("http://175.106.98.57:3000")
+                        .allowedOrigins("*")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);

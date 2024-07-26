@@ -22,6 +22,7 @@ import org.zerock.ziczone.repository.member.CompanyUserRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.payment.PaymentRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
+import org.zerock.ziczone.service.payment.PaymentServiceImpl;
 
 import javax.transaction.Transactional;
 import java.util.*;
@@ -49,6 +50,7 @@ public class PickServiceImpl implements PickService {
     private final PayHistoryRepository payHistoryRepository;
     private final PickAndScrapRepository pickAndScrapRepository;
     private final CompanyUserRepository companyUserRepository;
+    private final PaymentServiceImpl paymentServiceImpl;
 
     // (로그인 안되었을때) 메인페이지에서 pickCards 전송
     @Override
@@ -103,9 +105,10 @@ public class PickServiceImpl implements PickService {
         List<Resume> latestResumes = resumeRepository.findAllByPersonalUserIsPersonalVisibleTrueOrderByResumeUpdateDesc();
         // 개인회원의 정보를 가져온다.
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(loggedInUserId);
-        // 개인회원의 berryPoint를 가져온다.
-        Payment payment = paymentRepository.findByPersonalUser_PersonalId(personalUser.getPersonalId());
-        Integer userBerryPoint = (payment != null && payment.getBerryPoint() != null) ? payment.getBerryPoint() : 0;
+
+        // 개인회원의 totalBerryPoints를 가져온다.
+        Map<String, Integer> totalBerryPointsMap = paymentServiceImpl.myTotalBerryPoints(loggedInUserId);
+        Integer totalBerryPoints = totalBerryPointsMap.get("totalBerryPoints");
 
         return latestResumes.stream().map(resume -> {
             PersonalUser user = resume.getPersonalUser();
@@ -125,9 +128,7 @@ public class PickServiceImpl implements PickService {
             List<PickAndScrap> pickAndScraps = pickAndScrapRepository.findByPersonalUser(user);
             List<Boolean> scrapList = pickAndScraps.stream().map(PickAndScrap::isScrap).collect(Collectors.toList());
             List<Boolean> pickList = pickAndScraps.stream().map(PickAndScrap::isPick).collect(Collectors.toList());
-            List<Long> companyIdList = pickAndScraps.stream()
-                    .map(pickAndScrap -> pickAndScrap.getCompanyUser().getCompanyId())
-                    .collect(Collectors.toList());
+
             // 결제 내역 추출
             List<Long> payHistoryId = payHistoryRepository.findBySellerIdAndBuyerId(user.getPersonalId(), personalUser.getPersonalId()).stream()
                     .map(PayHistory::getPayHistoryId).collect(Collectors.toList());
@@ -145,10 +146,9 @@ public class PickServiceImpl implements PickService {
                     .jobName(String.join(",", jobNames))
                     .scrap(scrapList)
                     .pick(pickList)
-//                    .companyId(companyIdList)
                     .resumeUpdate(resume.getResumeUpdate())
                     .payHistoryId(payHistoryId)
-                    .berryPoint(userBerryPoint)
+                    .berryPoint(totalBerryPoints)
                     .build();
         }).collect(Collectors.toList());
 
@@ -285,10 +285,6 @@ public class PickServiceImpl implements PickService {
     // (PersonalId로 로그인했을 경우) pickDetailzone 왼쪽 회원정보 가져오는 메서드
     @Override
     public PickPersonalDetailDTO getPickCardsByPersonalId(Long loggedInUserId, Long personalId) {
-        PersonalUser loggedInPersonalUser = personalUserRepository.findByUser_UserId(loggedInUserId);
-        if(loggedInPersonalUser == null) {
-            throw new RuntimeException("personal user not found");
-        }
         PersonalUser personalUser = personalUserRepository.findByPersonalId(personalId);
         if(personalUser == null) {
             throw new RuntimeException("personal user not found");
@@ -303,10 +299,6 @@ public class PickServiceImpl implements PickService {
         List<String> jobNames = jobPositionRepository.findByPersonalUserPersonalId(personalId).stream()
                 .map(jobPosition -> jobPosition.getJob().getJobName())
                 .collect(Collectors.toList());
-        // payHistoryId에 결제한 내역이 있으면 바로 Detail로 들어갈 수 있게 하기 위해
-        // 아 여기서 보내면 안되고 pickzone에서 card호출할때 거기서 보내야지
-        // 지워도 될듯
-        Optional<PayHistory> payHistoryOptional = payHistoryRepository.findByBuyerIdAndSellerId(loggedInPersonalUser.getPersonalId(), personalId);
 
         PickPersonalDetailDTO pickPersonalDetailDTO = PickPersonalDetailDTO.builder()
                 .userId(personalUser.getUser().getUserId())
@@ -401,36 +393,23 @@ public class PickServiceImpl implements PickService {
         // Buyer 정보 가져오기
         PersonalUser buyer = personalUserRepository.findByUser_UserId(openCardDTO.getBuyerId());
         if(buyer == null) {
-            throw new RuntimeException("personal user not found");
+            throw new RuntimeException("Buyer not found");
         }
         // Seller 정보 가져오기
         PersonalUser seller = personalUserRepository.findByPersonalId(openCardDTO.getSellerId());
         if(seller == null) {
-            throw new RuntimeException("personal user not found");
+            throw new RuntimeException("Seller not found");
         }
         // PayHistory에 buyerId와 sellerId가 존재하는지 확인
         if(payHistoryRepository.existsByBuyerIdAndSellerId(buyer.getPersonalId(), seller.getPersonalId())){
             return true;    // 이미 결제가 존재함
         }
-        // 현재 포인트 확인
-        Payment buyerPayment = paymentRepository.findByPersonalUser_PersonalId(buyer.getPersonalId());
-        if(buyerPayment == null) {
-            throw new RuntimeException("personal user not found");
-        }
-        // 50보다 적으면 error
-        if(buyerPayment.getBerryPoint() < 50){
-            throw new IllegalArgumentException("Not enough points");
-        }
-
-        // 포인트 차감
-        buyerPayment.subtractBerryPoints(50);
-        paymentRepository.save(buyerPayment);
 
         // 결제 내역 저장
         PayHistory payHistory = PayHistory.builder()
                 .sellerId(seller.getPersonalId())
                 .buyerId(buyer.getPersonalId())
-                .berryBucket("-50")
+                .berryBucket("-500")
                 .payHistoryContent(openCardDTO.getPayHistoryContent())
                 .payHistoryDate(openCardDTO.getPayHistoryDate())
                 .personalUser(buyer)

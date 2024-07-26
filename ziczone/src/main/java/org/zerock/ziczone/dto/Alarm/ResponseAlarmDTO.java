@@ -19,4 +19,5 @@ public class ResponseAlarmDTO {
     private String receiver;
     private Integer getBerry;
     private LocalDateTime alarmCreate;
+    private Boolean readOrNot;
 }

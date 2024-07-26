@@ -2,19 +2,23 @@ package org.zerock.ziczone.service.myPage;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.juli.logging.Log;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.zerock.ziczone.domain.application.*;
 import org.zerock.ziczone.domain.job.JobPosition;
 import org.zerock.ziczone.domain.member.PersonalUser;
+import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.domain.tech.TechStack;
 import org.zerock.ziczone.dto.mypage.*;
+import org.zerock.ziczone.exception.mypage.PersonalNotFoundException;
 import org.zerock.ziczone.exception.mypage.ResumeAlreadyExistsException;
+import org.zerock.ziczone.exception.mypage.UserNotFoundException;
+import org.zerock.ziczone.exception.resume.ResumeNotFoundException;
 import org.zerock.ziczone.repository.application.*;
 import org.zerock.ziczone.repository.job.JobPositionRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
+import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
 import org.zerock.ziczone.service.storage.StorageService;
 
@@ -41,10 +45,11 @@ public class ResumeServiceImpl implements ResumeService {
     private final PersonalUserRepository personalUserRepository;
 
     final static String BUCKET_NAME = "ziczone-bucket-jangindle-optimizer";
+    private final UserRepository userRepository;
 
     @Transactional
     @Override
-    public ResumeDTO saveResume(ResumeDTO resumeDTO, MultipartFile resumePhoto, MultipartFile personalState, List<MultipartFile> portfolios) {
+    public void saveResume(ResumeDTO resumeDTO, MultipartFile resumePhoto, MultipartFile personalState, List<MultipartFile> portfolios) {
         Long personalId = resumeDTO.getPersonalId();
         validatePersonalId(personalId);
 
@@ -53,6 +58,8 @@ public class ResumeServiceImpl implements ResumeService {
             throw new ResumeAlreadyExistsException("Resume already exists for personal ID: " + personalId);
         }
 
+        List<JobPosition> jobPositions = jobPositionRepository.findByPersonalUserPersonalId(personalId);
+        List<TechStack> techStacks = techStackRepository.findByPersonalUserPersonalId(personalId);
         // 파일 업로드
         Map<String, String> resumePhotoData = uploadFile(resumePhoto, "resumePhoto");
         Map<String, String> personalStateData = uploadFile(personalState, "personalState");
@@ -65,10 +72,22 @@ public class ResumeServiceImpl implements ResumeService {
 
         // Resume 객체 생성
         Resume resume = buildResume(resumeDTO, resumePhotoData, personalStateData, personalUser);
+        if (resumeDTO.getJobPositions() == null || resumeDTO.getJobPositions().isEmpty()) {
+            List<JobPositionDTO> jobPositionDTOs = jobPositions.stream()
+                    .map(JobPositionDTO::fromEntity)
+                    .toList();
+            resumeDTO = resumeDTO.toBuilder().jobPositions(jobPositionDTOs).build();
+        }
+        if (resumeDTO.getTechStacks() == null || resumeDTO.getTechStacks().isEmpty()) {
+            List<TechStackDTO> techStackDTOs = techStacks.stream()
+                    .map(TechStackDTO::fromEntity)
+                    .toList();
+            resumeDTO = resumeDTO.toBuilder().techStacks(techStackDTOs).build();
+        }
         resumeRepository.save(resume);
         saveRelatedEntities(resume, resumeDTO, portfolioFiles);
 
-        return buildResumeDTO(resume, resumeDTO, portfolioFiles);
+//        return buildResumeDTO(resume, resumeDTO, portfolioFiles);
     }
 
     @Transactional
@@ -86,8 +105,8 @@ public class ResumeServiceImpl implements ResumeService {
         log.info("Updating resume Start(Before): {}, DTO: {}", userId, resumeDTO);
 
         // 파일 처리
-        Map<String, String> resumePhotoData = processFileUpdate(existingResume.getResumePhotoUrl(), existingResume.getResumePhotoUuid(), resumePhoto, "resumePhoto");
-        Map<String, String> personalStateData = processFileUpdate(existingResume.getPersonalStateUrl(), existingResume.getPersonalStateUuid(), personalState, "personalState");
+        Map<String, String> resumePhotoData = processFileUpdate(existingResume.getResumePhotoFileName(),existingResume.getResumePhotoUrl(), existingResume.getResumePhotoUuid(), resumePhoto, "resumePhoto");
+        Map<String, String> personalStateData = processFileUpdate(existingResume.getPersonalStateFileName(),existingResume.getPersonalStateUrl(), existingResume.getPersonalStateUuid(), personalState, "personalState");
         List<Map<String, String>> portfolioFiles = processPortfoliosUpdate(resumeDTO.getResumeId(), portfolios);
 
         log.info("portfolioFiles.stream().toList() {}", portfolioFiles.stream().toList());
@@ -96,9 +115,36 @@ public class ResumeServiceImpl implements ResumeService {
         // 엔티티 업데이트
         existingResume = updateResumeEntity(existingResume, resumeDTO, resumePhotoData, personalStateData);
 
+
+        Long resumeId = existingResume.getResumeId();
+        Long personalUserId= existingResume.getPersonalUser().getPersonalId();
+
+
+
+        // 연관 엔티티 삭제
+        log.info("연관 엔티티 삭제 보내기 전 existingResume {}", existingResume);
+
+        if(resumeDTO.getJobPositions() != null && !resumeDTO.getJobPositions().isEmpty()) {
+            jobPositionRepository.deleteByPersonalUserPersonalId(personalUserId);
+        }
+        if(resumeDTO.getTechStacks() != null && !resumeDTO.getTechStacks().isEmpty()) {
+            techStackRepository.deleteByPersonalUserPersonalId(personalUserId);
+        }
+
+        certificateRepository.deleteByResumeResumeId(resumeId);
+        educationRepository.deleteByResumeResumeId(resumeId);
+        careerRepository.deleteByResumeResumeId(resumeId);
+        curriculumRepository.deleteByResumeResumeId(resumeId);
+        etcRepository.deleteByResumeResumeId(resumeId);
+        portfolioRepository.deleteByResumeResumeId(resumeId);
+        archiveRepository.deleteByResumeResumeId(resumeId);
         // 연관 엔티티 저장
         log.info("연관 엔티티 저장 보내기 전 existingResume {}", existingResume);
+        log.info("연관 엔티티 저장 보내기 전 portfolioFiles {}", portfolioFiles);
+
+
         saveRelatedEntities(existingResume, resumeDTO, portfolioFiles);
+
 
         // 이력서 저장
         resumeRepository.save(existingResume);
@@ -115,10 +161,23 @@ public class ResumeServiceImpl implements ResumeService {
 
     @Transactional
     @Override
-    public void deleteResume(Long resumeId) {
+    public void deleteResume(Long userId) {
+        User user = userRepository.findByUserId(userId);
+        if(user == null){
+            throw new UserNotFoundException("User not found");
+        }
+        PersonalUser personalUser = personalUserRepository.findByUser_UserId(user.getUserId());
+        if(personalUser == null){
+            throw new PersonalNotFoundException("Personal user not found");
+        }
+        Resume resumeEntity = resumeRepository.findResumeByPersonalUser_PersonalId(personalUser.getPersonalId());
+        if(resumeEntity == null){
+            throw new ResumeNotFoundException("Resume not found");
+        }
+        Long resumeId = resumeEntity.getResumeId();
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid resume ID: " + resumeId));
-
+//
         // 포트폴리오 파일 삭제
         List<Portfolio> portfolios = portfolioRepository.findByResume_ResumeId(resumeId);
         if (portfolios != null && !portfolios.isEmpty()) {
@@ -139,7 +198,7 @@ public class ResumeServiceImpl implements ResumeService {
         }
 
         // 연관 엔티티 삭제
-        deleteRelatedEntities(resumeId, resume.getPersonalUser().getPersonalId());
+        deletePartialEntities(resumeId, resume.getPersonalUser().getPersonalId());
 
         // 이력서 삭제
         resumeRepository.deleteById(resumeId);
@@ -175,6 +234,9 @@ public class ResumeServiceImpl implements ResumeService {
 
     // 포트폴리오 파일 업로드
     private List<Map<String, String>> uploadPortfolios(List<MultipartFile> portfolios) {
+        if(portfolios == null || portfolios.isEmpty()){
+            return Collections.emptyList();
+        }
         return portfolios.stream()
                 .filter(file -> file != null && !file.isEmpty())
                 .map(file -> storageService.uploadFile(file, "portfolio", BUCKET_NAME))
@@ -212,28 +274,41 @@ public class ResumeServiceImpl implements ResumeService {
     }
 
     // 파일 업데이트 처리
-    private Map<String, String> processFileUpdate(String existingFileUrl, String existingFileUUID, MultipartFile newFile, String folderName) {
+    private Map<String, String> processFileUpdate(String existingFileName,
+                                                  String existingFileUrl,
+                                                  String existingFileUUID,
+                                                  MultipartFile newFile,
+                                                  String folderName) {
         Map<String, String> fileData = new HashMap<>();
+
+        /*
+        새로운 파일을 등록하면 기존에 저장되어 있는 파일을 삭제한다.
+        단,
+         */
+
 
         // 새로운 파일이 없는 경우
         if (newFile == null || newFile.isEmpty()) {
-            if (existingFileUUID != null && !existingFileUUID.isEmpty()) {
-                storageService.deleteFile(BUCKET_NAME, folderName, existingFileUUID);
-            }
-            fileData.put("fileUrl", existingFileUrl != null ? existingFileUrl : "");
-            fileData.put("fileUUID", existingFileUUID != null ? existingFileUUID : "");
-            fileData.put("fileOriginalFileName", newFile != null ? newFile.getOriginalFilename() : "");
+            // 기존 파일 정보를 그대로 유지
+            fileData.put("fileUrl", Optional.ofNullable(existingFileUrl).orElse(""));
+            fileData.put("fileUUID", Optional.ofNullable(existingFileUUID).orElse(""));
+            fileData.put("fileOriginalFileName", Optional.ofNullable(existingFileName).orElse(""));
 
             log.info("fileData >>>  {}", fileData);
             return fileData;
         }
 
-        // 새로운 파일 업로드
+// 새로운 파일 업로드
         fileData = storageService.uploadFile(newFile, folderName, BUCKET_NAME);
 
-        // 기존 파일 삭제
-        if (existingFileUUID != null && !existingFileUUID.isEmpty()) {
-            storageService.deleteFile(BUCKET_NAME, folderName, existingFileUUID);
+// 기존 파일 삭제
+// 새로 업로드한 파일 이름이 기존 파일 이름과 다른 경우에만 삭제
+        // 파일 이름이 같으면 일단 삭제
+        if (existingFileName.equals(fileData.get("fileOriginalFileName")) || !existingFileName.equals(fileData.get("fileOriginalFileName"))) {
+            if (existingFileUUID != null && !existingFileUUID.isEmpty()) {
+                log.info("기존 파일 삭제 시작 : {}", existingFileUUID);
+                storageService.deleteFile(BUCKET_NAME, folderName, existingFileUUID);
+            }
         }
 
         return fileData;
@@ -242,24 +317,66 @@ public class ResumeServiceImpl implements ResumeService {
     // 포트폴리오 파일 업데이트 처리
     private List<Map<String, String>> processPortfoliosUpdate(Long resumeId, List<MultipartFile> newPortfolios) {
         List<Portfolio> existingPortfolios = portfolioRepository.findByResume_ResumeId(resumeId);
+        List<Map<String, String>> portfolioFiles = new ArrayList<>();
+
+
+        if (newPortfolios == null || newPortfolios.isEmpty() || newPortfolios.stream().allMatch(MultipartFile::isEmpty)) {
+            // 새로운 포트폴리오 파일이 없는 경우 기존 파일 유지
+            log.info("새로운 포트폴리오 파일이 없는 경우 기존 파일 유지");
+            if (existingPortfolios != null && !existingPortfolios.isEmpty()) {
+                log.info("existingPortfolios != null && !existingPortfolios.isEmpty()");
+                existingPortfolios.forEach(portfolio -> {
+                    Map<String, String> existingFileData = new HashMap<>();
+                    existingFileData.put("fileUrl", Optional.ofNullable(portfolio.getPortFileUrl()).orElse(""));
+                    existingFileData.put("fileUUID", Optional.ofNullable(portfolio.getPortFileUuid()).orElse(""));
+                    existingFileData.put("fileOriginalFileName", Optional.ofNullable(portfolio.getPortFileName()).orElse(""));
+                    portfolioFiles.add(existingFileData);
+                });
+            }
+            return portfolioFiles;
+        }
 
         if (existingPortfolios != null && !existingPortfolios.isEmpty()) {
             existingPortfolios.forEach(portfolio -> {
-                if (portfolio.getPortFileUuid() != null && !portfolio.getPortFileUuid().isEmpty()) {
+                log.info("새로운 포트폴리오 파일과 기존 파일 이름 비교");
+                // 새로운 포트폴리오 파일과 기존 파일 이름 비교
+                boolean isSameFile = newPortfolios.stream()
+                        .anyMatch(newFile -> {
+                            String newFileName = newFile.getOriginalFilename();
+                            String portFileName = portfolio.getPortFileName();
+                            log.info("newFileName : {}", newFileName);
+                            log.info("portFileName : {}", portFileName);
+                            return newFileName != null && newFileName.equals(portFileName);
+                        });
+
+                log.info("isSameFile : {}", isSameFile);
+                if (!isSameFile && portfolio.getPortFileName() != null && !portfolio.getPortFileName().isEmpty()) {
+                    log.info("이름이 다르면 기존 파일 삭제");
+                    // 이름이 다르면 기존 파일 삭제
+                    storageService.deleteFile(BUCKET_NAME, "portfolio", portfolio.getPortFileUuid());
+                }else if(isSameFile && portfolio.getPortFileName() != null && !portfolio.getPortFileName().isEmpty()){
+                    log.info("이름이 같아도 기존 파일 삭제");
                     storageService.deleteFile(BUCKET_NAME, "portfolio", portfolio.getPortFileUuid());
                 }
             });
+            // 기존 포트폴리오 레코드 삭제
             portfolioRepository.deleteByResumeResumeId(resumeId);
-        }
-        for (MultipartFile file : newPortfolios) {
-            log.info("File Name: {}, File Size: {}", file.getOriginalFilename(), file.getSize());
+            log.info("기존 포트폴리오 레코드 삭제");
         }
 
-        return newPortfolios.stream()
-                .filter(file -> file != null && !file.isEmpty())
-                .map(file -> storageService.uploadFile(file, "portfolio", BUCKET_NAME))
-                .collect(Collectors.toList());
+        // 새로운 포트폴리오 파일 업로드
+        for (MultipartFile file : newPortfolios) {
+            log.info("File Name: {}, File Size: {}", file.getOriginalFilename(), file.getSize());
+            if (file != null && !file.isEmpty()) {
+                log.info("새로운 포트폴리오 파일 업로드");
+                Map<String, String> fileData = storageService.uploadFile(file, "portfolio", BUCKET_NAME);
+                portfolioFiles.add(fileData);
+            }
+        }
+
+        return portfolioFiles;
     }
+
 
     // 이력서 엔티티 업데이트
     private Resume updateResumeEntity(Resume existingResume, ResumeDTO resumeDTO, Map<String, String> resumePhotoData, Map<String, String> personalStateData) {
@@ -272,23 +389,18 @@ public class ResumeServiceImpl implements ResumeService {
                 .phoneNum(Optional.ofNullable(resumeDTO.getPhoneNum()).orElse(existingResume.getPhoneNum()))
                 .resumeEmail(Optional.ofNullable(resumeDTO.getResumeEmail()).orElse(existingResume.getResumeEmail()))
                 .resumeEmail(Optional.ofNullable(resumeDTO.getResumeEmail()).orElse(existingResume.getResumeEmail()))
-
 //                .resumePhotoUrl(resumePhotoData.get("fileUrl").isEmpty() ? null : resumePhotoData.get("fileUrl"))
 //                .resumePhotoUuid(resumePhotoData.get("fileUUID").isEmpty() ? null : resumePhotoData.get("fileUUID"))
 //                .resumePhotoFileName(resumePhotoData.get("fileOriginalFileName").isEmpty() ? null : resumePhotoData.get("fileOriginalFileName"))
 //                .personalStateUrl(personalStateData.get("fileUrl").isEmpty() ? null : personalStateData.get("fileUrl"))
 //                .personalStateUuid(personalStateData.get("fileUUID").isEmpty() ? null : personalStateData.get("fileUUID"))
 //                .personalStateFileName(personalStateData.get("fileOriginalFileName").isEmpty() ? null : personalStateData.get("fileOriginalFileName"))
-//
-
-                .resumePhotoUrl(resumePhotoData.get("fileUrl").isEmpty() ? "" : resumePhotoData.get("fileUrl"))
-                .resumePhotoUuid(resumePhotoData.get("fileUUID").isEmpty() ? "" : resumePhotoData.get("fileUUID"))
-                .resumePhotoFileName(resumePhotoData.get("fileOriginalFileName").isEmpty() ? "" : resumePhotoData.get("fileOriginalFileName"))
-                .personalStateUrl(personalStateData.get("fileUrl").isEmpty() ? "" : personalStateData.get("fileUrl"))
-                .personalStateUuid(personalStateData.get("fileUUID").isEmpty() ? "" : personalStateData.get("fileUUID"))
-                .personalStateFileName(personalStateData.get("fileOriginalFileName").isEmpty() ? "" : personalStateData.get("fileOriginalFileName"))
-
-
+                .resumePhotoUrl(resumePhotoData.get("fileUrl") == null || resumePhotoData.get("fileUrl").isEmpty() ? "" : resumePhotoData.get("fileUrl"))
+                .resumePhotoUuid(resumePhotoData.get("fileUUID") == null ||resumePhotoData.get("fileUUID").isEmpty() ? "" : resumePhotoData.get("fileUUID"))
+                .resumePhotoFileName(resumePhotoData.get("fileOriginalFileName") == null || resumePhotoData.get("fileOriginalFileName").isEmpty() ? "" : resumePhotoData.get("fileOriginalFileName"))
+                .personalStateUrl(personalStateData.get("fileUrl") == null || personalStateData.get("fileUrl").isEmpty() ? "" : personalStateData.get("fileUrl"))
+                .personalStateUuid(personalStateData.get("fileUUID") == null ||personalStateData.get("fileUUID").isEmpty() ? "" : personalStateData.get("fileUUID"))
+                .personalStateFileName(personalStateData.get("fileOriginalFileName") == null ||personalStateData.get("fileOriginalFileName").isEmpty() ? "" : personalStateData.get("fileOriginalFileName"))
                 .resumeUpdate(LocalDateTime.now())
                 .build();
     }
@@ -369,6 +481,8 @@ public class ResumeServiceImpl implements ResumeService {
     }
 
     private void savePortfolios(Resume resume, List<Map<String, String>> portfolioFiles) {
+        log.info("savePortfolio resume: {}", resume);
+        log.info("savePortfolio port: portfolioFiles.stream().toList() {}", portfolioFiles.stream().toList());
         if (portfolioFiles != null && !portfolioFiles.isEmpty()) {
             portfolioRepository.deleteByResumeResumeId(resume.getResumeId());
             portfolioFiles.forEach(fileData -> {
@@ -385,6 +499,7 @@ public class ResumeServiceImpl implements ResumeService {
 
     private void saveJobPositions(PersonalUser personalUser, List<JobPositionDTO> jobPositions) {
         if (jobPositions != null) {
+            log.info("jobPositions : {} ",jobPositions);
             jobPositionRepository.deleteByPersonalUserPersonalId(personalUser.getPersonalId());
             jobPositions.forEach(jobPosDTO -> {
                 JobPosition jobPosition = JobPosition.builder()
@@ -440,6 +555,87 @@ public class ResumeServiceImpl implements ResumeService {
         return resumeRepository.findAll().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public boolean ResumeExist(Long userId) {
+        PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
+        return resumeRepository.existsByPersonalUser_PersonalId(personalUser.getPersonalId());
+    }
+
+    /**
+     * 포트폴리오 삭제
+     * @param portfolioId
+     * @return
+     */
+    @Override
+    public void deletePortfolio(Long portfolioId) {
+        Portfolio portfolio = portfolioRepository.findById(portfolioId).orElseThrow(() -> new NoSuchElementException("Portfolio not found"));
+        String fileUUID = portfolio.getPortFileUuid();
+        storageService.deleteFile(BUCKET_NAME, "portfolio", fileUUID);
+        portfolioRepository.deleteById(portfolioId);
+        Resume resume = portfolio.getResume();
+        resumeRepository.save(resume);
+    }
+
+    /**
+     * 사진 삭제
+     * @param resumeId
+     * @return
+     */
+    @Override
+    public void deleteResumePhoto(Long resumeId) {
+        Resume resume = resumeRepository.findById(resumeId).orElseThrow(() -> new NoSuchElementException("Resume not found"));
+        storageService.deleteFile(BUCKET_NAME, "resume-photos", resume.getResumePhotoUuid());
+
+        Resume updatedResume = Resume.builder()
+                .resumeId(resume.getResumeId())
+                .resumeName(resume.getResumeName())
+                .resumeDate(resume.getResumeDate())
+                .phoneNum(resume.getPhoneNum())
+                .resumePhotoUrl("")
+                .resumePhotoUuid("")
+                .resumePhotoFileName("")
+                .resumeEmail(resume.getResumeEmail())
+                .resumeCreate(resume.getResumeCreate())
+                .resumeUpdate(LocalDateTime.now())
+                .personalStateUrl(resume.getPersonalStateUrl())
+                .personalStateUuid(resume.getPersonalStateUuid())
+                .personalStateFileName(resume.getPersonalStateFileName())
+                .personalUser(resume.getPersonalUser())
+                .build();
+
+        resumeRepository.save(updatedResume);
+    }
+
+    /**
+     * 자소서 삭제
+     * @param resumeId
+     * @return
+     */
+    @Override
+    public void deleteResumePersonalState(Long resumeId) {
+        Resume resume = resumeRepository.findById(resumeId).orElseThrow(() -> new NoSuchElementException("Resume not found"));
+        storageService.deleteFile(BUCKET_NAME, "personal-states", resume.getPersonalStateUuid());
+
+        Resume updatedResume = Resume.builder()
+                .resumeId(resume.getResumeId())
+                .resumeName(resume.getResumeName())
+                .resumeDate(resume.getResumeDate())
+                .phoneNum(resume.getPhoneNum())
+                .resumePhotoUrl(resume.getResumePhotoUrl())
+                .resumePhotoUuid(resume.getResumePhotoUuid())
+                .resumePhotoFileName(resume.getResumePhotoFileName())
+                .resumeEmail(resume.getResumeEmail())
+                .resumeCreate(resume.getResumeCreate())
+                .resumeUpdate(LocalDateTime.now())
+                .personalStateUrl("")
+                .personalStateUuid("")
+                .personalStateFileName("")
+                .personalUser(resume.getPersonalUser())
+                .build();
+
+        resumeRepository.save(updatedResume);
     }
 
     private ResumeDTO convertToDto(Resume resume) {
@@ -506,9 +702,18 @@ public class ResumeServiceImpl implements ResumeService {
     }
 
     // 연관 엔티티 삭제
-    private void deleteRelatedEntities(Long resumeId, Long personalUserId) {
+    private void deleteAllEntities(Long resumeId, Long personalUserId) {
         jobPositionRepository.deleteByPersonalUserPersonalId(personalUserId);
         techStackRepository.deleteByPersonalUserPersonalId(personalUserId);
+        certificateRepository.deleteByResumeResumeId(resumeId);
+        educationRepository.deleteByResumeResumeId(resumeId);
+        careerRepository.deleteByResumeResumeId(resumeId);
+        curriculumRepository.deleteByResumeResumeId(resumeId);
+        etcRepository.deleteByResumeResumeId(resumeId);
+        portfolioRepository.deleteByResumeResumeId(resumeId);
+        archiveRepository.deleteByResumeResumeId(resumeId);
+    }
+    private void deletePartialEntities(Long resumeId, Long personalUserId) {
         certificateRepository.deleteByResumeResumeId(resumeId);
         educationRepository.deleteByResumeResumeId(resumeId);
         careerRepository.deleteByResumeResumeId(resumeId);

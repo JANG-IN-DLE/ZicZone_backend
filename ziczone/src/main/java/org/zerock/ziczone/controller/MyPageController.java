@@ -7,25 +7,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.zerock.ziczone.domain.PayHistory;
-import org.zerock.ziczone.domain.member.PersonalUser;
-import org.zerock.ziczone.domain.member.User;
-import org.zerock.ziczone.domain.payment.Payment;
 import org.zerock.ziczone.dto.help.BoardDTO;
 import org.zerock.ziczone.dto.mypage.*;
-import org.zerock.ziczone.exception.mypage.PersonalNotFoundException;
-import org.zerock.ziczone.repository.PayHistoryRepository;
-import org.zerock.ziczone.repository.member.PersonalUserRepository;
-import org.zerock.ziczone.repository.member.UserRepository;
-import org.zerock.ziczone.repository.payment.PaymentRepository;
 import org.zerock.ziczone.service.help.BoardService;
-import org.zerock.ziczone.service.help.CommentService;
 import org.zerock.ziczone.service.myPage.MyPageService;
-import org.zerock.ziczone.service.myPage.MyPageServiceImpl;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -33,13 +22,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MyPageController {
     private final MyPageService mypageService;
-    private final MyPageServiceImpl myPageServiceImpl;
     private final BoardService boardService;
-    private final CommentService commentService;
-    private final PaymentRepository paymentRepository;
-    private final PersonalUserRepository personalUserRepository;
-    private final UserRepository userRepository;
-    private final PayHistoryRepository payHistoryRepository;
+
 
 
     /**
@@ -83,7 +67,7 @@ public class MyPageController {
     ) {
 
         ObjectMapper objectMapper = new ObjectMapper();
-        Map<String, Object> payload;
+        Map<String,Object> payload;
         try {
             payload = objectMapper.readValue(payloadStr, Map.class);
         } catch (IOException e) {
@@ -132,7 +116,6 @@ public class MyPageController {
     @GetMapping("/personal/purchased/{userId}")
     public ResponseEntity<AggregatedDataDTO> getAggregatedData(@PathVariable Long userId) {
         AggregatedDataDTO aggregatedData = mypageService.getAggregatedData(userId);
-        log.info(aggregatedData.toString());
         return new ResponseEntity<>(aggregatedData, HttpStatus.OK);
     }
 
@@ -162,8 +145,8 @@ public class MyPageController {
         return ResponseEntity.ok(companyUserDTOS);
     }
     /**
-     * 기업회원 마이페이지 Pick 탭 조회
-     * 기업의 픽 탭에는 기업의 정보를 조회할 수 있는 카드형식의 리스트 데이터를 전송
+     * 기업회원 마이페이지 scraps 탭 조회
+     * 기업의 스크랩 탭에는 기업의 정보를 조회할 수 있는 카드형식의 리스트 데이터를 전송
      * @PathVariable userId 개인유저 아이디
      * @return ResponseEntity<List<PersonalUserDTO>> 개인 유저 정보 리스트
      */
