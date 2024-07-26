@@ -3,20 +3,26 @@ package org.zerock.ziczone.service.help;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
+import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.domain.board.Board;
 import org.zerock.ziczone.domain.board.Comment;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.domain.member.UserType;
+import org.zerock.ziczone.domain.payment.Payment;
 import org.zerock.ziczone.dto.help.CommentDTO;
+import org.zerock.ziczone.repository.PayHistoryRepository;
 import org.zerock.ziczone.repository.board.BoardRepository;
 import org.zerock.ziczone.repository.board.CommentRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
+import org.zerock.ziczone.repository.payment.PaymentRepository;
 
 import javax.transaction.Transactional;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,6 +34,8 @@ public class CommentServiceImpl implements CommentService {
     private final BoardRepository boardRepository;
     private final CommentRepository commentRepository;
     private final PersonalUserRepository personalUserRepository;
+    private final PaymentRepository paymentRepository;
+    private final PayHistoryRepository payHistoryRepository;
 
     /**
      * 댓글 등록
@@ -197,6 +205,27 @@ public class CommentServiceImpl implements CommentService {
         }
 
         comment.changeSelection(true);
+
+        List<Payment> payments = paymentRepository.findByPersonalUser(comment.getUser().getPersonalUser());
+        Payment payment;
+        if (payments.isEmpty()) {
+            payment = new Payment();
+            String orderId = UUID.randomUUID().toString();
+            String paymentKey = UUID.randomUUID().toString();
+            payment.initializePayment(comment.getUser().getPersonalUser(), orderId, paymentKey);
+            paymentRepository.save(payment);
+        }
+
+        PayHistory payHistory = PayHistory.builder()
+                .buyerId(comment.getUser().getPersonalUser().getPersonalId())
+                .sellerId(board.getUser().getPersonalUser().getPersonalId())
+                .berryBucket(board.getCorrPoint().toString())
+                .payHistoryContent("댓글채택")
+                .payHistoryDate(LocalDateTime.now())
+                .personalUser(comment.getUser().getPersonalUser())
+                .build();
+
+        payHistoryRepository.save(payHistory);
 
         commentRepository.save(comment);
     }

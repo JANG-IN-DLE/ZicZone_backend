@@ -7,9 +7,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.zerock.ziczone.domain.application.Portfolio;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.dto.mypage.ResumeDTO;
+import org.zerock.ziczone.exception.mypage.PersonalNotFoundException;
+import org.zerock.ziczone.exception.mypage.UserNotFoundException;
+import org.zerock.ziczone.exception.resume.ResumeNotFoundException;
+import org.zerock.ziczone.repository.application.PortfolioRepository;
+import org.zerock.ziczone.repository.application.ResumeRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.service.myPage.ResumeService;
@@ -26,7 +32,13 @@ public class MyPageResumeController {
     private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
     private final PersonalUserRepository personalUserRepository;
+    private final PortfolioRepository portfolioRepository;
 
+
+    @GetMapping("/check/{userId}")
+    public ResponseEntity<Boolean> userCheck(@PathVariable Long userId) {
+        return ResponseEntity.ok(resumeService.ResumeExist(userId));
+    }
     /**
      * 새로운 이력서를 저장합니다.
      * @param resumePhoto 이력서 사진 파일
@@ -46,8 +58,7 @@ public class MyPageResumeController {
         User user = userRepository.findByUserId(userId);
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
         resumeDTO.setPersonalId(personalUser.getPersonalId());
-        resumeDTO.setResumeName(user.getUserName());
-        ResumeDTO savedResume = resumeService.saveResume(resumeDTO, resumePhoto, personalState, portfolios);
+        resumeService.saveResume(resumeDTO, resumePhoto, personalState, portfolios);
         return ResponseEntity.ok("Success Create Resume");
     }
 
@@ -69,31 +80,48 @@ public class MyPageResumeController {
             @RequestPart(required = false) MultipartFile personalState,
             @RequestPart(required = false) List<MultipartFile> portfolios) {
 
+            ResumeDTO resumeDTO = convertJsonToResumeDTO(resumeDTOString);
 
-        ResumeDTO resumeDTO = convertJsonToResumeDTO(resumeDTOString);
 
-        User user = userRepository.findByUserId(userId);
-        if (user == null) {
-            throw new IllegalArgumentException("User not found with userId: " + userId);
-        }
+            User user = userRepository.findByUserId(userId);
+            if (user == null) {
+                throw new IllegalArgumentException("User not found with userId: " + userId);
+            }
 
-        Long personalId = user.getPersonalUser().getPersonalId();
+            Long personalId = user.getPersonalUser().getPersonalId();
+            resumeDTO = resumeDTO.toBuilder().personalId(personalId).build();
 
-        resumeDTO = resumeDTO.toBuilder().personalId(personalId).build();
+            resumeService.updateResume(resumeDTO.getResumeId(), resumeDTO, resumePhoto, personalState, portfolios);
+            return ResponseEntity.ok("Resume updated successfully.");
 
-        resumeService.updateResume(resumeDTO.getResumeId(), resumeDTO, resumePhoto, personalState, portfolios);
-        return ResponseEntity.ok("Resume updated successfully.");
     }
 
     /**
      * 이력서를 삭제합니다.
-     * @param resumeId 삭제할 이력서 ID
+     * @param userId 삭제할 이력서 ID
      * @return 삭제 결과 메시지
      */
-    @DeleteMapping("/{resumeId}")
-    public ResponseEntity<String> deleteResume(@PathVariable Long resumeId) {
-        resumeService.deleteResume(resumeId);
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<String> deleteResume(@PathVariable Long userId) {
+        resumeService.deleteResume(userId);
         return ResponseEntity.ok("Resume deleted successfully.");
+    }
+
+    @DeleteMapping("/portfolio/{portfolioId}")
+    public ResponseEntity<String> deletePortfolio(@PathVariable Long portfolioId) {
+        Portfolio portfolio = portfolioRepository.findByPortId(portfolioId);
+        resumeService.deletePortfolio(portfolio.getPortId());
+        return ResponseEntity.ok("Portfolio deleted successfully.");
+    }
+    @DeleteMapping("/photo/{resumeId}")
+    public ResponseEntity<String> deletePhoto(@PathVariable Long resumeId) {
+        resumeService.deleteResumePhoto(resumeId);
+        return ResponseEntity.ok("Photos deleted successfully.");
+    }
+    @DeleteMapping("/personal-state/{resumeId}")
+    public ResponseEntity<String> deletePersonalState(@PathVariable Long resumeId) {
+        resumeService.deleteResumePersonalState(resumeId);
+        return ResponseEntity.ok("PersonalState deleted successfully.");
     }
 
     /**
@@ -115,9 +143,17 @@ public class MyPageResumeController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<ResumeDTO> getResumeByUserId(@PathVariable Long userId) {
         User user = userRepository.findByUserId(userId);
+        if (user == null) {
+            throw new UserNotFoundException("User not found");
+        }
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(userId);
-
+        if (personalUser == null) {
+            throw new PersonalNotFoundException("Personal user not found");
+        }
         ResumeDTO resumeDTO = resumeService.getResumeByUserId(personalUser.getPersonalId());
+        if (resumeDTO == null){
+            throw new ResumeNotFoundException("Resume not found");
+        }
         resumeDTO.setResumeName(user.getUserName());
         return ResponseEntity.ok(resumeDTO);
     }

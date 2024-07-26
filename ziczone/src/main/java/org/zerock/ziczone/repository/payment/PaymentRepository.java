@@ -2,6 +2,7 @@ package org.zerock.ziczone.repository.payment;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.payment.Payment;
 
@@ -13,13 +14,12 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("SELECT p FROM Payment p WHERE p.personalUser.personalId = :personalId AND p.payState = 'SUCCESS'")
     Optional<List<Payment>>  findAllSuccessfulPaymentsByPersonalId(Long personalId);
 
-    @Query("SELECT SUM(p.berryPoint) FROM Payment p WHERE p.personalUser.personalId = :personalId AND p.payState = org.zerock.ziczone.domain.payment.PayState.SUCCESS")
+    @Query("SELECT SUM(p.berryPoint) FROM Payment p WHERE p.personalUser.personalId = :personalId AND p.payState IN (org.zerock.ziczone.domain.payment.PayState.SUCCESS,org.zerock.ziczone.domain.payment.PayState.ADOPT)")
     Optional<Integer> findTotalBerryPointsByPersonalId(Long personalId);
 
 
 
     Payment findByPersonalUser_PersonalId(Long personalId);
 
-    Payment findByPersonalUser(PersonalUser personalUser);
-
+    List<Payment> findByPersonalUser(PersonalUser personalUser);
 }

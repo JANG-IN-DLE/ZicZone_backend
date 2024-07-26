@@ -7,16 +7,19 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.zerock.ziczone.domain.PayHistory;
 import org.zerock.ziczone.domain.board.Board;
 import org.zerock.ziczone.domain.member.PersonalUser;
 import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.domain.member.UserType;
-import org.zerock.ziczone.domain.payment.Payment;
 import org.zerock.ziczone.dto.help.BoardDTO;
 import org.zerock.ziczone.dto.help.BoardProfileCardDTO;
 import org.zerock.ziczone.dto.page.PageRequestDTO;
 import org.zerock.ziczone.dto.page.PageResponseDTO;
+import org.zerock.ziczone.exception.board.BoardNotFoundException;
 import org.zerock.ziczone.exception.mypage.PersonalNotFoundException;
+import org.zerock.ziczone.exception.mypage.UserNotFoundException;
+import org.zerock.ziczone.repository.PayHistoryRepository;
 import org.zerock.ziczone.repository.board.BoardRepository;
 import org.zerock.ziczone.repository.board.CommentRepository;
 import org.zerock.ziczone.repository.job.JobPositionRepository;
@@ -24,13 +27,12 @@ import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.repository.payment.PaymentRepository;
 import org.zerock.ziczone.repository.tech.TechStackRepository;
+import org.zerock.ziczone.service.payment.PaymentService;
 import org.zerock.ziczone.service.storage.StorageService;
 
 import javax.transaction.Transactional;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,8 +46,10 @@ public class BoardServiceImpl implements BoardService {
     private final JobPositionRepository jobPositionRepository;
     private final TechStackRepository techStackRepository;
     private final PaymentRepository paymentRepository;
+    private final PayHistoryRepository payHistoryRepository;
     private final CommentRepository commentRepository;
     private final StorageService storageService;
+    private final PaymentService paymentService;
 
     final String BUCKETNAME = "ziczone-bucket-jangindle";
 
@@ -66,16 +70,13 @@ public class BoardServiceImpl implements BoardService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 userId"));
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(user.getUserId());
-        Payment payment = paymentRepository.findByPersonalUser(personalUser);
-
         if (user.getUserType() != UserType.PERSONAL) {
             throw new IllegalArgumentException("개인 회원만 게시물을 등록할 수 있습니다.");
         }
-        if (payment.getBerryPoint() < corrPoint) {
+        Map<String, Integer> berryPointMap = paymentService.myTotalBerryPoints(userId);
+        Integer totalBerryPoints = berryPointMap.get("totalBerryPoints");
+        if (totalBerryPoints < corrPoint) {
             throw new IllegalArgumentException("보유한 베리 포인트가 부족합니다.");
-        } else {
-            payment.deductionBoardBerryPoint(corrPoint);
-            paymentRepository.save(payment);
         }
 
         String corrPdfUUID = UUID.randomUUID().toString();
@@ -95,6 +96,17 @@ public class BoardServiceImpl implements BoardService {
                 .build();
 
         boardRepository.save(board);
+
+        PayHistory payHistory = PayHistory.builder()
+                .sellerId(userId)
+                .buyerId(userId)
+                .berryBucket("-"+board.getCorrPoint().toString())
+                .payHistoryContent("게시물등록")
+                .payHistoryDate(LocalDateTime.now())
+                .personalUser(board.getUser().getPersonalUser())
+                .build();
+
+        payHistoryRepository.save(payHistory);
 
         return board.getCorrId();
     }
@@ -119,10 +131,11 @@ public class BoardServiceImpl implements BoardService {
         List<String> jobNames = jobPositionRepository.findByPersonalUser(personalUser).stream()
                 .map(jobPosition -> jobPosition.getJob().getJobName())
                 .collect(Collectors.toList());
-        Payment payment = paymentRepository.findByPersonalUser(personalUser);
         List<String> techUrls = techStackRepository.findByPersonalUser(personalUser).stream()
                 .map(techStack -> techStack.getTech().getTechUrl())
                 .collect(Collectors.toList());
+        Map<String, Integer> berryPointMap = paymentService.myTotalBerryPoints(userId);
+        Integer totalBerryPoints = berryPointMap.get("totalBerryPoints");
 
         BoardProfileCardDTO boardProfileCardDTO = BoardProfileCardDTO.builder()
                 .userId(user.getUserId())
@@ -131,7 +144,7 @@ public class BoardServiceImpl implements BoardService {
                 .gender(personalUser.getGender())
                 .userName(user.getUserName())
                 .personalCareer(personalUser.getPersonalCareer())
-                .berryPoint(payment.getBerryPoint())
+                .berryPoint(totalBerryPoints)
                 .userIntro(user.getUserIntro())
                 .techUrl(String.join(",", techUrls))
                 .build();
@@ -184,13 +197,14 @@ public class BoardServiceImpl implements BoardService {
                 .orElseThrow(() -> new IllegalArgumentException("유효하지 않은 corrId"));
         User user = board.getUser();
         PersonalUser personalUser = user.getPersonalUser();
-        Payment payment = paymentRepository.findByPersonalUser(personalUser);
         List<String> jobNames = jobPositionRepository.findByPersonalUser(personalUser).stream()
                 .map(jobPosition -> jobPosition.getJob().getJobName())
                 .collect(Collectors.toList());
         List<String> techUrls = techStackRepository.findByPersonalUser(personalUser).stream()
                 .map(techStack -> techStack.getTech().getTechUrl())
                 .collect(Collectors.toList());
+        Map<String, Integer> berryPointMap = paymentService.myTotalBerryPoints(board.getUser().getUserId());
+        Integer totalBerryPoints = berryPointMap.get("totalBerryPoints");
 
         BoardProfileCardDTO boardProfileCardDTO = BoardProfileCardDTO.builder()
                 .userId(user.getUserId())
@@ -199,7 +213,7 @@ public class BoardServiceImpl implements BoardService {
                 .jobName(String.join(",", jobNames))
                 .gender(personalUser.getGender())
                 .userName(user.getUserName())
-                .berryPoint(payment.getBerryPoint())
+                .berryPoint(totalBerryPoints)
                 .personalCareer(personalUser.getPersonalCareer())
                 .userIntro(user.getUserIntro())
                 .techUrl(String.join(",", techUrls))
@@ -341,6 +355,9 @@ public class BoardServiceImpl implements BoardService {
             throw new IllegalArgumentException("작성자만 삭제할 수 있습니다.");
         }
 
+        // TODO: 수정 필요
+        storageService.deleteFile("ziczone-bucket-jangindle", "CorrPdf", board.getCorrPdfUuid());
+
         boardRepository.deleteById(corrId);
     }
 
@@ -393,7 +410,13 @@ public class BoardServiceImpl implements BoardService {
     @Override
     public List<BoardDTO> userReadAll(Long userId) {
         List<Board> boards = boardRepository.findByUserUserId(userId);
+        if(boards == null){
+            throw new BoardNotFoundException("Board not found");
+        }
         User userCheck = userRepository.findByUserId(userId);
+        if(userCheck == null){
+            throw new UserNotFoundException("User not found");
+        }
         PersonalUser personalUserCheck = userCheck.getPersonalUser();
         if (personalUserCheck == null){
             throw new PersonalNotFoundException("Personal User Not Found");

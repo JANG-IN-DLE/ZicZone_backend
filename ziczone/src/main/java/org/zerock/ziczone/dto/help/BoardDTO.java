@@ -24,7 +24,9 @@ public class BoardDTO {
     private String corrContent; // 게시물 내용
 
     private String corrPdfUrl;         // 게시물 파일 URL
+
     private String corrPdfUuid;         // 게시물 파일 UUID
+
     private String corrPdfFileName;         // 게시물 파일 FileName
 
     private LocalDateTime corrModify; // 게시물 수정시간

@@ -40,6 +40,7 @@ public class MainPageServiceImpl implements MainPageService {
         return MainCompanyUserDTO.builder()
                 .userName(user.getUserName())
                 .email(user.getEmail())
+                .userIntro(user.getUserIntro())
                 .companyLogo(companyUser.getCompanyLogoUrl())
                 .build();
     }
@@ -48,13 +49,14 @@ public class MainPageServiceImpl implements MainPageService {
     public MainPersonalUserDTO getPersonalUser(Long userId) {
         User user = userRepository.findByUserId(userId);
         PersonalUser personalUser = personalUserRepository.findByUser_UserId(user.getUserId());
-        Payment payment = paymentRepository.findByPersonalUser(personalUser);
+//        Payment payment = paymentRepository.findByPersonalUser(personalUser);
 
         return MainPersonalUserDTO.builder()
                 .userName(user.getUserName())
                 .email(user.getEmail())
                 .gender(personalUser.getGender())
-//                .berryPoint(payment.getBerryPoint())
+                .userIntro(user.getUserIntro())
+                .personalCareer(personalUser.getPersonalCareer())
                 .build();
     }
 }

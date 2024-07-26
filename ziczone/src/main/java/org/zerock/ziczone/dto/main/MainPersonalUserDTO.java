@@ -18,5 +18,7 @@ public class MainPersonalUserDTO {
 
     private Gender gender;
 
-    private Integer berryPoint;
+    private String personalCareer;
+
+    private String userIntro;
 }

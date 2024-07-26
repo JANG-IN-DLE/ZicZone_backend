@@ -25,7 +25,7 @@ public class BoardProfileCardDTO {
 
     private String personalCareer; // 경력
 
-    private Integer berryPoint; // 보유 포인트
+    private Integer berryPoint; // payment.berryPoint 아님
 
     private String userIntro; // 한줄 소개
 
