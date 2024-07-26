@@ -8,7 +8,7 @@ import java.util.List;
 public interface ResumeService {
     
     // 지원서 저장
-    ResumeDTO saveResume(ResumeDTO resumeDTO, MultipartFile resumePhoto, MultipartFile personalState, List<MultipartFile> portfolios);
+    void saveResume(ResumeDTO resumeDTO, MultipartFile resumePhoto, MultipartFile personalState, List<MultipartFile> portfolios);
     // 지원서 수정
     void updateResume(Long resumeId, ResumeDTO resumeDTO, MultipartFile resumePhoto, MultipartFile personalState, List<MultipartFile> portfolios);
     // 지원서 삭제
