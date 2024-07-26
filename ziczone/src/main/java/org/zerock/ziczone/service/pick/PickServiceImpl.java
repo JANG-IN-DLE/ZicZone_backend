@@ -409,7 +409,7 @@ public class PickServiceImpl implements PickService {
         PayHistory payHistory = PayHistory.builder()
                 .sellerId(seller.getPersonalId())
                 .buyerId(buyer.getPersonalId())
-                .berryBucket("-50")
+                .berryBucket("-500")
                 .payHistoryContent(openCardDTO.getPayHistoryContent())
                 .payHistoryDate(openCardDTO.getPayHistoryDate())
                 .personalUser(buyer)
