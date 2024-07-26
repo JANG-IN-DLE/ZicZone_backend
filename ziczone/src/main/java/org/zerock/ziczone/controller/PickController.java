@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.zerock.ziczone.dto.pick.*;
+import org.zerock.ziczone.service.alarm.AlarmServiceImpl;
 import org.zerock.ziczone.service.pick.PickService;
 
 import java.net.URI;
@@ -19,6 +20,8 @@ import java.util.List;
 public class PickController {
 
     private final PickService pickService;
+    private final AlarmServiceImpl alarmServiceImpl;
+
     // main페이지에서 로그인 안된 회원들을 위한 Get요청
     @GetMapping("/api/pickcards")
     public List<PickCardDTO> getPickCards() {
@@ -72,6 +75,7 @@ public class PickController {
                 URI location = URI.create("/api/personal/pickcards/" + openCardDTO.getBuyerId() + "/" + openCardDTO.getSellerId());
                 return ResponseEntity.status(HttpStatus.SEE_OTHER).location(location).build();
             }
+            alarmServiceImpl.addAlarm("BUYRESUME", openCardDTO.getBuyerId(), openCardDTO.getSellerId());
             return ResponseEntity.ok().build();
         }catch (IllegalArgumentException e){
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -81,12 +85,14 @@ public class PickController {
     @PostMapping("/api/company/scrap")
     public ResponseEntity<?> scrapUser(@RequestBody PickAndScrapDTO pickAndScrapDTO){
         PickAndScrapDTO updatedPickAndScrapDTO = pickService.scrapUser(pickAndScrapDTO);
+        alarmServiceImpl.addAlarm("SCRAP", updatedPickAndScrapDTO.getUserId(), updatedPickAndScrapDTO.getPersonalId());
         return ResponseEntity.ok(updatedPickAndScrapDTO);
     }
     // (CompanyId로 로그인되었을때) pick 요청을 처리하는 메서드
     @PostMapping("/api/company/pick")
     public ResponseEntity<?> pickUser(@RequestBody PickAndScrapDTO pickAndScrapDTO){
         PickAndScrapDTO updatedPickAndScrapDTO = pickService.pickUser(pickAndScrapDTO);
+        alarmServiceImpl.addAlarm("PICK", updatedPickAndScrapDTO.getUserId(), updatedPickAndScrapDTO.getPersonalId());
         return ResponseEntity.ok(updatedPickAndScrapDTO);
     }
 }
