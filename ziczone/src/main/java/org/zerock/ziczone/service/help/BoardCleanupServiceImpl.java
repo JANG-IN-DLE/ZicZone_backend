@@ -25,8 +25,8 @@ public class BoardCleanupServiceImpl implements BoardCleanupService {
     private final AlarmService alarmService;
 
     @Override
-//    @Scheduled(cron = "0 0 0 * * ?")
-    @Scheduled(cron = "0 * * * * ?") // 테스트 (매 분마다 실행)
+    @Scheduled(cron = "0 0 0 * * ?")
+    // @Scheduled(cron = "0 * * * * ?") // 테스트 (매 분마다 실행)
     @Transactional
     public void cleanupOldBoards() {
         LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
