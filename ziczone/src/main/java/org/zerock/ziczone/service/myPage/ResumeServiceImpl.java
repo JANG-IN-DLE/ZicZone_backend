@@ -49,7 +49,7 @@ public class ResumeServiceImpl implements ResumeService {
 
     @Transactional
     @Override
-    public ResumeDTO saveResume(ResumeDTO resumeDTO, MultipartFile resumePhoto, MultipartFile personalState, List<MultipartFile> portfolios) {
+    public void saveResume(ResumeDTO resumeDTO, MultipartFile resumePhoto, MultipartFile personalState, List<MultipartFile> portfolios) {
         Long personalId = resumeDTO.getPersonalId();
         validatePersonalId(personalId);
 
@@ -87,7 +87,7 @@ public class ResumeServiceImpl implements ResumeService {
         resumeRepository.save(resume);
         saveRelatedEntities(resume, resumeDTO, portfolioFiles);
 
-        return buildResumeDTO(resume, resumeDTO, portfolioFiles);
+//        return buildResumeDTO(resume, resumeDTO, portfolioFiles);
     }
 
     @Transactional
