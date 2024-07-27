@@ -91,10 +91,18 @@ public class PickController {
     // (CompanyId로 로그인되었을때) scrap 요청을 처리하는 메서드 (userId 로그인된 유저, personalId 당한 유저 personalId)
     @PostMapping("/api/company/scrap")
     public ResponseEntity<?> scrapUser(@RequestBody PickAndScrapDTO pickAndScrapDTO){
-        PickAndScrapDTO updatedPickAndScrapDTO = pickService.scrapUser(pickAndScrapDTO);
-        PersonalUser scrapedUser = personalUserRepository.findByPersonalId(updatedPickAndScrapDTO.getPersonalId());
-        alarmServiceImpl.addAlarm("SCRAP", updatedPickAndScrapDTO.getUserId(), scrapedUser.getUser().getUserId());
-        return ResponseEntity.ok(updatedPickAndScrapDTO);
+        try{
+            PickAndScrapDTO updatedPickAndScrapDTO = pickService.scrapUser(pickAndScrapDTO);
+            PersonalUser scrapedUser = personalUserRepository.findByPersonalId(updatedPickAndScrapDTO.getPersonalId());
+            if(updatedPickAndScrapDTO.getScrap()) {
+                alarmServiceImpl.addAlarm("SCRAP", updatedPickAndScrapDTO.getUserId(), scrapedUser.getUser().getUserId());
+            }
+            return ResponseEntity.ok(updatedPickAndScrapDTO);
+        }catch(Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error while processing scrap request.");
+        }
+
+
     }
     // (CompanyId로 로그인되었을때) pick 요청을 처리하는 메서드
     @PostMapping("/api/company/pick")
