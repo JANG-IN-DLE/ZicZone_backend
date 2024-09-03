@@ -53,6 +53,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)// Rest서버는 세션 상태를 유지하지 않으므로 STATELESS
                 .and()
                 .authorizeRequests()
+                .antMatchers("/api/personal/**").hasAuthority("PERSONAL")
+                .antMatchers("/api/company/**").hasAuthority("COMPANY")
                 .anyRequest().permitAll(); // 그 외 모든 요청은 인증 필요
 
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
