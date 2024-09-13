@@ -17,6 +17,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.zerock.ziczone.domain.member.UserType;
@@ -55,8 +58,22 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers("/api/personal/**").hasAuthority("PERSONAL")
                 .antMatchers("/api/company/**").hasAuthority("COMPANY")
-                .anyRequest().permitAll(); // 그 외 모든 요청은 인증 필요
+                .anyRequest().permitAll();
 
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
+    }
+
+    // CORS 설정 추가
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.addAllowedOrigin("http://localhost:3000"); // 허용할 출처
+        configuration.addAllowedMethod("*"); // 모든 HTTP 메소드 허용
+        configuration.addAllowedHeader("*"); // 모든 헤더 허용
+        configuration.setAllowCredentials(true); // 자격 증명 허용
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration); // 모든 경로에 대해 CORS 설정 적용
+        return source;
     }
 }
