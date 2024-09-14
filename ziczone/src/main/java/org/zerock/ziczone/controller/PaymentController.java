@@ -19,7 +19,7 @@ import org.zerock.ziczone.repository.PayHistoryRepository;
 import org.zerock.ziczone.repository.member.PersonalUserRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
 import org.zerock.ziczone.repository.payment.PaymentRepository;
-import org.zerock.ziczone.service.login.JwtService;
+import org.zerock.ziczone.security.JwtService;
 import org.zerock.ziczone.service.payment.PaymentService;
 import org.zerock.ziczone.service.payment.TossPayService;
 
