@@ -13,7 +13,7 @@ import org.zerock.ziczone.repository.alarm.AlarmContentRepository;
 import org.zerock.ziczone.repository.alarm.AlarmRepository;
 import org.zerock.ziczone.repository.board.BoardRepository;
 import org.zerock.ziczone.repository.member.UserRepository;
-import org.zerock.ziczone.service.login.JwtService;
+import org.zerock.ziczone.security.JwtService;
 
 import javax.transaction.Transactional;
 import java.io.IOException;

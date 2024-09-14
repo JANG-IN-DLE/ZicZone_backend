@@ -1,4 +1,4 @@
-package org.zerock.ziczone.service.login;
+package org.zerock.ziczone.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -6,18 +6,14 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.zerock.ziczone.domain.member.User;
-import org.zerock.ziczone.domain.member.UserType;
 import org.zerock.ziczone.repository.member.UserRepository;
 
 import javax.servlet.http.HttpServletRequest;
 import java.security.Key;
 import java.util.Date;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -50,7 +46,7 @@ public class JwtService {
                 .signWith(key)
                 .compact();
 
-        return PREFIX + token;
+        return token;
     }
 
     // 클라이언트가 보내온 요청 헤더에서, 토큰을 확인하고 사용자 이름으로 전환함(로그인이외의 다른 컨트롤러에서 적절하게 사용해야함)

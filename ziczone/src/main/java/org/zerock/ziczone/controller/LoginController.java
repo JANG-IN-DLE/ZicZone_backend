@@ -12,16 +12,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.zerock.ziczone.domain.member.User;
-import org.zerock.ziczone.domain.member.UserType;
 import org.zerock.ziczone.dto.login.AccountCredentialsDTO;
 import org.zerock.ziczone.service.Email.EmailAuthService;
 import org.zerock.ziczone.service.join.JoinService;
-import org.zerock.ziczone.service.login.JwtService;
+import org.zerock.ziczone.security.JwtService;
 import org.zerock.ziczone.service.login.LoginService;
-import org.zerock.ziczone.service.login.UserDetailsServiceImpl;
 
 import java.util.Map;
-import java.util.Optional;
 
 @Log4j2
 @RestController

@@ -1,4 +1,4 @@
-package org.zerock.ziczone.service.login;
+package org.zerock.ziczone.security;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -7,7 +7,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.zerock.ziczone.domain.member.User;
-import org.zerock.ziczone.domain.member.UserType;
 import org.zerock.ziczone.repository.member.UserRepository;
 import org.springframework.security.core.userdetails.User.UserBuilder;
 
