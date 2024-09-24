@@ -47,14 +47,9 @@ public class LoginController {
                                                                         //현재 요청의 인증 상태를 저장하고 이후 요청에서도 인증정보 사용가능
 
             // 토큰 발급
-            String jwts = jwtService.getToken(auth.getName());
+            Map<String, String> jwts = jwtService.getToken(auth.getName());
             log.info("Token : " + jwts);
-
-            // 클라이언트에 AUTHORIZATION 헤더에 토큰이 전달됨
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.AUTHORIZATION, jwts)
-                    .header(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, "Authorization")
-                    .body(Map.of("message", "Auth Success"));
+            return ResponseEntity.ok(jwts);
         } catch (BadCredentialsException e) {
             // 아이디나 비밀번호가 틀렸을 때
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
