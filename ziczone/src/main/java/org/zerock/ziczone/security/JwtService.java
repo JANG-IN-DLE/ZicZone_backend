@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.repository.member.UserRepository;
 
@@ -22,6 +23,7 @@ import java.util.function.Function;
 @Component
 @RequiredArgsConstructor
 @Service
+@Transactional
 public class JwtService {
 
     private final UserRepository userRepository;
@@ -34,13 +36,11 @@ public class JwtService {
 
     // 비밀키로 서명된 JWT토큰 발급
     public Map<String, String> getToken(String email) {
-        Optional<User> user = userRepository.findByEmail(email);
-        if(user.isEmpty()) {
-            throw new IllegalArgumentException("User not found");
-        }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        String role = user.get().getUserType().toString();
-        Long userId = user.get().getUserId();
+        String role = user.getUserType().toString();
+        Long userId = user.getUserId();
 
         String refreshToken = Jwts.builder()
                         .setSubject(email)
@@ -62,7 +62,18 @@ public class JwtService {
         tokens.put("access_token", accessToken);
         tokens.put("refresh_token", refreshToken);
 
+        saveRefreshToken(email, refreshToken);
         return tokens;
+    }
+
+    // RefreshToken DB에 저장
+    public void saveRefreshToken(String email, String refreshToken) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        User updateUser = user.toBuilder().refreshToken(refreshToken).build();
+        userRepository.save(updateUser);
+
     }
 
     // 클라이언트가 보내온 요청 헤더에서, 토큰을 확인하고 사용자 이름으로 전환함(로그인이외의 다른 컨트롤러에서 적절하게 사용해야함)
