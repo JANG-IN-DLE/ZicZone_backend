@@ -31,7 +31,7 @@ public class LoginController {
     private final LoginService loginService;
 
     private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager;
+    private final AuthenticationManager authenticationManager; //비밀번호 자동 비교
 
     @PostMapping("/login")
     public ResponseEntity<?> getToken(@RequestBody AccountCredentialsDTO accountCredentials) {
@@ -42,8 +42,8 @@ public class LoginController {
                     accountCredentials.getPassword());
 
             //UserDetailsServiceImpl에 구현한 loadUserByUsername이 호출되어 사용자의 인증을 DB와 확인하여 내부적으로 처리함
-            Authentication auth = authenticationManager.authenticate(creds); //인증수행
-            SecurityContextHolder.getContext().setAuthentication(auth); //인증에 성공하면, SecurityContextHelder에 인증 정보 설정
+            Authentication auth = authenticationManager.authenticate(creds); //인증수행, 성공시 Authentication객체 반환
+            SecurityContextHolder.getContext().setAuthentication(auth); //인증에 성공하면, SecurityContextHolder에 인증 정보 설정
                                                                         //현재 요청의 인증 상태를 저장하고 이후 요청에서도 인증정보 사용가능
 
             // 토큰 발급

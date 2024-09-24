@@ -31,22 +31,21 @@ public class JwtService {
 
     // 비밀키로 서명된 JWT토큰 발급
     public String getToken(String email) {
-
         Optional<User> user = userRepository.findByEmail(email);
-        if(!user.isPresent()) {
+        if(user.isEmpty()) {
             throw new IllegalArgumentException("User not found");
         }
+
         String role = user.get().getUserType().toString();
         Long userId = user.get().getUserId();
-        String token = Jwts.builder()
+
+        return Jwts.builder()
                 .setSubject(email)
                 .claim("role", role)
                 .claim("userId", userId)
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRE_TIME))
                 .signWith(key)
                 .compact();
-
-        return token;
     }
 
     // 클라이언트가 보내온 요청 헤더에서, 토큰을 확인하고 사용자 이름으로 전환함(로그인이외의 다른 컨트롤러에서 적절하게 사용해야함)
@@ -55,16 +54,13 @@ public class JwtService {
 
         // 토큰이 헤더에 존재한다면
         if (token != null && token.startsWith(PREFIX)) {
-            String user = Jwts.parserBuilder()
+            // token을 비밀키로 풀었을 때 user가 잘 추출되면
+            return Jwts.parserBuilder()
                     .setSigningKey(key)
                     .build()
                     .parseClaimsJws(token.replace(PREFIX, ""))
                     .getBody()
                     .getSubject();
-
-            // token을 비밀키로 풀었을 때 user가 잘 추출되면
-            if (user != null)
-                return user;
         }
         return null;
     }
