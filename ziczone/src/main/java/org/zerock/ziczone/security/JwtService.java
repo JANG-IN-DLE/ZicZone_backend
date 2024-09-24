@@ -14,6 +14,8 @@ import org.zerock.ziczone.repository.member.UserRepository;
 import javax.servlet.http.HttpServletRequest;
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -25,12 +27,13 @@ public class JwtService {
     private final UserRepository userRepository;
 
     // 토큰의 유효기간
-    static final long EXPIRE_TIME = 1000 * 60 * 60 * 24; // 1일
+    static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 14; // 14일
+    static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 30; // 30분
     static final String PREFIX = "Bearer "; // 토큰을 빨리 찾기 위해 붙여주는 문자열
     static final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256); // 비밀키
 
     // 비밀키로 서명된 JWT토큰 발급
-    public String getToken(String email) {
+    public Map<String, String> getToken(String email) {
         Optional<User> user = userRepository.findByEmail(email);
         if(user.isEmpty()) {
             throw new IllegalArgumentException("User not found");
@@ -39,13 +42,27 @@ public class JwtService {
         String role = user.get().getUserType().toString();
         Long userId = user.get().getUserId();
 
-        return Jwts.builder()
-                .setSubject(email)
-                .claim("role", role)
-                .claim("userId", userId)
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRE_TIME))
-                .signWith(key)
-                .compact();
+        String refreshToken = Jwts.builder()
+                        .setSubject(email)
+                        .claim("role", role)
+                        .claim("userId", userId)
+                        .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRE_TIME))
+                        .signWith(key)
+                        .compact();
+
+        String accessToken = Jwts.builder()
+                        .setSubject(email)
+                        .claim("role", role)
+                        .claim("userId", userId)
+                        .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRE_TIME))
+                        .signWith(key)
+                        .compact();
+
+        Map<String, String> tokens = new HashMap<>();
+        tokens.put("access_token", accessToken);
+        tokens.put("refresh_token", refreshToken);
+
+        return tokens;
     }
 
     // 클라이언트가 보내온 요청 헤더에서, 토큰을 확인하고 사용자 이름으로 전환함(로그인이외의 다른 컨트롤러에서 적절하게 사용해야함)
