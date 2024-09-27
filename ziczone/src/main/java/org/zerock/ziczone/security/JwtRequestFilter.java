@@ -33,6 +33,11 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
 
+        // refresh token 재발급 요청(/api/token/refresh)은 필터링하지 않음
+        if (request.getRequestURI().equals("/api/token/refresh")) {
+            chain.doFilter(request, response);
+            return;
+        }
         //Authorization헤더에서 JWT토큰 추출
         final String authorizationHeader = request.getHeader("Authorization");
 
@@ -46,7 +51,14 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         //헤더가 존재하고 ziczone으로 시작하는 경우, 토큰에서 username추출
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwt = authorizationHeader.substring(7);
-            username = jwtService.extractUsername(jwt); //토큰에서 사용자이름 추출(email)
+            try {
+                username = jwtService.extractUsername(jwt); // 토큰에서 사용자 이름 추출(email)
+            } catch (ExpiredJwtException e) {
+                // AccessToken 만료 시 클라이언트에 만료되었음을 알림
+                log.info("AccessToken 만료됨");
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Access token expired");
+                return; // 필터 체인을 멈추고 응답을 종료
+            }
         }
 
         // 사용자이름이 존재하고, 현재 SecurityContext에 인증정보가 없다면(정상토큰일 경우 실행)
