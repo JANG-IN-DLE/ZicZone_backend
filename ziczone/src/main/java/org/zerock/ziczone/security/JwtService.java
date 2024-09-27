@@ -6,6 +6,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
@@ -26,14 +27,16 @@ import java.util.function.Function;
 @RequiredArgsConstructor
 @Service
 @Transactional
+@Log4j2
 public class JwtService {
 
     private final UserRepository userRepository;
 
     // 토큰의 유효기간
     static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 14; // 14일
-//    static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 30; // 30분
-    static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 15; // 임시(15초)
+//    static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 30; // 14일
+    static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 30; // 30분
+//    static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 15; // 임시(15초)
     static final String PREFIX = "Bearer "; // 토큰을 빨리 찾기 위해 붙여주는 문자열
     static final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256); // 비밀키
 
@@ -79,33 +82,64 @@ public class JwtService {
 
     }
 
-    // refresh token, access token 검사하고 accesstoken을 재발급
     public String refreshAccessToken(String accessToken, String refreshToken) {
-        // Access token 정보
-        String userEmailFromAccess = extractUsername(accessToken);
-        Long userIdFromAccess = extractUserId(accessToken);
+        try {
+            // 로그 추가: Access token에서 사용자 정보 추출 시 로그 출력
+            log.info("Extracting user information from access token");
+            String userEmailFromAccess = extractUsername(accessToken);
+            Long userIdFromAccess = extractUserId(accessToken);
+            log.info("Access token info: userEmail={}, userId={}", userEmailFromAccess, userIdFromAccess);
 
-        // DB에 refreshToken이 저장되어있는지 확인
-        User user = userRepository.findByRefreshToken(refreshToken)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+            // 로그 추가: DB에 저장된 refreshToken이 유효한지 확인하는 부분
+            log.info("Looking for user with refresh token");
+            User user = userRepository.findByRefreshToken(refreshToken)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // 같은 사용자의 token인지 확인
-        if(!userEmailFromAccess.equals(user.getEmail()) || !userIdFromAccess.equals(user.getUserId())) {
-            throw new IllegalArgumentException("Tokens do not match for the same user");
+            // 로그 추가: 같은 사용자인지 확인
+            log.info("Validating if tokens belong to the same user");
+            if (!userEmailFromAccess.equals(user.getEmail()) || !userIdFromAccess.equals(user.getUserId())) {
+                log.error("Tokens do not match: accessToken user={}, refreshToken user={}", userEmailFromAccess, user.getEmail());
+                throw new IllegalArgumentException("Tokens do not match for the same user");
+            }
+
+            // 로그 추가: Refresh Token 만료 확인
+            log.info("Checking if refresh token is expired");
+            if (isTokenExpired(refreshToken)) {
+                log.error("Refresh token is expired for user={}", userEmailFromAccess);
+                throw new IllegalArgumentException("Refresh token is expired");
+            }
+
+            // 로그 추가: 새로운 Access Token 발급
+            log.info("Generating new access token");
+            return Jwts.builder()
+                    .setSubject(user.getEmail())
+                    .claim("role", user.getUserType())
+                    .claim("userId", user.getUserId())
+                    .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRE_TIME))
+                    .signWith(key)
+                    .compact();
+
+        } catch (ExpiredJwtException e) {
+            // 로그 추가: Access Token이 만료된 경우 처리
+            log.warn("Access token expired: {}", e.getMessage());
+
+            // 여기서 Refresh Token으로 새로운 Access Token 발급\
+            User user = userRepository.findByRefreshToken(refreshToken)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+            if (isTokenExpired(refreshToken)) {
+                log.error("Refresh token is expired during access token renewal for user={}", user.getEmail());
+                throw new IllegalArgumentException("Refresh token is expired");
+            }
+
+            return Jwts.builder()
+                    .setSubject(user.getEmail())
+                    .claim("role", user.getUserType())
+                    .claim("userId", user.getUserId())
+                    .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRE_TIME))
+                    .signWith(key)
+                    .compact();
         }
-
-        // refresh token 만료 확인
-        if(isTokenExpired(refreshToken)) {
-            throw new IllegalArgumentException("Refresh token is expired");
-        }
-
-        return Jwts.builder()
-                .setSubject(user.getEmail())
-                .claim("role", user.getUserType())
-                .claim("userId", user.getUserId())
-                .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRE_TIME))
-                .signWith(key)
-                .compact();
     }
 
     // 클라이언트가 보내온 요청 헤더에서, 토큰을 확인하고 사용자 이름으로 전환함(로그인이외의 다른 컨트롤러에서 적절하게 사용해야함)
@@ -157,7 +191,15 @@ public class JwtService {
 
     // 토큰 만료 여부 확인
     public Boolean isTokenExpired(String token) {
-        return extractClaim(token, Claims::getExpiration).before(new Date());
+        try {
+            return extractClaim(token, Claims::getExpiration).before(new Date());
+        } catch (ExpiredJwtException e) {
+            log.error("Token is expired: {}", e.getMessage());
+            return true; // 만료된 토큰임을 명시적으로 반환
+        } catch (Exception e) {
+            log.error("Error extracting claims from token: {}", e.getMessage());
+            return true; // 안전하게 처리하기 위해 true 반환 (예외가 발생하면 만료된 것으로 처리)
+        }
     }
 
     // 토큰 유효성 검증
