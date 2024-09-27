@@ -18,6 +18,8 @@ import org.zerock.ziczone.service.join.JoinService;
 import org.zerock.ziczone.security.JwtService;
 import org.zerock.ziczone.service.login.LoginService;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
 
 @Log4j2
@@ -95,5 +97,17 @@ public class LoginController {
         }else {
             return ResponseEntity.ok("change Password Fail");
         }
+    }
+
+    @PostMapping("/logout")
+    public void logout(HttpServletResponse response) {
+        // 쿠키 삭제를 위한 설정
+        Cookie refreshTokenCookie = new Cookie("refresh_token", null); // 쿠키의 값을 null로 설정
+        refreshTokenCookie.setPath("/"); // 쿠키의 경로를 지정
+        refreshTokenCookie.setMaxAge(0); // 쿠키의 만료 시간을 0으로 설정하여 즉시 삭제
+        refreshTokenCookie.setHttpOnly(true); // HttpOnly 속성 설정
+        refreshTokenCookie.setSecure(true); // HTTPS 환경에서만 전송 (옵션)
+
+        response.addCookie(refreshTokenCookie); // 응답에 쿠키 추가 (삭제 요청)
     }
 }
