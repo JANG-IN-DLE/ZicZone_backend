@@ -1,6 +1,7 @@
 package org.zerock.ziczone.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -13,6 +14,7 @@ import org.zerock.ziczone.domain.member.User;
 import org.zerock.ziczone.repository.member.UserRepository;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
@@ -75,6 +77,35 @@ public class JwtService {
         User updateUser = user.toBuilder().refreshToken(refreshToken).build();
         userRepository.save(updateUser);
 
+    }
+
+    // refresh token, access token 검사하고 accesstoken을 재발급
+    public String refreshAccessToken(String accessToken, String refreshToken) {
+        // Access token 정보
+        String userEmailFromAccess = extractUsername(accessToken);
+        Long userIdFromAccess = extractUserId(accessToken);
+
+        // DB에 refreshToken이 저장되어있는지 확인
+        User user = userRepository.findByRefreshToken(refreshToken)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // 같은 사용자의 token인지 확인
+        if(!userEmailFromAccess.equals(user.getEmail()) || !userIdFromAccess.equals(user.getUserId())) {
+            throw new IllegalArgumentException("Tokens do not match for the same user");
+        }
+
+        // refresh token 만료 확인
+        if(isTokenExpired(refreshToken)) {
+            throw new IllegalArgumentException("Refresh token is expired");
+        }
+
+        return Jwts.builder()
+                .setSubject(user.getEmail())
+                .claim("role", user.getUserType())
+                .claim("userId", user.getUserId())
+                .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_EXPIRE_TIME))
+                .signWith(key)
+                .compact();
     }
 
     // 클라이언트가 보내온 요청 헤더에서, 토큰을 확인하고 사용자 이름으로 전환함(로그인이외의 다른 컨트롤러에서 적절하게 사용해야함)
